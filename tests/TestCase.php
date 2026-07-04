@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use App\Models\Organization;
+use App\Models\Tenant;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Features;
@@ -27,8 +27,8 @@ abstract class TestCase extends BaseTestCase
     /**
      * Clean up every tenant a test created. Tenant creation runs CREATE DATABASE
      * (DDL), which implicitly commits and defeats RefreshDatabase's wrapping
-     * transaction, so central `organizations` rows are freed explicitly (rather
-     * than rolled back) and the separate tenant databases are dropped.
+     * transaction, so central `tenants` rows are freed explicitly (rather than
+     * rolled back) and the separate tenant databases are dropped.
      */
     protected function purgeTenants(): void
     {
@@ -37,8 +37,8 @@ abstract class TestCase extends BaseTestCase
         }
 
         // Free slugs via a mass query-builder delete (no model events / no DDL).
-        if (class_exists(Organization::class)) {
-            Organization::withTrashed()->forceDelete();
+        if (class_exists(Tenant::class)) {
+            Tenant::withTrashed()->forceDelete();
         }
 
         $this->dropLeftoverTenantDatabases();
