@@ -24,7 +24,11 @@ class PathSlugTenantResolver extends PathTenantResolver
         /** @var Route $route */
         $route = $args[0];
 
-        if ($slug = $route->parameter(static::$tenantParameterName)) {
+        // Explicit null/empty check — NOT truthiness: a valid unique slug can be
+        // the string "0", which is falsy in PHP and would otherwise be skipped.
+        $slug = $route->parameter(static::$tenantParameterName);
+
+        if ($slug !== null && $slug !== '') {
             // Never leak the {tenant} segment into controller arguments.
             $route->forgetParameter(static::$tenantParameterName);
 
@@ -33,7 +37,7 @@ class PathSlugTenantResolver extends PathTenantResolver
             }
         }
 
-        throw new TenantCouldNotBeIdentifiedByPathException($slug ?? null);
+        throw new TenantCouldNotBeIdentifiedByPathException($slug);
     }
 
     /**
