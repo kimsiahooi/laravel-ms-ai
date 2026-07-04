@@ -30,6 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('admin.login');
             }
 
+            if (tenant()) {
+                return route('tenant.login', ['tenant' => tenant('slug')]);
+            }
+
             return route('login');
         });
     })

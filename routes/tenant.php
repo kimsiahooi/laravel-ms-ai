@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\SessionController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 
@@ -20,6 +22,9 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 | allowed values are constrained by the Route::pattern('tenant', ...) declared in
 | AppServiceProvider so reserved/central words are never resolved as tenants.
 |
+| The resolver forgets the {tenant} param, so redirect()->route('tenant.*') calls
+| must pass ['tenant' => tenant('slug')] explicitly.
+|
 | PreventAccessFromCentralDomains is intentionally OMITTED: with path/slug
 | identification the tenant shares the central host, so it would 404 all traffic.
 |
@@ -27,8 +32,18 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 
 Route::middleware(['web', InitializeTenancyByPath::class])
     ->prefix('{tenant}')
+    ->name('tenant.')
     ->group(function () {
-        // Throwaway smoke route — replaced by real tenant pages in Task 13.
-        // The resolver forgets the {tenant} param, so read the tenant via tenant().
+        // Throwaway smoke route (kept for the reserved/unknown-slug route tests).
         Route::get('/_probe', fn () => tenant('slug'));
+
+        Route::middleware('guest:web')->group(function () {
+            Route::get('login', [SessionController::class, 'create'])->name('login');
+            Route::post('login', [SessionController::class, 'store'])->name('login.store');
+        });
+
+        Route::middleware('auth:web')->group(function () {
+            Route::get('dashboard', DashboardController::class)->name('dashboard');
+            Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
+        });
     });
