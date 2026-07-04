@@ -2,28 +2,19 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
-
 /*
 |--------------------------------------------------------------------------
-| Tenant Routes
+| Tenant Routes (path-identified by slug)
 |--------------------------------------------------------------------------
 |
-| Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider.
+| Intentionally empty for now.
 |
-| Feel free to customize them however you want. Good luck!
+| This application identifies tenants by URL slug (`/{tenant}/…`), NOT by
+| domain. The default domain-based scaffold (InitializeTenancyByDomain +
+| PreventAccessFromCentralDomains) was removed — it collided with the central
+| `/` route and called Tenant::domains() (no domains table in this design).
+|
+| Phase 1 · Task 7 replaces this with a path-based `/{tenant}` route group
+| using a slug resolver, registered via bootstrap/app.php.
 |
 */
-
-Route::middleware([
-    'web',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
-])->group(function () {
-    Route::get('/', function () {
-        return 'This is your multi-tenant application. The id of the current tenant is '.tenant('id');
-    });
-});
