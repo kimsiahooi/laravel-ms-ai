@@ -10,9 +10,15 @@ it('serves a tenant route resolved by slug', function () {
         ->assertSee('acme');
 });
 
-it('does not treat a reserved slug (admin) as a tenant', function () {
-    // The {tenant} pattern excludes reserved words, so /admin/_probe never
-    // matches the tenant group and there is no central route for it -> 404.
+it('does not treat a reserved slug (admin) as a tenant, even when such a tenant row exists', function () {
+    // Create a tenant whose slug IS the reserved word. If the {tenant} pattern
+    // regressed and let 'admin' through, InitializeTenancyByPath would resolve
+    // THIS tenant and /admin/_probe would return 200 "admin". Because the pattern
+    // excludes 'admin', the group never matches -> 404. The existing tenant row is
+    // what makes the pattern the ONLY thing that can produce this 404 (without it,
+    // $onFail would also 404 and a pattern regression would go unnoticed).
+    Tenant::create(['name' => 'Admin', 'slug' => 'admin']);
+
     $this->get('/admin/_probe')->assertNotFound();
 });
 
