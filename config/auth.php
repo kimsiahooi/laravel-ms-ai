@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CentralUser;
 use App\Models\User;
 
 return [
@@ -38,9 +39,16 @@ return [
     */
 
     'guards' => [
+        // Tenant users — authenticated against the active tenant's database.
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'tenant_users',
+        ],
+
+        // Super-admins — authenticated against the central database at /admin.
+        'central' => [
+            'driver' => 'session',
+            'provider' => 'central_users',
         ],
     ],
 
@@ -62,15 +70,17 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        // Tenant users live in the active tenant DB (default connection).
+        'tenant_users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // Super-admins live in the central DB (CentralUser pins the connection).
+        'central_users' => [
+            'driver' => 'eloquent',
+            'model' => CentralUser::class,
+        ],
     ],
 
     /*
@@ -94,7 +104,7 @@ return [
 
     'passwords' => [
         'users' => [
-            'provider' => 'users',
+            'provider' => 'tenant_users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
