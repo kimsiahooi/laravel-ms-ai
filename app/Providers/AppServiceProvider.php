@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Support\ReservedSlugs;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +27,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureTenancyRouting();
+    }
+
+    /**
+     * Constrain the {tenant} path segment to real, non-reserved slugs, and turn
+     * an unresolvable tenant slug into a clean 404 instead of the default 500.
+     */
+    protected function configureTenancyRouting(): void
+    {
+        Route::pattern('tenant', ReservedSlugs::pattern());
+
+        InitializeTenancyByPath::$onFail = fn ($e, $request, $next) => abort(404);
     }
 
     /**

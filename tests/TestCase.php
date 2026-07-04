@@ -19,6 +19,14 @@ abstract class TestCase extends BaseTestCase
 
     protected function tearDown(): void
     {
+        // A test HTTP request through the tenant route group leaves tenancy
+        // initialized (the default DB connection still points at the tenant DB).
+        // Revert to central BEFORE dropping tenant DBs, otherwise the sweep and
+        // RefreshDatabase's rollback would run against a just-dropped database.
+        if ($this->app && tenant() !== null) {
+            tenancy()->end();
+        }
+
         $this->purgeTenants();
 
         parent::tearDown();
