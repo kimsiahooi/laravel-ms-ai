@@ -1,4 +1,23 @@
 <laravel-boost-guidelines>
+=== .ai/biome rules ===
+
+# Biome (JS/TS/JSON Formatter & Linter)
+
+This project uses **Biome** as the single formatter + linter for JavaScript,
+TypeScript, JSX/TSX, and JSON. It **replaces ESLint and Prettier** (both removed).
+Config: `biome.json`. Full policy: `docs/CODING-STANDARDS.md`.
+
+- If you modified any JS/TS/TSX/JSON files, you must run `bun run check`
+  (`biome check --write .`) before finalizing — it formats, organizes imports,
+  and applies safe lint fixes.
+- Verify with `bun run check:ci` (`biome check .`): a clean run is **0 errors**.
+  Pre-existing warnings come from Laravel's starter-kit UI and are non-blocking —
+  do not add new ones.
+- Do NOT hand-format JS/TS or reintroduce ESLint/Prettier. PHP formatting stays
+  with Pint; Biome never touches PHP/Blade.
+- Package manager / JS runtime is **Bun** (`bun install`, `bun run …`), not
+  npm / pnpm / yarn.
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -27,7 +46,6 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - react (REACT) - v19
 - tailwindcss (TAILWINDCSS) - v4
 - @laravel/vite-plugin-wayfinder (WAYFINDER_VITE) - v0
-- @biomejs/biome (BIOME) - v2
 
 ## Skills Activation
 
@@ -194,15 +212,6 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
-
-=== biome/core rules ===
-
-# Biome (JS/TS/JSON Formatter & Linter)
-
-- This project uses **Biome** as the single formatter + linter for JavaScript, TypeScript, JSX/TSX, and JSON. It **replaces ESLint and Prettier** (both removed). Config: `biome.json`. Full conventions: `docs/CODING-STANDARDS.md`.
-- If you modified any JS/TS/TSX/JSON files, you must run `bun run check` (`biome check --write .`) before finalizing changes — it formats, organizes imports, and applies safe lint fixes.
-- To verify without writing, run `bun run check:ci` (`biome check .`). A clean run has **0 errors**; pre-existing warnings come from Laravel's starter-kit UI and are non-blocking — do not add new ones.
-- Do NOT hand-format JS/TS or reintroduce ESLint/Prettier. PHP formatting stays with Pint (above); Biome never touches PHP/Blade.
 
 === pest/core rules ===
 
