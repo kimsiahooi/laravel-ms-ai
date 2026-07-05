@@ -38,3 +38,13 @@ it('does not authenticate a central super-admin on the tenant web guard', functi
 
     $this->assertGuest('web');
 });
+
+it('logs a central super-admin out', function () {
+    CentralUser::create(['name' => 'Root', 'email' => 'root@example.com', 'password' => 'password']);
+
+    $this->post('/admin/login', ['email' => 'root@example.com', 'password' => 'password']);
+    $this->assertAuthenticated('central');
+
+    $this->post('/admin/logout')->assertRedirect(route('admin.login'));
+    $this->assertGuest('central');
+});

@@ -34,7 +34,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('tenant.login', ['tenant' => tenant('slug')]);
             }
 
-            return route('login');
+            return route('home');
+        });
+
+        // And send already-authenticated users to their own area's dashboard.
+        $middleware->redirectUsersTo(function (Request $request) {
+            if ($request->is('admin') || $request->is('admin/*')) {
+                return route('admin.dashboard');
+            }
+
+            if (tenant()) {
+                return route('tenant.dashboard', ['tenant' => tenant('slug')]);
+            }
+
+            return route('home');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

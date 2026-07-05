@@ -39,7 +39,9 @@ Route::middleware(['web', InitializeTenancyByPath::class])
 
         Route::middleware('guest:web')->group(function () {
             Route::get('login', [SessionController::class, 'create'])->name('login');
-            Route::post('login', [SessionController::class, 'store'])->name('login.store');
+            Route::post('login', [SessionController::class, 'store'])
+                ->middleware('throttle:6,1')
+                ->name('login.store');
         });
 
         Route::middleware('auth:web')->group(function () {

@@ -9,6 +9,9 @@ it('logs a tenant user into their own tenant dashboard', function () {
         ->post('/acme/login', ['email' => 'jane@acme.test', 'password' => 'password'])
         ->assertRedirect(route('tenant.dashboard', ['tenant' => 'acme']))
         ->assertSessionHasNoErrors();
+
+    // A tenant login must never authenticate the central super-admin guard.
+    $this->assertGuest('central');
 });
 
 it('does not let a user log into a tenant they do not belong to', function () {
@@ -27,4 +30,13 @@ it('redirects a guest from the tenant dashboard to that tenant login', function 
 
     $this->get('/acme/dashboard')
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
+});
+
+it('logs a tenant user out', function () {
+    app(ProvisionTenant::class)->handle('Acme', 'acme', 'Jane', 'jane@acme.test', 'password');
+
+    $this->post('/acme/login', ['email' => 'jane@acme.test', 'password' => 'password']);
+
+    $this->post('/acme/logout')->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
+    $this->assertGuest('web');
 });

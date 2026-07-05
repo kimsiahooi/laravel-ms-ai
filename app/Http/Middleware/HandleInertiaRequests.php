@@ -41,7 +41,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                // Resolve the correct guard per area: the /admin pages authenticate
+                // super-admins on the 'central' guard, everything else the 'web' guard.
+                'user' => $request->is('admin', 'admin/*')
+                    ? $request->user('central')
+                    : $request->user(),
             ],
             'tenant' => $tenant ? [
                 'slug' => $tenant->slug,
