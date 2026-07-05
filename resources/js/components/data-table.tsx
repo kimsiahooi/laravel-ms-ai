@@ -447,6 +447,11 @@ export function DataTable<T>({
                                                     <PaginationLink
                                                         href={link.url ?? '#'}
                                                         isActive={link.active}
+                                                        tabIndex={
+                                                            loading
+                                                                ? -1
+                                                                : undefined
+                                                        }
                                                         className={cn(
                                                             loading &&
                                                                 'pointer-events-none opacity-50',
