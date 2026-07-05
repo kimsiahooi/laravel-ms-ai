@@ -443,7 +443,13 @@ function tenantDbExists(string $slug): bool
 {
     $name = config('tenancy.database.prefix').$slug;
 
-    return DB::connection('central')->select('SHOW DATABASES LIKE ?', [$name]) !== [];
+    // A bound placeholder inside `SHOW DATABASES LIKE ?` is rejected under this
+    // project's PDO config (native prepared statements, EMULATE_PREPARES off),
+    // so query the catalog view instead — same semantics.
+    return DB::connection('central')->select(
+        'SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?',
+        [$name],
+    ) !== [];
 }
 
 beforeEach(function () {
