@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\SessionController;
+use App\Http\Controllers\Tenant\SupplierController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -58,6 +59,8 @@ Route::middleware(['web', InitializeTenancyByPath::class])
 
             // Catalog
             Route::resource('categories', CategoryController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('suppliers', SupplierController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
