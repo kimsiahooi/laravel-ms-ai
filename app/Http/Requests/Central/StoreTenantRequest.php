@@ -48,7 +48,7 @@ class StoreTenantRequest extends FormRequest
         return [
             'slug.regex' => 'The slug may only contain lowercase letters, numbers and hyphens.',
             'slug.not_in' => 'That slug is reserved and cannot be used.',
-            'slug.unique' => 'A tenant with that slug already exists.',
+            'slug.unique' => 'A tenant with that slug already exists (it may be in the archive — restore or permanently delete it first).',
         ];
     }
 }
