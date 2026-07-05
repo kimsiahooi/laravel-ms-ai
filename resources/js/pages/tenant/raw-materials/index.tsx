@@ -1,23 +1,19 @@
 import { Form, Head, router, usePage } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
     Boxes,
-    ChevronLeft,
-    ChevronRight,
     LoaderCircle,
     MoreHorizontal,
     Pencil,
     Plus,
-    Search,
-    SearchX,
     Trash2,
-    X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -35,15 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import TenantLayout from '@/layouts/tenant-layout';
-import { cn } from '@/lib/utils';
 
 type RawMaterial = {
     id: number;
@@ -54,26 +42,12 @@ type RawMaterial = {
     created_at: string;
 };
 
-type Paginator<T> = {
-    data: T[];
-    from: number | null;
-    to: number | null;
-    total: number;
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    prev_page_url: string | null;
-    next_page_url: string | null;
-};
-
 type PageProps = {
     rawMaterials: Paginator<RawMaterial>;
     filters: { search: string; per_page: number };
     tenant: { slug: string; name: string };
     flash: { success: string | null };
 };
-
-const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 function flashToast(page: { props: unknown }): void {
     const message = (page.props as { flash?: { success?: string | null } })
@@ -89,8 +63,6 @@ export default function RawMaterialsIndex() {
         page.props as unknown as PageProps;
     const base = `/${tenant.slug}/raw-materials`;
 
-    const [search, setSearch] = useState(filters.search);
-    const [loading, setLoading] = useState(false);
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState<RawMaterial | null>(null);
     const [name, setName] = useState('');
@@ -98,54 +70,6 @@ export default function RawMaterialsIndex() {
     const [unit, setUnit] = useState('');
     const [minStock, setMinStock] = useState('0');
     const [deleting, setDeleting] = useState<RawMaterial | null>(null);
-
-    const searchRef = useRef<HTMLInputElement>(null);
-
-    const listReload = {
-        only: ['rawMaterials', 'filters'],
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        onStart: () => setLoading(true),
-        onFinish: () => setLoading(false),
-    };
-
-    // Debounced server-side search (trimmed guard so no duplicate fires). Options
-    // are inlined (not `listReload`) so the effect's dep array stays exhaustive.
-    useEffect(() => {
-        const q = search.trim();
-
-        if (q === filters.search) {
-            return undefined;
-        }
-
-        const timer = setTimeout(() => {
-            router.get(
-                base,
-                { search: q || undefined, per_page: filters.per_page },
-                {
-                    only: ['rawMaterials', 'filters'],
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    onStart: () => setLoading(true),
-                    onFinish: () => setLoading(false),
-                },
-            );
-        }, 350);
-
-        return () => clearTimeout(timer);
-    }, [search, filters.search, filters.per_page, base]);
-
-    const visit = (
-        url: string | null,
-        data: Record<string, string | number | undefined> = {},
-    ) => {
-        if (url === null) {
-            return;
-        }
-        router.get(url, data, listReload);
-    };
 
     const resetForm = () => {
         setName('');
@@ -169,11 +93,6 @@ export default function RawMaterialsIndex() {
         setFormOpen(true);
     };
 
-    const clearSearch = () => {
-        setSearch('');
-        searchRef.current?.focus();
-    };
-
     const confirmDelete = () => {
         if (!deleting) {
             return;
@@ -186,6 +105,78 @@ export default function RawMaterialsIndex() {
             },
         });
     };
+
+    const columns: ColumnDef<RawMaterial>[] = [
+        {
+            accessorKey: 'name',
+            header: 'Name',
+            cell: ({ row }) => (
+                <span className="font-medium text-foreground">
+                    {row.original.name}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'sku',
+            header: 'SKU',
+            cell: ({ row }) => (
+                <span className="font-mono text-muted-foreground text-xs">
+                    {row.original.sku}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'unit',
+            header: 'Unit',
+            cell: ({ row }) => row.original.unit,
+            meta: { className: 'hidden text-muted-foreground md:table-cell' },
+        },
+        {
+            accessorKey: 'min_stock',
+            header: 'Min stock',
+            cell: ({ row }) =>
+                Number(row.original.min_stock).toLocaleString(undefined, {
+                    maximumFractionDigits: 4,
+                }),
+            meta: {
+                className: 'text-right text-muted-foreground tabular-nums',
+            },
+        },
+        {
+            id: 'actions',
+            header: () => <span className="sr-only">Actions</span>,
+            meta: { className: 'text-right' },
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label={`Actions for ${row.original.name}`}
+                        >
+                            <MoreHorizontal className="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onSelect={() => openEdit(row.original)}
+                        >
+                            <Pencil className="size-4" />
+                            Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => setDeleting(row.original)}
+                        >
+                            <Trash2 className="size-4" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        },
+    ];
 
     return (
         <TenantLayout
@@ -205,304 +196,44 @@ export default function RawMaterialsIndex() {
                 </p>
             </div>
 
-            {rawMaterials.total === 0 && filters.search === '' ? (
-                <Card>
-                    <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                        <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                            <Boxes className="size-6" />
-                        </span>
-                        <div className="space-y-1">
-                            <h3 className="font-semibold text-lg">
-                                No raw materials yet
-                            </h3>
-                            <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                Add your first raw material to start tracking
-                                your stock.
-                            </p>
-                        </div>
-                        <Button onClick={openCreate}>
-                            <Plus className="size-4" />
-                            New raw material
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardHeader className="gap-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2">
-                                <CardTitle>Raw materials</CardTitle>
-                                <Badge
-                                    variant="secondary"
-                                    className="tabular-nums"
-                                >
-                                    {rawMaterials.total}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="relative w-full sm:w-64">
-                                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        ref={searchRef}
-                                        value={search}
-                                        onChange={(event) =>
-                                            setSearch(event.target.value)
-                                        }
-                                        placeholder="Search name or SKU…"
-                                        aria-label="Search raw materials"
-                                        className="px-9"
-                                    />
-                                    {loading ? (
-                                        <LoaderCircle className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                                    ) : (
-                                        search !== '' && (
-                                            <button
-                                                type="button"
-                                                onClick={clearSearch}
-                                                aria-label="Clear search"
-                                                className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            >
-                                                <X className="size-3.5" />
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                                <Button
-                                    onClick={openCreate}
-                                    className="shrink-0"
-                                >
-                                    <Plus className="size-4" />
-                                    New raw material
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <p role="status" aria-live="polite" className="sr-only">
-                            {rawMaterials.data.length > 0
-                                ? `Showing ${rawMaterials.from} to ${rawMaterials.to} of ${rawMaterials.total} raw materials`
-                                : `No raw materials match "${filters.search}"`}
-                        </p>
-                        <div
-                            aria-busy={loading}
-                            className={cn(
-                                'overflow-x-auto transition-opacity',
-                                loading && 'pointer-events-none opacity-60',
-                            )}
-                        >
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-border border-b">
-                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                                            Name
-                                        </th>
-                                        <th className="hidden h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
-                                            SKU
-                                        </th>
-                                        <th className="hidden h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
-                                            Unit
-                                        </th>
-                                        <th className="h-10 px-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                                            Min stock
-                                        </th>
-                                        <th className="h-10 px-4 text-right">
-                                            <span className="sr-only">
-                                                Actions
-                                            </span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rawMaterials.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5}>
-                                                <div className="flex flex-col items-center gap-2 py-12 text-center">
-                                                    <SearchX className="size-6 text-muted-foreground" />
-                                                    <p className="text-muted-foreground text-sm">
-                                                        No raw materials match “
-                                                        {filters.search}”
-                                                    </p>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={clearSearch}
-                                                    >
-                                                        Clear search
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        rawMaterials.data.map((rawMaterial) => (
-                                            <tr
-                                                key={rawMaterial.id}
-                                                className="border-border border-b transition-colors last:border-0 hover:bg-muted/50"
-                                            >
-                                                <td className="px-4 py-3 font-medium text-foreground">
-                                                    {rawMaterial.name}
-                                                </td>
-                                                <td className="hidden max-w-md truncate px-4 py-3 text-muted-foreground sm:table-cell">
-                                                    {rawMaterial.sku}
-                                                </td>
-                                                <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                                                    {rawMaterial.unit}
-                                                </td>
-                                                <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
-                                                    {Number(
-                                                        rawMaterial.min_stock,
-                                                    ).toLocaleString(
-                                                        undefined,
-                                                        {
-                                                            maximumFractionDigits: 4,
-                                                        },
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger
-                                                            asChild
-                                                        >
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="size-8"
-                                                                aria-label={`Actions for ${rawMaterial.name}`}
-                                                            >
-                                                                <MoreHorizontal className="size-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem
-                                                                onSelect={() =>
-                                                                    openEdit(
-                                                                        rawMaterial,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="size-4" />
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                variant="destructive"
-                                                                onSelect={() =>
-                                                                    setDeleting(
-                                                                        rawMaterial,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="size-4" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {rawMaterials.data.length > 0 && (
-                            <div className="flex flex-col items-center justify-between gap-4 border-border border-t px-4 py-3 sm:flex-row">
-                                <p className="text-muted-foreground text-sm">
-                                    Showing{' '}
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {rawMaterials.from}
-                                    </span>
-                                    –
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {rawMaterials.to}
-                                    </span>{' '}
-                                    of{' '}
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {rawMaterials.total}
-                                    </span>{' '}
-                                    raw materials
+            <DataTable
+                columns={columns}
+                paginator={rawMaterials}
+                filters={filters}
+                baseUrl={base}
+                only={['rawMaterials', 'filters']}
+                getRowId={(rawMaterial) => String(rawMaterial.id)}
+                title="Raw materials"
+                searchPlaceholder="Search name or SKU…"
+                toolbar={
+                    <Button onClick={openCreate} className="shrink-0">
+                        <Plus className="size-4" />
+                        New raw material
+                    </Button>
+                }
+                emptyState={
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
+                                <Boxes className="size-6" />
+                            </span>
+                            <div className="space-y-1">
+                                <h3 className="font-semibold text-lg">
+                                    No raw materials yet
+                                </h3>
+                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
+                                    Add your first raw material to start
+                                    tracking your stock.
                                 </p>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="hidden text-muted-foreground text-sm sm:inline">
-                                            Per page
-                                        </span>
-                                        <Select
-                                            value={String(
-                                                rawMaterials.per_page,
-                                            )}
-                                            disabled={loading}
-                                            onValueChange={(value) =>
-                                                visit(base, {
-                                                    search:
-                                                        filters.search ||
-                                                        undefined,
-                                                    per_page: Number(value),
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                className="h-8 w-17"
-                                                aria-label="Rows per page"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {PER_PAGE_OPTIONS.map((n) => (
-                                                    <SelectItem
-                                                        key={n}
-                                                        value={String(n)}
-                                                    >
-                                                        {n}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8"
-                                            disabled={
-                                                !rawMaterials.prev_page_url ||
-                                                loading
-                                            }
-                                            onClick={() =>
-                                                visit(
-                                                    rawMaterials.prev_page_url,
-                                                )
-                                            }
-                                            aria-label="Previous page"
-                                        >
-                                            <ChevronLeft className="size-4" />
-                                        </Button>
-                                        <span className="px-1 text-muted-foreground text-sm tabular-nums">
-                                            Page {rawMaterials.current_page} of{' '}
-                                            {rawMaterials.last_page}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8"
-                                            disabled={
-                                                !rawMaterials.next_page_url ||
-                                                loading
-                                            }
-                                            onClick={() =>
-                                                visit(
-                                                    rawMaterials.next_page_url,
-                                                )
-                                            }
-                                            aria-label="Next page"
-                                        >
-                                            <ChevronRight className="size-4" />
-                                        </Button>
-                                    </div>
-                                </div>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
+                            <Button onClick={openCreate}>
+                                <Plus className="size-4" />
+                                New raw material
+                            </Button>
+                        </CardContent>
+                    </Card>
+                }
+            />
 
             {/* Create / edit dialog */}
             <Dialog
