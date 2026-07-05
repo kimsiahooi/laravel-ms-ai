@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
+        "deploy": "bash scripts/deploy.sh",
         "dev": "vite",
         "format": "biome format --write .",
         "format:check": "biome format .",
