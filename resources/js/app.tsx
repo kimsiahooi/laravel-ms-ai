@@ -12,7 +12,12 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            // welcome + the custom central (/admin) and tenant (/{slug}) pages
+            // render their own full-page layout, so they get no shared app shell
+            // (no sidebar). A dedicated central/tenant shell comes in the UI phase.
             case name === 'welcome':
+            case name.startsWith('admin/'):
+            case name.startsWith('tenant/'):
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
