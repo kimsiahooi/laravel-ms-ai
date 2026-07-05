@@ -25,6 +25,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('auth:central')->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
+        Route::get('tenants', [TenantController::class, 'index'])->name('tenants.index');
         Route::post('tenants', [TenantController::class, 'store'])->name('tenants.store');
         Route::post('logout', [AdminSessionController::class, 'destroy'])->name('logout');
     });

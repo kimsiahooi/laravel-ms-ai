@@ -6,10 +6,52 @@ namespace App\Http\Controllers\Central;
 
 use App\Actions\ProvisionTenant;
 use App\Http\Requests\Central\StoreTenantRequest;
+use App\Models\Tenant;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class TenantController
 {
+    /** @var array<int, int> */
+    private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
+    public function index(Request $request): Response
+    {
+        $search = trim((string) $request->string('search'));
+
+        $perPage = (int) $request->integer('per_page', 10);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
+            $perPage = 10;
+        }
+
+        $tenants = Tenant::query()
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $group) use ($search): void {
+                    $group->where('id', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Tenant $tenant): array => [
+                'slug' => $tenant->getKey(),
+                'name' => $tenant->name,
+                'created_at' => $tenant->created_at,
+            ]);
+
+        return Inertia::render('admin/tenants/index', [
+            'tenants' => $tenants,
+            'filters' => [
+                'search' => $search,
+                'per_page' => $perPage,
+            ],
+        ]);
+    }
+
     public function store(StoreTenantRequest $request, ProvisionTenant $provision): RedirectResponse
     {
         $data = $request->validated();
