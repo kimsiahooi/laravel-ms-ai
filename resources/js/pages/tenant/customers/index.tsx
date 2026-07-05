@@ -703,8 +703,8 @@ export default function CustomersIndex() {
                     <DialogHeader>
                         <DialogTitle>Delete customer</DialogTitle>
                         <DialogDescription>
-                            Remove “{deleting?.name}” from your catalog?
-                            Products keep their data but lose this customer.
+                            Remove “{deleting?.name}” from your customers? This
+                            removes the record from your directory.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
