@@ -19,6 +19,7 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: '/admin/dashboard',
         icon: LayoutGrid,
+        prefetch: true,
     },
     {
         title: 'Tenants',

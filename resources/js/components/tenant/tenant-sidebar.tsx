@@ -26,6 +26,7 @@ export function TenantSidebar() {
             title: 'Dashboard',
             href: dashboardUrl,
             icon: LayoutGrid,
+            prefetch: true,
         },
         {
             title: 'Categories',

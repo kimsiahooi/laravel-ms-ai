@@ -11,4 +11,8 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    // Opt-in Inertia prefetch. Off by default: prefetching list pages caches a
+    // pre-mutation snapshot, so they look stale after a create/delete until a
+    // hard refresh. Only enable on stable pages (e.g. the dashboard).
+    prefetch?: boolean;
 };
