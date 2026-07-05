@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { FolderTree, LayoutGrid } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import TenantLogo from '@/components/tenant/tenant-logo';
 import { TenantNavUser } from '@/components/tenant/tenant-nav-user';
@@ -26,6 +26,11 @@ export function TenantSidebar() {
             title: 'Dashboard',
             href: dashboardUrl,
             icon: LayoutGrid,
+        },
+        {
+            title: 'Categories',
+            href: `/${slug}/categories`,
+            icon: FolderTree,
         },
     ];
 
