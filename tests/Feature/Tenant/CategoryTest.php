@@ -14,14 +14,6 @@ beforeEach(function () {
     );
 });
 
-function loginAsAcmeUser(): void
-{
-    test()->post('/acme/login', [
-        'email' => 'ada@acme.test',
-        'password' => 'password123',
-    ]);
-}
-
 it('redirects a guest from the categories page to the tenant login', function () {
     $this->get('/acme/categories')
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));

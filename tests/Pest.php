@@ -57,3 +57,15 @@ function makeTenants(int $count): void
         }
     });
 }
+
+/**
+ * Log in as the seeded first user of the `acme` tenant (provision it first
+ * via ProvisionTenant in the test's beforeEach).
+ */
+function loginAsAcmeUser(): void
+{
+    test()->post('/acme/login', [
+        'email' => 'ada@acme.test',
+        'password' => 'password123',
+    ]);
+}
