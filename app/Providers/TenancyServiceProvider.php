@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Tenancy\PathSlugTenantResolver;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +13,6 @@ use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
-use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -97,12 +95,9 @@ class TenancyServiceProvider extends ServiceProvider
 
     public function register()
     {
-        // Resolve the {tenant} path segment by slug (App\Tenancy\PathSlugTenantResolver)
-        // instead of the default id-based PathTenantResolver.
-        $this->app->bind(
-            PathTenantResolver::class,
-            PathSlugTenantResolver::class,
-        );
+        // The {tenant} path segment resolves via stancl's default PathTenantResolver,
+        // which finds tenants by their key. The tenant key is `id`, which stores the
+        // slug (e.g. "acme"), so `/{slug}/…` resolves natively — no custom resolver.
     }
 
     public function boot()

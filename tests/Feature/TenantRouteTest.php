@@ -3,7 +3,7 @@
 use App\Models\Tenant;
 
 it('serves a tenant route resolved by slug', function () {
-    Tenant::create(['name' => 'Acme', 'slug' => 'acme']);
+    Tenant::create(['name' => 'Acme', 'id' => 'acme']);
 
     $this->get('/acme/_probe')
         ->assertOk()
@@ -17,7 +17,7 @@ it('does not treat a reserved slug (admin) as a tenant, even when such a tenant 
     // excludes 'admin', the group never matches -> 404. The existing tenant row is
     // what makes the pattern the ONLY thing that can produce this 404 (without it,
     // $onFail would also 404 and a pattern regression would go unnoticed).
-    Tenant::create(['name' => 'Admin', 'slug' => 'admin']);
+    Tenant::create(['name' => 'Admin', 'id' => 'admin']);
 
     $this->get('/admin/_probe')->assertNotFound();
 });

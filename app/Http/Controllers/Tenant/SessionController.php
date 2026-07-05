@@ -38,12 +38,12 @@ class SessionController
         // Always land on this tenant's dashboard — never intended() (its stored URL
         // may belong to central or another tenant). The resolver forgot the {tenant}
         // param, so supply the slug explicitly.
-        return redirect()->route('tenant.dashboard', ['tenant' => tenant('slug')]);
+        return redirect()->route('tenant.dashboard', ['tenant' => tenant('id')]);
     }
 
     public function destroy(Request $request): RedirectResponse
     {
-        $slug = tenant('slug');
+        $slug = tenant('id');
 
         Auth::guard('web')->logout();
 

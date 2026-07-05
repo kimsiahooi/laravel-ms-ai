@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 it('scopes the session cookie name per tenant and reverts on end', function () {
     $original = config('session.cookie');
 
-    $tenant = Tenant::create(['name' => 'Acme', 'slug' => 'acme']);
+    $tenant = Tenant::create(['name' => 'Acme', 'id' => 'acme']);
 
     tenancy()->initialize($tenant);
     expect(config('session.cookie'))->toBe($original.'_tenant_'.$tenant->getTenantKey());
@@ -18,8 +18,8 @@ it('scopes the session cookie name per tenant and reverts on end', function () {
 it('gives two tenants distinct session cookie names', function () {
     $original = config('session.cookie');
 
-    $a = Tenant::create(['name' => 'A', 'slug' => 'a']);
-    $b = Tenant::create(['name' => 'B', 'slug' => 'b']);
+    $a = Tenant::create(['name' => 'A', 'id' => 'a']);
+    $b = Tenant::create(['name' => 'B', 'id' => 'b']);
 
     tenancy()->initialize($a);
     $cookieA = config('session.cookie');
@@ -35,7 +35,7 @@ it('gives two tenants distinct session cookie names', function () {
 });
 
 it('provisions a sessions table inside each tenant database', function () {
-    $tenant = Tenant::create(['name' => 'Acme', 'slug' => 'acme']);
+    $tenant = Tenant::create(['name' => 'Acme', 'id' => 'acme']);
 
     $tenant->run(function () {
         expect(Schema::hasTable('sessions'))->toBeTrue();

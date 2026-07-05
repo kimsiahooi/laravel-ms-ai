@@ -26,12 +26,13 @@ class StoreTenantRequest extends FormRequest
             'slug' => [
                 'required',
                 'string',
-                'max:255',
+                // Capped so `<db prefix><slug>` fits MySQL's 64-char database-name limit.
+                'max:50',
                 // Lowercase kebab only — must match the {tenant} route pattern so the
                 // provisioned tenant is actually reachable by URL.
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
                 Rule::notIn(ReservedSlugs::LIST),
-                Rule::unique('tenants', 'slug'),
+                Rule::unique('tenants', 'id'),
             ],
             'admin_name' => ['required', 'string', 'max:255'],
             'admin_email' => ['required', 'string', 'email', 'max:255'],

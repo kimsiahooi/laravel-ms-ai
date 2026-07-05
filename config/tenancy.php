@@ -15,7 +15,7 @@ use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 
 return [
     'tenant_model' => Tenant::class,
-    'id_generator' => null, // keep integer auto-increment tenant ids (no UUID)
+    'id_generator' => null, // the id column stores a supplied slug string (no UUID / auto-increment)
 
     'domain_model' => Domain::class,
 
@@ -60,7 +60,7 @@ return [
          * Tenant database names are created like this:
          * prefix + tenant_id + suffix.
          */
-        'prefix' => env('TENANCY_DB_PREFIX', 'tenant'),
+        'prefix' => env('TENANCY_DB_PREFIX', 'tenant_'), // db name = prefix + slug, e.g. tenant_acme
         'suffix' => '',
 
         /**

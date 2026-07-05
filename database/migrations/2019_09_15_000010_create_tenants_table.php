@@ -11,11 +11,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tenants', function (Blueprint $table) {
-            $table->id();                     // bigint auto-increment tenant key (not a UUID)
+            // The `id` IS the slug: a string primary key (e.g. "acme") that also
+            // names the tenant database (tenancy.database.prefix + id -> `tenant_acme`).
+            // Capped at 50 so `<prefix><id>` stays within MySQL's 64-char db-name limit.
+            $table->string('id', 50)->primary();
             $table->string('name');
-            $table->string('slug')->unique(); // path identifier
             $table->string('logo')->nullable();
-            $table->json('data')->nullable(); // stancl VirtualColumn overflow + tenancy_* internal keys
+            $table->json('data')->nullable(); // stancl data overflow + tenancy_* internal keys
             $table->timestamps();
             $table->softDeletes();
         });

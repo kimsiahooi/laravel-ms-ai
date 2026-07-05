@@ -23,6 +23,6 @@ class TenantController
         );
 
         return redirect()->route('admin.dashboard')
-            ->with('success', "Tenant \"{$tenant->name}\" created — login at /{$tenant->slug}/login.");
+            ->with('success', "Tenant \"{$tenant->name}\" created — login at /{$tenant->getKey()}/login.");
     }
 }

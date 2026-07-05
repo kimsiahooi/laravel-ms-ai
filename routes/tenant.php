@@ -23,7 +23,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 | AppServiceProvider so reserved/central words are never resolved as tenants.
 |
 | The resolver forgets the {tenant} param, so redirect()->route('tenant.*') calls
-| must pass ['tenant' => tenant('slug')] explicitly.
+| must pass ['tenant' => tenant('id')] explicitly (the id column stores the slug).
 |
 | PreventAccessFromCentralDomains is intentionally OMITTED: with path/slug
 | identification the tenant shares the central host, so it would 404 all traffic.
@@ -35,7 +35,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
     ->name('tenant.')
     ->group(function () {
         // Throwaway smoke route (kept for the reserved/unknown-slug route tests).
-        Route::get('/_probe', fn () => tenant('slug'));
+        Route::get('/_probe', fn () => tenant('id'));
 
         Route::middleware('guest:web')->group(function () {
             Route::get('login', [SessionController::class, 'create'])->name('login');

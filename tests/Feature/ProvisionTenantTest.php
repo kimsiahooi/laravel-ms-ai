@@ -16,7 +16,7 @@ it('provisions a tenant database and seeds exactly one admin user inside it', fu
     );
 
     expect($tenant)->toBeInstanceOf(Tenant::class)
-        ->and($tenant->slug)->toBe('acme')
+        ->and($tenant->id)->toBe('acme')
         ->and($tenant->getConnectionName())->toBe('central');
 
     // The admin lives in the TENANT database, not central.
@@ -42,5 +42,5 @@ it('rejects a reserved slug before creating any database', function () {
         adminPassword: 'secret-password',
     ))->toThrow(ValidationException::class);
 
-    expect(Tenant::where('slug', 'admin')->exists())->toBeFalse();
+    expect(Tenant::where('id', 'admin')->exists())->toBeFalse();
 });

@@ -25,7 +25,7 @@ it('lets a super-admin create a tenant with its first user from the admin panel'
         ->assertRedirect(route('admin.dashboard'))
         ->assertSessionHas('success');
 
-    $tenant = Tenant::where('slug', 'acme')->first();
+    $tenant = Tenant::where('id', 'acme')->first();
     expect($tenant)->not->toBeNull();
 
     // The first user was seeded inside the tenant's own database.
@@ -40,7 +40,7 @@ it('rejects a reserved slug', function () {
         ])
         ->assertSessionHasErrors('slug');
 
-    expect(Tenant::where('slug', 'admin')->exists())->toBeFalse();
+    expect(Tenant::where('id', 'admin')->exists())->toBeFalse();
 });
 
 it('rejects a duplicate slug', function () {
@@ -69,5 +69,5 @@ it('forbids guests from creating tenants', function () {
         'admin_name' => 'X', 'admin_email' => 'x@x.test', 'admin_password' => 'secret-password',
     ])->assertRedirect(route('admin.login'));
 
-    expect(Tenant::where('slug', 'acme')->exists())->toBeFalse();
+    expect(Tenant::where('id', 'acme')->exists())->toBeFalse();
 });

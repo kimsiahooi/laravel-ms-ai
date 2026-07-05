@@ -33,7 +33,7 @@ class ProvisionTenant
         // CreateDatabase + MigrateDatabase (synchronous) before this returns.
         $tenant = Tenant::create([
             'name' => $name,
-            'slug' => $slug,
+            'id' => $slug, // the id column stores the slug (the tenant key)
         ]);
 
         // run() switches the default connection to the tenant DB, executes the

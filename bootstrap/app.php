@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if (tenant()) {
-                return route('tenant.login', ['tenant' => tenant('slug')]);
+                return route('tenant.login', ['tenant' => tenant('id')]);
             }
 
             return route('home');
@@ -44,7 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if (tenant()) {
-                return route('tenant.dashboard', ['tenant' => tenant('slug')]);
+                return route('tenant.dashboard', ['tenant' => tenant('id')]);
             }
 
             return route('home');

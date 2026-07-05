@@ -48,7 +48,7 @@ class HandleInertiaRequests extends Middleware
                     : $request->user(),
             ],
             'tenant' => $tenant ? [
-                'slug' => $tenant->slug,
+                'slug' => $tenant->getKey(),
                 'name' => $tenant->name,
             ] : null,
             'flash' => [
