@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Contact, FolderTree, LayoutGrid, Truck } from 'lucide-react';
+import { Boxes, Contact, FolderTree, LayoutGrid, Truck } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import TenantLogo from '@/components/tenant/tenant-logo';
 import { TenantNavUser } from '@/components/tenant/tenant-nav-user';
@@ -41,6 +41,11 @@ export function TenantSidebar() {
             title: 'Customers',
             href: `/${slug}/customers`,
             icon: Contact,
+        },
+        {
+            title: 'Raw materials',
+            href: `/${slug}/raw-materials`,
+            icon: Boxes,
         },
     ];
 

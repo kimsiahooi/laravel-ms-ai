@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\SupplierController;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +65,9 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::resource('suppliers', SupplierController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('customers', CustomerController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('raw-materials', RawMaterialController::class)
+                ->parameters(['raw-materials' => 'rawMaterial'])
                 ->only(['index', 'store', 'update', 'destroy']);
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
