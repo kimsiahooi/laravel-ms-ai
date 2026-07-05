@@ -351,124 +351,103 @@ export function DataTable<T>({
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {paginator.last_page > 1 && (
-                                <Pagination className="mx-0 w-auto">
-                                    <PaginationContent>
-                                        {paginator.links.map((link, index) => {
-                                            const disabled =
-                                                !link.url || loading;
-                                            const disabledClass = cn(
-                                                disabled &&
-                                                    'pointer-events-none opacity-50',
-                                            );
+                            <Pagination className="mx-0 w-auto">
+                                <PaginationContent>
+                                    {paginator.links.map((link, index) => {
+                                        const disabled = !link.url || loading;
+                                        const disabledClass = cn(
+                                            disabled &&
+                                                'pointer-events-none opacity-50',
+                                        );
 
-                                            if (index === 0) {
-                                                return (
-                                                    <PaginationItem key="prev">
-                                                        <PaginationPrevious
-                                                            href={
-                                                                link.url ?? '#'
-                                                            }
-                                                            aria-disabled={
-                                                                disabled
-                                                            }
-                                                            tabIndex={
-                                                                disabled
-                                                                    ? -1
-                                                                    : undefined
-                                                            }
-                                                            className={
-                                                                disabledClass
-                                                            }
-                                                            onClick={(
-                                                                event,
-                                                            ) => {
-                                                                event.preventDefault();
-                                                                navigate(
-                                                                    link.url,
-                                                                );
-                                                            }}
-                                                        />
-                                                    </PaginationItem>
-                                                );
-                                            }
-
-                                            if (
-                                                index ===
-                                                paginator.links.length - 1
-                                            ) {
-                                                return (
-                                                    <PaginationItem key="next">
-                                                        <PaginationNext
-                                                            href={
-                                                                link.url ?? '#'
-                                                            }
-                                                            aria-disabled={
-                                                                disabled
-                                                            }
-                                                            tabIndex={
-                                                                disabled
-                                                                    ? -1
-                                                                    : undefined
-                                                            }
-                                                            className={
-                                                                disabledClass
-                                                            }
-                                                            onClick={(
-                                                                event,
-                                                            ) => {
-                                                                event.preventDefault();
-                                                                navigate(
-                                                                    link.url,
-                                                                );
-                                                            }}
-                                                        />
-                                                    </PaginationItem>
-                                                );
-                                            }
-
-                                            if (link.label === '...') {
-                                                return (
-                                                    <PaginationItem
-                                                        // biome-ignore lint/suspicious/noArrayIndexKey: paginator.links is a stable, server-generated list
-                                                        key={`ellipsis-${index}`}
-                                                        className="hidden sm:flex"
-                                                    >
-                                                        <PaginationEllipsis />
-                                                    </PaginationItem>
-                                                );
-                                            }
-
+                                        if (index === 0) {
                                             return (
-                                                <PaginationItem
-                                                    key={link.label}
-                                                    className="hidden sm:flex"
-                                                >
-                                                    <PaginationLink
+                                                <PaginationItem key="prev">
+                                                    <PaginationPrevious
                                                         href={link.url ?? '#'}
-                                                        isActive={link.active}
+                                                        aria-disabled={disabled}
                                                         tabIndex={
-                                                            loading
+                                                            disabled
                                                                 ? -1
                                                                 : undefined
                                                         }
-                                                        className={cn(
-                                                            loading &&
-                                                                'pointer-events-none opacity-50',
-                                                        )}
+                                                        className={
+                                                            disabledClass
+                                                        }
                                                         onClick={(event) => {
                                                             event.preventDefault();
                                                             navigate(link.url);
                                                         }}
-                                                    >
-                                                        {link.label}
-                                                    </PaginationLink>
+                                                    />
                                                 </PaginationItem>
                                             );
-                                        })}
-                                    </PaginationContent>
-                                </Pagination>
-                            )}
+                                        }
+
+                                        if (
+                                            index ===
+                                            paginator.links.length - 1
+                                        ) {
+                                            return (
+                                                <PaginationItem key="next">
+                                                    <PaginationNext
+                                                        href={link.url ?? '#'}
+                                                        aria-disabled={disabled}
+                                                        tabIndex={
+                                                            disabled
+                                                                ? -1
+                                                                : undefined
+                                                        }
+                                                        className={
+                                                            disabledClass
+                                                        }
+                                                        onClick={(event) => {
+                                                            event.preventDefault();
+                                                            navigate(link.url);
+                                                        }}
+                                                    />
+                                                </PaginationItem>
+                                            );
+                                        }
+
+                                        if (link.label === '...') {
+                                            return (
+                                                <PaginationItem
+                                                    // biome-ignore lint/suspicious/noArrayIndexKey: paginator.links is a stable, server-generated list
+                                                    key={`ellipsis-${index}`}
+                                                    className="hidden sm:flex"
+                                                >
+                                                    <PaginationEllipsis />
+                                                </PaginationItem>
+                                            );
+                                        }
+
+                                        return (
+                                            <PaginationItem
+                                                key={link.label}
+                                                className="hidden sm:flex"
+                                            >
+                                                <PaginationLink
+                                                    href={link.url ?? '#'}
+                                                    isActive={link.active}
+                                                    tabIndex={
+                                                        loading ? -1 : undefined
+                                                    }
+                                                    className={cn(
+                                                        loading &&
+                                                            'pointer-events-none opacity-50',
+                                                    )}
+                                                    onClick={(event) => {
+                                                        event.preventDefault();
+                                                        navigate(link.url);
+                                                    }}
+                                                >
+                                                    {link.label}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        );
+                                    })}
+                                </PaginationContent>
+                            </Pagination>
                         </div>
                     </div>
                 )}
