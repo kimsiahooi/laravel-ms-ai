@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Central\AdminSessionController;
 use App\Http\Controllers\Central\DashboardController;
+use App\Http\Controllers\Central\TenantController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -24,6 +25,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('auth:central')->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
+        Route::post('tenants', [TenantController::class, 'store'])->name('tenants.store');
         Route::post('logout', [AdminSessionController::class, 'destroy'])->name('logout');
     });
 });
