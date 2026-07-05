@@ -52,7 +52,10 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        // Self-service account deletion is permanent. The User model's SoftDeletes
+        // trait is for admin-driven disable/restore, not for a user erasing their
+        // own account (a recoverable ghost row would also block reusing the email).
+        $user->forceDelete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

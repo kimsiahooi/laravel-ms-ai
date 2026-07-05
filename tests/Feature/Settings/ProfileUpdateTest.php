@@ -77,6 +77,9 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+        // Permanent, not soft-deleted: the row is truly gone even withTrashed().
+        // (`fresh()` alone can't tell, since it honours the SoftDeletes scope.)
+        $this->assertNull(User::withTrashed()->find($user->id));
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()
