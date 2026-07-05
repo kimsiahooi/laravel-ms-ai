@@ -64,7 +64,7 @@ class TenantController
             adminPassword: $data['admin_password'],
         );
 
-        return redirect()->route('admin.dashboard')
+        return redirect()->route('admin.tenants.index')
             ->with('success', "Tenant \"{$tenant->name}\" created — login at /{$tenant->getKey()}/login.");
     }
 

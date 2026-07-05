@@ -193,7 +193,13 @@ export default function AdminTenantsTrashed() {
     };
 
     return (
-        <CentralAdminLayout>
+        <CentralAdminLayout
+            breadcrumbs={[
+                { title: 'Dashboard', href: '/admin/dashboard' },
+                { title: 'Tenants', href: '/admin/tenants' },
+                { title: 'Archived', href: '/admin/tenants/trashed' },
+            ]}
+        >
             <Head title="Archived tenants" />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

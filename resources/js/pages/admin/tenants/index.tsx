@@ -251,7 +251,12 @@ export default function AdminTenantsIndex() {
     };
 
     return (
-        <CentralAdminLayout>
+        <CentralAdminLayout
+            breadcrumbs={[
+                { title: 'Dashboard', href: '/admin/dashboard' },
+                { title: 'Tenants', href: '/admin/tenants' },
+            ]}
+        >
             <Head title="Tenants" />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

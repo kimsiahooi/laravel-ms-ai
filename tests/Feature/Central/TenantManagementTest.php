@@ -22,7 +22,7 @@ it('lets a super-admin create a tenant with its first user from the admin panel'
             'admin_email' => 'ada@acme.test',
             'admin_password' => 'secret-password',
         ])
-        ->assertRedirect(route('admin.dashboard'))
+        ->assertRedirect(route('admin.tenants.index'))
         ->assertSessionHas('success');
 
     $tenant = Tenant::where('id', 'acme')->first();
@@ -52,6 +52,22 @@ it('rejects a duplicate slug', function () {
             'admin_name' => 'B', 'admin_email' => 'b@acme.test', 'admin_password' => 'secret-password',
         ])
         ->assertSessionHasErrors('slug');
+});
+
+it('rejects creating a tenant whose slug is currently archived', function () {
+    $tenant = app(ProvisionTenant::class)->handle('Acme', 'acme', 'A', 'a@acme.test', 'secret-password');
+    $tenant->delete(); // soft-delete -> archived (its database is retained)
+
+    $this->actingAs($this->admin, 'central')
+        ->post('/admin/tenants', [
+            'name' => 'Acme Redux', 'slug' => 'acme',
+            'admin_name' => 'B', 'admin_email' => 'b@acme.test', 'admin_password' => 'secret-password',
+        ])
+        ->assertSessionHasErrors('slug');
+
+    // The archived tenant is untouched (not overwritten / not un-trashed).
+    expect(Tenant::withTrashed()->where('id', 'acme')->exists())->toBeTrue()
+        ->and(Tenant::where('id', 'acme')->exists())->toBeFalse();
 });
 
 it('rejects an invalid (non-kebab) slug', function () {
