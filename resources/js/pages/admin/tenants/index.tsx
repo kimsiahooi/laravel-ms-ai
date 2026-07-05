@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -48,15 +49,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
 import {
     Tooltip,
     TooltipContent,
@@ -714,7 +706,7 @@ export default function AdminTenantsIndex() {
                 </Card>
             )}
 
-            <Sheet
+            <Dialog
                 open={open}
                 onOpenChange={(next) => {
                     if (submitting) {
@@ -731,9 +723,8 @@ export default function AdminTenantsIndex() {
                     }
                 }}
             >
-                <SheetContent
-                    side="right"
-                    className="w-full gap-0 p-0 sm:max-w-md"
+                <DialogContent
+                    className="gap-0 p-0 sm:max-w-md"
                     onInteractOutside={(event) => {
                         if (submitting) {
                             event.preventDefault();
@@ -745,18 +736,18 @@ export default function AdminTenantsIndex() {
                         }
                     }}
                 >
-                    <SheetHeader className="gap-3 border-border border-b">
+                    <DialogHeader className="gap-3 border-border border-b p-4 text-left">
                         <span className="grid size-9 place-items-center rounded-lg bg-secondary text-foreground">
                             <Building2 className="size-5" />
                         </span>
                         <div className="space-y-1">
-                            <SheetTitle>Create a tenant</SheetTitle>
-                            <SheetDescription>
+                            <DialogTitle>Create a tenant</DialogTitle>
+                            <DialogDescription>
                                 Provision an isolated workspace and seed its
                                 first admin user.
-                            </SheetDescription>
+                            </DialogDescription>
                         </div>
-                    </SheetHeader>
+                    </DialogHeader>
 
                     <Form
                         action="/admin/tenants"
@@ -783,11 +774,11 @@ export default function AdminTenantsIndex() {
                                 toast.success(message);
                             }
                         }}
-                        className="flex min-h-0 flex-1 flex-col"
+                        className="flex min-h-0 flex-col"
                     >
                         {({ processing, errors }) => (
                             <>
-                                <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
+                                <div className="max-h-[60vh] space-y-6 overflow-y-auto px-4 py-5">
                                     <div className="space-y-4">
                                         <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                                             Organization
@@ -1011,8 +1002,8 @@ export default function AdminTenantsIndex() {
                                     </div>
                                 </div>
 
-                                <SheetFooter className="flex-row justify-end gap-2 border-border border-t">
-                                    <SheetClose asChild>
+                                <DialogFooter className="flex-row justify-end gap-2 border-border border-t p-4">
+                                    <DialogClose asChild>
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -1020,7 +1011,7 @@ export default function AdminTenantsIndex() {
                                         >
                                             Cancel
                                         </Button>
-                                    </SheetClose>
+                                    </DialogClose>
                                     <Button type="submit" disabled={processing}>
                                         {processing ? (
                                             <>
@@ -1034,12 +1025,12 @@ export default function AdminTenantsIndex() {
                                             </>
                                         )}
                                     </Button>
-                                </SheetFooter>
+                                </DialogFooter>
                             </>
                         )}
                     </Form>
-                </SheetContent>
-            </Sheet>
+                </DialogContent>
+            </Dialog>
 
             <Dialog
                 open={deleting !== null}
