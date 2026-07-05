@@ -86,6 +86,21 @@ it('force deletes a trashed tenant and drops its database', function () {
         ->and(tenantDbExists('acme'))->toBeFalse();
 });
 
+it('refuses to force delete a tenant that was never archived', function () {
+    $this->actingAs($this->admin, 'central')
+        ->delete('/admin/tenants/acme/force')
+        ->assertNotFound();
+
+    expect(Tenant::find('acme'))->not->toBeNull()
+        ->and(tenantDbExists('acme'))->toBeTrue();
+});
+
+it('refuses to restore a tenant that is not archived', function () {
+    $this->actingAs($this->admin, 'central')
+        ->patch('/admin/tenants/acme/restore')
+        ->assertNotFound();
+});
+
 it('rejects lifecycle routes for guests', function () {
     $this->delete('/admin/tenants/acme')->assertRedirect('/admin/login');
     $this->get('/admin/tenants/trashed')->assertRedirect('/admin/login');

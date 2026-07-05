@@ -111,6 +111,8 @@ class TenantController
 
     public function restore(Tenant $tenant): RedirectResponse
     {
+        abort_unless($tenant->trashed(), 404);
+
         $tenant->restore();
 
         return back()->with('success', "Tenant \"{$tenant->name}\" restored.");
@@ -118,6 +120,8 @@ class TenantController
 
     public function forceDestroy(Tenant $tenant): RedirectResponse
     {
+        abort_unless($tenant->trashed(), 404);
+
         $name = $tenant->name;
         $tenant->forceDelete();
 
