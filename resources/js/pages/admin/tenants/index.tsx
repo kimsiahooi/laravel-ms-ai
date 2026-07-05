@@ -1,10 +1,9 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
     Archive,
     Building2,
     Check,
-    ChevronLeft,
-    ChevronRight,
     Copy,
     ExternalLink,
     Eye,
@@ -12,17 +11,15 @@ import {
     LoaderCircle,
     MoreHorizontal,
     Plus,
-    Search,
-    SearchX,
     Trash2,
-    X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -41,13 +38,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
     Tooltip,
@@ -66,18 +56,6 @@ type Tenant = {
     created_at: string;
 };
 
-type Paginator<T> = {
-    data: T[];
-    from: number | null;
-    to: number | null;
-    total: number;
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    prev_page_url: string | null;
-    next_page_url: string | null;
-};
-
 type PageProps = {
     tenants: Paginator<Tenant>;
     filters: { search: string; per_page: number };
@@ -85,18 +63,6 @@ type PageProps = {
 };
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const PER_PAGE_OPTIONS = [10, 25, 50, 100];
-
-// Inertia visit options shared by search / pagination — partial reload of just
-// the list so the rest of the page is preserved.
-const listReload = (onStart: () => void, onFinish: () => void) => ({
-    only: ['tenants', 'filters'],
-    preserveState: true,
-    preserveScroll: true,
-    replace: true,
-    onStart,
-    onFinish,
-});
 
 function slugify(value: string): string {
     return value
@@ -119,8 +85,6 @@ export default function AdminTenantsIndex() {
     const getInitials = useInitials();
     const [, copy] = useClipboard();
 
-    const [search, setSearch] = useState(filters.search);
-    const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [name, setName] = useState('');
@@ -131,7 +95,6 @@ export default function AdminTenantsIndex() {
     const [deleting, setDeleting] = useState<Tenant | null>(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
 
-    const searchRef = useRef<HTMLInputElement>(null);
     const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -144,48 +107,6 @@ export default function AdminTenantsIndex() {
         },
         [],
     );
-
-    // Debounced server-side search. Compares the TRIMMED query against the
-    // server's (also trimmed) filters.search so the guard stays reachable and no
-    // duplicate request fires after the response for whitespace-padded input.
-    useEffect(() => {
-        const q = search.trim();
-
-        if (q === filters.search) {
-            return undefined;
-        }
-
-        const timer = setTimeout(() => {
-            router.get(
-                '/admin/tenants',
-                { search: q || undefined, per_page: filters.per_page },
-                listReload(
-                    () => setLoading(true),
-                    () => setLoading(false),
-                ),
-            );
-        }, 350);
-
-        return () => clearTimeout(timer);
-    }, [search, filters.search, filters.per_page]);
-
-    const visit = (
-        url: string | null,
-        data: Record<string, string | number | undefined> = {},
-    ) => {
-        if (url === null) {
-            return;
-        }
-
-        router.get(
-            url,
-            data,
-            listReload(
-                () => setLoading(true),
-                () => setLoading(false),
-            ),
-        );
-    };
 
     const slugInvalid = slug !== '' && !SLUG_PATTERN.test(slug);
 
@@ -237,10 +158,190 @@ export default function AdminTenantsIndex() {
         setShowPassword(false);
     };
 
-    const clearSearch = () => {
-        setSearch('');
-        searchRef.current?.focus();
-    };
+    const columns: ColumnDef<Tenant>[] = [
+        {
+            accessorKey: 'name',
+            header: 'Tenant',
+            cell: ({ row }) => (
+                <div className="flex items-center gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted font-medium text-xs">
+                        {getInitials(row.original.name)}
+                    </span>
+                    <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">
+                            {row.original.name}
+                        </p>
+                        <p className="truncate font-mono text-muted-foreground text-xs sm:hidden">
+                            /{row.original.slug}
+                        </p>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'slug',
+            header: 'Slug',
+            meta: { className: 'hidden sm:table-cell' },
+            cell: ({ row }) => {
+                const copied = copiedSlug === row.original.slug;
+
+                return (
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                handleCopy(
+                                    row.original.slug,
+                                    row.original.slug,
+                                    'Slug copied',
+                                )
+                            }
+                            title="Copy slug"
+                            className="cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            <Badge
+                                variant="outline"
+                                className="font-mono font-normal"
+                            >
+                                /{row.original.slug}
+                            </Badge>
+                        </button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7"
+                                    onClick={() =>
+                                        handleCopy(
+                                            row.original.slug,
+                                            row.original.slug,
+                                            'Slug copied',
+                                        )
+                                    }
+                                    aria-label="Copy slug"
+                                >
+                                    {copied ? (
+                                        <Check className="size-3.5" />
+                                    ) : (
+                                        <Copy className="size-3.5" />
+                                    )}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {copied ? 'Copied' : 'Copy slug'}
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            meta: { className: 'hidden md:table-cell' },
+            cell: ({ row }) => (
+                <span
+                    className="whitespace-nowrap text-muted-foreground tabular-nums"
+                    title={absoluteDate(row.original.created_at)}
+                    suppressHydrationWarning
+                >
+                    {timeAgo(row.original.created_at)}
+                </span>
+            ),
+        },
+        {
+            id: 'actions',
+            header: () => <span className="sr-only">Actions</span>,
+            meta: { className: 'text-right' },
+            cell: ({ row }) => {
+                const tenant = row.original;
+                const loginPath = `/${tenant.slug}/login`;
+
+                return (
+                    <div className="flex items-center justify-end gap-1">
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="hidden sm:inline-flex"
+                        >
+                            <a
+                                href={loginPath}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <ExternalLink className="size-3.5" />
+                                Open
+                            </a>
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8"
+                                    aria-label={`Actions for ${tenant.name}`}
+                                >
+                                    <MoreHorizontal className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                                <DropdownMenuItem asChild className="sm:hidden">
+                                    <a
+                                        href={loginPath}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <ExternalLink className="size-4" />
+                                        Open workspace
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        handleCopy(
+                                            tenant.slug,
+                                            `${origin}${loginPath}`,
+                                            'Workspace URL copied',
+                                        )
+                                    }
+                                >
+                                    <Copy className="size-4" />
+                                    Copy workspace URL
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        handleCopy(
+                                            tenant.slug,
+                                            tenant.slug,
+                                            'Slug copied',
+                                        )
+                                    }
+                                >
+                                    <Copy className="size-4" />
+                                    Copy slug
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() => setDeleting(tenant)}
+                                >
+                                    <Trash2 className="size-4" />
+                                    Delete tenant
+                                </DropdownMenuItem>
+                                <div
+                                    className="px-2 py-1.5 text-muted-foreground text-xs md:hidden"
+                                    suppressHydrationWarning
+                                >
+                                    Created {timeAgo(tenant.created_at)}
+                                </div>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                );
+            },
+        },
+    ];
 
     return (
         <CentralAdminLayout
@@ -268,443 +369,45 @@ export default function AdminTenantsIndex() {
                 </Button>
             </div>
 
-            {tenants.total === 0 && filters.search === '' ? (
-                <Card>
-                    <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                        <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                            <Building2 className="size-6" />
-                        </span>
-                        <div className="space-y-1">
-                            <h3 className="font-semibold text-lg">
-                                No tenants yet
-                            </h3>
-                            <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                Provision your first workspace to get started.
-                                Each tenant gets an isolated database and its
-                                own login URL.
-                            </p>
-                        </div>
-                        <Button onClick={() => setOpen(true)}>
-                            <Plus className="size-4" />
-                            Create your first tenant
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardHeader className="gap-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2">
-                                <CardTitle>Tenants</CardTitle>
-                                <Badge
-                                    variant="secondary"
-                                    className="tabular-nums"
-                                >
-                                    {tenants.total}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="relative w-full sm:w-64">
-                                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        ref={searchRef}
-                                        value={search}
-                                        onChange={(event) =>
-                                            setSearch(event.target.value)
-                                        }
-                                        placeholder="Search name or slug…"
-                                        aria-label="Search tenants"
-                                        className="px-9"
-                                    />
-                                    {loading ? (
-                                        <LoaderCircle className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                                    ) : (
-                                        search !== '' && (
-                                            <button
-                                                type="button"
-                                                onClick={clearSearch}
-                                                aria-label="Clear search"
-                                                className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            >
-                                                <X className="size-3.5" />
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                                <Button
-                                    onClick={() => setOpen(true)}
-                                    className="shrink-0"
-                                >
-                                    <Plus className="size-4" />
-                                    New tenant
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        {/* Always-mounted status region so search / no-results
-                            transitions are announced — a conditionally-mounted
-                            live region is silent on N→0 and 0→N. */}
-                        <p role="status" aria-live="polite" className="sr-only">
-                            {tenants.data.length > 0
-                                ? `Showing ${tenants.from} to ${tenants.to} of ${tenants.total} tenants`
-                                : `No tenants match "${filters.search}"`}
-                        </p>
-                        <div
-                            aria-busy={loading}
-                            className={cn(
-                                'overflow-x-auto transition-opacity',
-                                loading && 'pointer-events-none opacity-60',
-                            )}
-                        >
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-border border-b">
-                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                                            Tenant
-                                        </th>
-                                        <th className="hidden h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
-                                            Slug
-                                        </th>
-                                        <th className="hidden h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
-                                            Created
-                                        </th>
-                                        <th className="h-10 px-4 text-right">
-                                            <span className="sr-only">
-                                                Actions
-                                            </span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tenants.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4}>
-                                                <div className="flex flex-col items-center gap-2 py-12 text-center">
-                                                    <SearchX className="size-6 text-muted-foreground" />
-                                                    <p className="text-muted-foreground text-sm">
-                                                        No tenants match “
-                                                        {filters.search}”
-                                                    </p>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={clearSearch}
-                                                    >
-                                                        Clear search
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        tenants.data.map((tenant) => {
-                                            const loginPath = `/${tenant.slug}/login`;
-                                            const copied =
-                                                copiedSlug === tenant.slug;
-
-                                            return (
-                                                <tr
-                                                    key={tenant.slug}
-                                                    className="border-border border-b transition-colors last:border-0 hover:bg-muted/50"
-                                                >
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted font-medium text-xs">
-                                                                {getInitials(
-                                                                    tenant.name,
-                                                                )}
-                                                            </span>
-                                                            <div className="min-w-0">
-                                                                <p className="truncate font-medium text-foreground">
-                                                                    {
-                                                                        tenant.name
-                                                                    }
-                                                                </p>
-                                                                <p className="truncate font-mono text-muted-foreground text-xs sm:hidden">
-                                                                    /
-                                                                    {
-                                                                        tenant.slug
-                                                                    }
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="hidden px-4 py-3 sm:table-cell">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleCopy(
-                                                                        tenant.slug,
-                                                                        tenant.slug,
-                                                                        'Slug copied',
-                                                                    )
-                                                                }
-                                                                title="Copy slug"
-                                                                className="cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                                            >
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="font-mono font-normal"
-                                                                >
-                                                                    /
-                                                                    {
-                                                                        tenant.slug
-                                                                    }
-                                                                </Badge>
-                                                            </button>
-                                                            <Tooltip>
-                                                                <TooltipTrigger
-                                                                    asChild
-                                                                >
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="size-7"
-                                                                        onClick={() =>
-                                                                            handleCopy(
-                                                                                tenant.slug,
-                                                                                tenant.slug,
-                                                                                'Slug copied',
-                                                                            )
-                                                                        }
-                                                                        aria-label="Copy slug"
-                                                                    >
-                                                                        {copied ? (
-                                                                            <Check className="size-3.5" />
-                                                                        ) : (
-                                                                            <Copy className="size-3.5" />
-                                                                        )}
-                                                                    </Button>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    {copied
-                                                                        ? 'Copied'
-                                                                        : 'Copy slug'}
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </td>
-                                                    <td className="hidden px-4 py-3 md:table-cell">
-                                                        <span
-                                                            className="whitespace-nowrap text-muted-foreground tabular-nums"
-                                                            title={absoluteDate(
-                                                                tenant.created_at,
-                                                            )}
-                                                            suppressHydrationWarning
-                                                        >
-                                                            {timeAgo(
-                                                                tenant.created_at,
-                                                            )}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            <Button
-                                                                asChild
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="hidden sm:inline-flex"
-                                                            >
-                                                                <a
-                                                                    href={
-                                                                        loginPath
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                >
-                                                                    <ExternalLink className="size-3.5" />
-                                                                    Open
-                                                                </a>
-                                                            </Button>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger
-                                                                    asChild
-                                                                >
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="size-8"
-                                                                        aria-label={`Actions for ${tenant.name}`}
-                                                                    >
-                                                                        <MoreHorizontal className="size-4" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent
-                                                                    align="end"
-                                                                    className="w-52"
-                                                                >
-                                                                    <DropdownMenuItem
-                                                                        asChild
-                                                                        className="sm:hidden"
-                                                                    >
-                                                                        <a
-                                                                            href={
-                                                                                loginPath
-                                                                            }
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                        >
-                                                                            <ExternalLink className="size-4" />
-                                                                            Open
-                                                                            workspace
-                                                                        </a>
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem
-                                                                        onSelect={() =>
-                                                                            handleCopy(
-                                                                                tenant.slug,
-                                                                                `${origin}${loginPath}`,
-                                                                                'Workspace URL copied',
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Copy className="size-4" />
-                                                                        Copy
-                                                                        workspace
-                                                                        URL
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem
-                                                                        onSelect={() =>
-                                                                            handleCopy(
-                                                                                tenant.slug,
-                                                                                tenant.slug,
-                                                                                'Slug copied',
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Copy className="size-4" />
-                                                                        Copy
-                                                                        slug
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem
-                                                                        variant="destructive"
-                                                                        onSelect={() =>
-                                                                            setDeleting(
-                                                                                tenant,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Trash2 className="size-4" />
-                                                                        Delete
-                                                                        tenant
-                                                                    </DropdownMenuItem>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-muted-foreground text-xs md:hidden"
-                                                                        suppressHydrationWarning
-                                                                    >
-                                                                        Created{' '}
-                                                                        {timeAgo(
-                                                                            tenant.created_at,
-                                                                        )}
-                                                                    </div>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {tenants.data.length > 0 && (
-                            <div className="flex flex-col items-center justify-between gap-4 border-border border-t px-4 py-3 sm:flex-row">
-                                <p className="text-muted-foreground text-sm">
-                                    Showing{' '}
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {tenants.from}
-                                    </span>
-                                    –
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {tenants.to}
-                                    </span>{' '}
-                                    of{' '}
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {tenants.total}
-                                    </span>{' '}
-                                    tenants
+            <DataTable
+                columns={columns}
+                paginator={tenants}
+                filters={filters}
+                baseUrl="/admin/tenants"
+                only={['tenants', 'filters']}
+                getRowId={(tenant) => tenant.slug}
+                title="Tenants"
+                searchPlaceholder="Search name or slug…"
+                toolbar={
+                    <Button onClick={() => setOpen(true)} className="shrink-0">
+                        <Plus className="size-4" />
+                        New tenant
+                    </Button>
+                }
+                emptyState={
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
+                                <Building2 className="size-6" />
+                            </span>
+                            <div className="space-y-1">
+                                <h3 className="font-semibold text-lg">
+                                    No tenants yet
+                                </h3>
+                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
+                                    Provision your first workspace to get
+                                    started. Each tenant gets an isolated
+                                    database and its own login URL.
                                 </p>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="hidden text-muted-foreground text-sm sm:inline">
-                                            Per page
-                                        </span>
-                                        <Select
-                                            value={String(tenants.per_page)}
-                                            disabled={loading}
-                                            onValueChange={(value) =>
-                                                visit('/admin/tenants', {
-                                                    search:
-                                                        filters.search ||
-                                                        undefined,
-                                                    per_page: Number(value),
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                className="h-8 w-[4.25rem]"
-                                                aria-label="Rows per page"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {PER_PAGE_OPTIONS.map((n) => (
-                                                    <SelectItem
-                                                        key={n}
-                                                        value={String(n)}
-                                                    >
-                                                        {n}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8"
-                                            disabled={
-                                                !tenants.prev_page_url ||
-                                                loading
-                                            }
-                                            onClick={() =>
-                                                visit(tenants.prev_page_url)
-                                            }
-                                            aria-label="Previous page"
-                                        >
-                                            <ChevronLeft className="size-4" />
-                                        </Button>
-                                        <span className="px-1 text-muted-foreground text-sm tabular-nums">
-                                            Page {tenants.current_page} of{' '}
-                                            {tenants.last_page}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8"
-                                            disabled={
-                                                !tenants.next_page_url ||
-                                                loading
-                                            }
-                                            onClick={() =>
-                                                visit(tenants.next_page_url)
-                                            }
-                                            aria-label="Next page"
-                                        >
-                                            <ChevronRight className="size-4" />
-                                        </Button>
-                                    </div>
-                                </div>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
+                            <Button onClick={() => setOpen(true)}>
+                                <Plus className="size-4" />
+                                Create your first tenant
+                            </Button>
+                        </CardContent>
+                    </Card>
+                }
+            />
 
             <Dialog
                 open={open}
@@ -759,10 +462,6 @@ export default function AdminTenantsIndex() {
                         onSuccess={(page) => {
                             setOpen(false);
                             resetForm();
-                            // The create redirect resets the list to page 1 with no
-                            // search; clear the local query so it doesn't re-apply
-                            // and hide the tenant that was just created.
-                            setSearch('');
 
                             // Toast here (fires once per submit) rather than off a
                             // flash.success effect, which drops repeat identical
