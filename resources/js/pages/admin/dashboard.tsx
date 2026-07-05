@@ -10,6 +10,7 @@ import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
+import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 type Stats = {
@@ -23,44 +24,6 @@ type PageProps = {
     auth: { user: { name: string; email: string } | null };
     stats: Stats;
 };
-
-const RELATIVE_TIME = new Intl.RelativeTimeFormat(undefined, {
-    numeric: 'auto',
-});
-
-/** Best-effort relative timestamp; render-time snapshot (does not tick live). */
-function timeAgo(iso: string): string {
-    const then = new Date(iso).getTime();
-
-    if (Number.isNaN(then)) {
-        return '';
-    }
-
-    const seconds = Math.round((then - Date.now()) / 1000);
-    const abs = Math.abs(seconds);
-
-    if (abs < 60) {
-        return 'just now';
-    }
-
-    const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
-        ['minute', 60],
-        ['hour', 3600],
-        ['day', 86400],
-        ['month', 2592000],
-        ['year', 31536000],
-    ];
-
-    let chosen: [Intl.RelativeTimeFormatUnit, number] = ['minute', 60];
-
-    for (const unit of units) {
-        if (abs >= unit[1]) {
-            chosen = unit;
-        }
-    }
-
-    return RELATIVE_TIME.format(Math.round(seconds / chosen[1]), chosen[0]);
-}
 
 function StatCard({
     icon: Icon,

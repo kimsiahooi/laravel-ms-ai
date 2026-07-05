@@ -65,6 +65,7 @@ import {
 import { useClipboard } from '@/hooks/use-clipboard';
 import { useInitials } from '@/hooks/use-initials';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
+import { absoluteDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 type Tenant = {
@@ -93,9 +94,6 @@ type PageProps = {
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
-const RELATIVE_TIME = new Intl.RelativeTimeFormat(undefined, {
-    numeric: 'auto',
-});
 
 // Inertia visit options shared by search / pagination — partial reload of just
 // the list so the rest of the page is preserved.
@@ -115,53 +113,6 @@ function slugify(value: string): string {
         .replace(/\p{M}/gu, '') // strip combining marks left by NFKD
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
-}
-
-/** Best-effort relative timestamp; render-time snapshot (does not tick live). */
-function timeAgo(iso: string): string {
-    const then = new Date(iso).getTime();
-
-    if (Number.isNaN(then)) {
-        return '';
-    }
-
-    const seconds = Math.round((then - Date.now()) / 1000);
-    const abs = Math.abs(seconds);
-
-    if (abs < 60) {
-        return 'just now';
-    }
-
-    const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
-        ['minute', 60],
-        ['hour', 3600],
-        ['day', 86400],
-        ['month', 2592000],
-        ['year', 31536000],
-    ];
-
-    let chosen: [Intl.RelativeTimeFormatUnit, number] = ['minute', 60];
-
-    for (const unit of units) {
-        if (abs >= unit[1]) {
-            chosen = unit;
-        }
-    }
-
-    return RELATIVE_TIME.format(Math.round(seconds / chosen[1]), chosen[0]);
-}
-
-function absoluteDate(iso: string): string {
-    const date = new Date(iso);
-
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    }).format(date);
 }
 
 function flashToast(page: { props: unknown }): void {
