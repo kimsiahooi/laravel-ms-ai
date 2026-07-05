@@ -15,6 +15,22 @@ The central admin dashboard can create tenants but cannot remove them. We want t
 3. **Restore** a soft-deleted tenant from the Archived page back to active.
 4. Guarantee that once a tenant is soft-deleted, **its `/{slug}/…` pages cannot
    be accessed**.
+5. **Move the tenants list off the dashboard** onto its own page. The dashboard
+   becomes a stats-only overview; all tenant management lives under `/admin/tenants`.
+
+## Page structure
+
+The current dashboard (`/admin/dashboard`) renders both the stats cards **and** the
+full tenants table + create form. This design splits them:
+
+- **`/admin/dashboard`** → stats cards only (Total / Added today / Last 7 days /
+  Newest), plus a CTA linking to the tenants page. No table.
+- **`/admin/tenants`** → the tenants list (search, pagination, per-page), the
+  **New tenant** create sheet, row actions incl. **Delete** (soft), and a link to
+  Archived. This is the paginate+search logic **moved out of** `DashboardController`.
+- **`/admin/tenants/trashed`** → the Archived page (restore + permanent force delete).
+
+Sidebar nav gains **Tenants** and **Archived** items alongside **Dashboard**.
 
 ## Critical constraint: soft delete must NOT drop the database
 
@@ -87,6 +103,8 @@ protected $dispatchesEvents = [
 
 | Verb + path | Method | Name | Notes |
 |---|---|---|---|
+| `GET /admin/tenants` | `index` | `admin.tenants.index` | tenants list (moved off dashboard) |
+| `POST /admin/tenants` | `store` | `admin.tenants.store` | existing create |
 | `DELETE /admin/tenants/{tenant}` | `destroy` | `admin.tenants.destroy` | soft delete (active binding) |
 | `GET /admin/tenants/trashed` | `trashed` | `admin.tenants.trashed` | archived list |
 | `PATCH /admin/tenants/{tenant}/restore` | `restore` | `admin.tenants.restore` | `->withTrashed()` |
@@ -95,10 +113,21 @@ protected $dispatchesEvents = [
 `GET /admin/tenants/trashed` is a static segment and does not collide with the
 `{tenant}` routes (different verbs / no `GET /admin/tenants/{tenant}`).
 
+### Controller — `app/Http/Controllers/Central/DashboardController.php`
+
+Reduce to stats only: drop the tenant pagination/search block and the `tenants` /
+`filters` props. Render `admin/dashboard` with just `stats` (now a plain array — the
+closure was only to skip recompute on list partial-reloads, which no longer happen
+here). The `stats()` helper is unchanged.
+
 ### Controller — `app/Http/Controllers/Central/TenantController.php`
 
 Add to the existing controller (keep `store`):
 
+- `index(Request $request)` → the paginate + search logic **moved from**
+  `DashboardController`: `per_page` clamp `[10,25,50,100]`, `search` LIKE over
+  id/name, `latest()`, `->through()` to `{ slug, name, created_at }`; renders
+  `admin/tenants/index` with `tenants` + `filters`.
 - `destroy(Tenant $tenant)` → `$tenant->delete()`; `back()->with('success', …)`.
 - `trashed(Request $request)` → paginated + searchable list over
   `Tenant::onlyTrashed()`, ordered `deleted_at desc`, mirroring
@@ -124,13 +153,27 @@ must be restored or permanently deleted first.
 
 ## Frontend
 
-### Dashboard (`resources/js/pages/admin/dashboard.tsx`)
+### Dashboard (`resources/js/pages/admin/dashboard.tsx`) — slim down
 
-- Add a destructive **Delete** item to each row's dropdown menu.
-- Clicking opens an `AlertDialog`: "Delete `{name}`? Its workspace becomes
-  inaccessible, but its data is kept — you can restore it from Archived."
-- Confirm → `router.delete(route('admin.tenants.destroy', slug), { preserveScroll: true })`;
-  the `back()` redirect reloads `tenants`/`stats` for the current URL; success toast.
+- Keep the greeting + the 4 stat cards.
+- **Remove** the tenants table, search, pagination, the create sheet, and the
+  clipboard/row-action machinery — all of that moves to the tenants index page.
+- Add a primary CTA (e.g. "Manage tenants →") linking to `admin.tenants.index`,
+  and keep an empty-state nudge when `stats.total === 0`.
+
+### New page (`resources/js/pages/admin/tenants/index.tsx`) — the moved list
+
+- The tenants table currently on the dashboard, moved here largely intact: card,
+  paginated table (Tenant · Slug · Created), debounced server search, per-page
+  `Select`, pagination footer, `sr-only` status region, `aria-busy`, the **New
+  tenant** create `Sheet`, and the copy-slug/URL affordances.
+- Its list partial-reloads now target `only: ['tenants','filters']` and hit
+  `admin.tenants.index` (no `stats` prop on this page).
+- Row dropdown gains a destructive **Delete** item → `AlertDialog` ("Delete
+  `{name}`? Its workspace becomes inaccessible, but its data is kept — restore it
+  from Archived.") → `router.delete(route('admin.tenants.destroy', slug), { preserveScroll: true })`;
+  the `back()` redirect reloads the list for the current URL; success toast.
+- Header includes a link/button to **Archived** (`admin.tenants.trashed`).
 
 ### New page (`resources/js/pages/admin/tenants/trashed.tsx`)
 
@@ -148,23 +191,31 @@ must be restored or permanently deleted first.
 
 ### Admin sidebar (`resources/js/components/admin/admin-sidebar.tsx`)
 
-- Add an **Archived** nav item (e.g. lucide `Archive` / `Trash2`) linking to
-  `admin.tenants.trashed`.
+- Nav items become: **Dashboard** (`/admin/dashboard`), **Tenants**
+  (`admin.tenants.index`, e.g. lucide `Building2`), **Archived**
+  (`admin.tenants.trashed`, e.g. lucide `Archive`).
 
 ## Testing (TDD — write failing first)
 
 Backend (Pest, `tests/Feature/Central/`):
 
-1. `destroy` soft-deletes: central row has `deleted_at`; redirect + `success` flash.
-2. **DB retained on soft delete** — after `destroy`, the `tenant_<slug>` database
+1. **Dashboard is stats-only** — `GET /admin/dashboard` renders `admin/dashboard`
+   with `stats` and has **no** `tenants` prop.
+2. **Tenants index** — `GET /admin/tenants` renders `admin/tenants/index`,
+   paginated, with search + `per_page` clamp. (Retarget the existing
+   `AdminDashboardTest` pagination/search/per-page cases here — move them to a
+   `TenantIndexTest` or rename, pointing at `/admin/tenants`.)
+3. `destroy` soft-deletes: central row has `deleted_at`; `back()` + `success` flash.
+4. **DB retained on soft delete** — after `destroy`, the `tenant_<slug>` database
    still exists (the anti-footgun test).
-3. **Trashed tenant inaccessible** — after `destroy`, `GET /{slug}/login` → 404.
-4. `trashed` lists only soft-deleted tenants, paginated.
-5. `restore` clears `deleted_at`; `GET /{slug}/login` reachable again.
-6. **`forceDestroy` removes the row AND drops `tenant_<slug>`** (assert the
+5. **Trashed tenant inaccessible** — after `destroy`, `GET /{slug}/login` → 404.
+6. `trashed` lists only soft-deleted tenants, paginated.
+7. `restore` clears `deleted_at`; `GET /{slug}/login` reachable again.
+8. **`forceDestroy` removes the row AND drops `tenant_<slug>`** (assert the
    database no longer exists).
-7. All four routes reject guests / require `auth:central`.
-8. (Optional) creating a tenant whose slug is currently trashed is rejected.
+9. All `admin.tenants.*` routes (index, store, destroy, trashed, restore,
+   force-destroy) reject guests / require `auth:central`.
+10. (Optional) creating a tenant whose slug is currently trashed is rejected.
 
 Frontend gates: `bun run check:ci` (0 errors), `bun run types:check`, `bun run build`.
 
