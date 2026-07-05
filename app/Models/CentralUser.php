@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
@@ -22,10 +24,11 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class CentralUser extends Authenticatable
+class CentralUser extends Authenticatable implements PasskeyUser
 {
     use CentralConnection;
     use Notifiable;
+    use PasskeyAuthenticatable;
 
     protected $table = 'users';
 
