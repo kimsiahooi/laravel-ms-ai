@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
+use Stancl\Tenancy\Events;
 
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
@@ -23,6 +24,26 @@ class Tenant extends BaseTenant implements TenantWithDatabase
      * clobber it with lastInsertId, hence the overrides below.
      */
     protected $keyType = 'string';
+
+    /**
+     * Remap of stancl's base $dispatchesEvents: DB teardown (TenantDeleted ->
+     * DeleteDatabase job, wired in TenancyServiceProvider) must fire on a FORCE
+     * delete, not on the soft-delete `deleted` event. Otherwise soft-deleting a
+     * tenant would drop its database and make restore impossible.
+     *
+     * @var array<string, class-string>
+     */
+    protected $dispatchesEvents = [
+        'saving' => Events\SavingTenant::class,
+        'saved' => Events\TenantSaved::class,
+        'creating' => Events\CreatingTenant::class,
+        'created' => Events\TenantCreated::class,
+        'updating' => Events\UpdatingTenant::class,
+        'updated' => Events\TenantUpdated::class,
+        'deleting' => Events\DeletingTenant::class,
+        // 'deleted' intentionally NOT mapped to TenantDeleted (see docblock).
+        'forceDeleted' => Events\TenantDeleted::class,
+    ];
 
     public function getIncrementing(): bool
     {
