@@ -3,6 +3,7 @@
 use App\Http\Controllers\Central\AdminSessionController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\TenantController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -16,6 +17,11 @@ Route::inertia('dashboard', 'dashboard')->middleware(['auth', 'verified'])->name
 // (not the tenant group). Namespaced route names (admin.*) avoid colliding with
 // Fortify's root auth routes.
 Route::prefix('admin')->name('admin.')->group(function () {
+    // Bare /admin -> the dashboard when signed in, otherwise the login page.
+    Route::get('/', fn () => redirect()->route(
+        Auth::guard('central')->check() ? 'admin.dashboard' : 'admin.login'
+    ))->name('home');
+
     Route::middleware('guest:central')->group(function () {
         Route::get('login', [AdminSessionController::class, 'create'])->name('login');
         Route::post('login', [AdminSessionController::class, 'store'])

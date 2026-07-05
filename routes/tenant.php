@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\SessionController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 
@@ -37,6 +38,13 @@ Route::middleware(['web', InitializeTenancyByPath::class])
     ->group(function () {
         // Throwaway smoke route (kept for the reserved/unknown-slug route tests).
         Route::get('/_probe', fn () => tenant('id'));
+
+        // Bare /{tenant} -> the dashboard when signed in, otherwise the login page.
+        // Pass ['tenant' => tenant('id')] since the resolver forgets the param.
+        Route::get('/', fn () => redirect()->route(
+            Auth::guard('web')->check() ? 'tenant.dashboard' : 'tenant.login',
+            ['tenant' => tenant('id')],
+        ))->name('home');
 
         Route::middleware('guest:web')->group(function () {
             Route::get('login', [SessionController::class, 'create'])->name('login');
