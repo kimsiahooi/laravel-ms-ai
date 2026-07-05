@@ -147,7 +147,7 @@ export function DataTable<T>({
         getCoreRowModel: getCoreRowModel(),
         getRowId,
         manualPagination: true,
-        rowCount: paginator.total,
+        rowCount: paginator.total, // informational only — pagination is server-driven via paginator.links
     });
 
     const columnCount = table.getAllLeafColumns().length;
@@ -355,6 +355,11 @@ export function DataTable<T>({
                                                             aria-disabled={
                                                                 disabled
                                                             }
+                                                            tabIndex={
+                                                                disabled
+                                                                    ? -1
+                                                                    : undefined
+                                                            }
                                                             className={
                                                                 disabledClass
                                                             }
@@ -384,6 +389,11 @@ export function DataTable<T>({
                                                             aria-disabled={
                                                                 disabled
                                                             }
+                                                            tabIndex={
+                                                                disabled
+                                                                    ? -1
+                                                                    : undefined
+                                                            }
                                                             className={
                                                                 disabledClass
                                                             }
@@ -403,6 +413,7 @@ export function DataTable<T>({
                                             if (link.label === '...') {
                                                 return (
                                                     <PaginationItem
+                                                        // biome-ignore lint/suspicious/noArrayIndexKey: paginator.links is a stable, server-generated list
                                                         key={`ellipsis-${index}`}
                                                         className="hidden sm:flex"
                                                     >
