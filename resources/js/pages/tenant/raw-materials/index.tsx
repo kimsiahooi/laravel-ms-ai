@@ -165,7 +165,7 @@ export default function RawMaterialsIndex() {
         setName(rawMaterial.name);
         setSku(rawMaterial.sku);
         setUnit(rawMaterial.unit);
-        setMinStock(String(rawMaterial.min_stock ?? '0'));
+        setMinStock(String(Number(rawMaterial.min_stock ?? 0)));
         setFormOpen(true);
     };
 
@@ -348,7 +348,9 @@ export default function RawMaterialsIndex() {
                                                     {rawMaterial.unit}
                                                 </td>
                                                 <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
-                                                    {rawMaterial.min_stock}
+                                                    {Number(
+                                                        rawMaterial.min_stock,
+                                                    ).toLocaleString()}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <DropdownMenu>
