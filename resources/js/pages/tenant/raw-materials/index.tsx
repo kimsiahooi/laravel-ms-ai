@@ -350,7 +350,12 @@ export default function RawMaterialsIndex() {
                                                 <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                                                     {Number(
                                                         rawMaterial.min_stock,
-                                                    ).toLocaleString()}
+                                                    ).toLocaleString(
+                                                        undefined,
+                                                        {
+                                                            maximumFractionDigits: 4,
+                                                        },
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <DropdownMenu>

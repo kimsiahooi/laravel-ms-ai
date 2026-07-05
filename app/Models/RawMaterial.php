@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Raw material in the per-tenant catalog. Lives on the default connection, which
+ * InitializeTenancyByPath has switched to the tenant database.
+ *
+ * @property int $id
+ * @property string $name
+ * @property string $sku
+ * @property string $unit
+ * @property string $min_stock
+ */
 #[Fillable(['name', 'sku', 'unit', 'min_stock'])]
 class RawMaterial extends Model
 {

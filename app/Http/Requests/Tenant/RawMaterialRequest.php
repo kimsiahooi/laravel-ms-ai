@@ -12,6 +12,7 @@ class RawMaterialRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // The route is already gated by auth:web; belt-and-suspenders.
         return $this->user() !== null;
     }
 
