@@ -253,17 +253,20 @@ export default function AdminDashboard() {
         [],
     );
 
-    // Debounced server-side search. Skips when already in sync with the server
-    // (initial mount, and after each response updates filters.search).
+    // Debounced server-side search. Compares the TRIMMED query against the
+    // server's (also trimmed) filters.search so the guard stays reachable and no
+    // duplicate request fires after the response for whitespace-padded input.
     useEffect(() => {
-        if (search === filters.search) {
+        const q = search.trim();
+
+        if (q === filters.search) {
             return undefined;
         }
 
         const timer = setTimeout(() => {
             router.get(
                 '/admin/dashboard',
-                { search: search || undefined, per_page: filters.per_page },
+                { search: q || undefined, per_page: filters.per_page },
                 listReload(
                     () => setLoading(true),
                     () => setLoading(false),
@@ -456,7 +459,16 @@ export default function AdminDashboard() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
+                        {/* Always-mounted status region so search / no-results
+                            transitions are announced — a conditionally-mounted
+                            live region is silent on N→0 and 0→N. */}
+                        <p role="status" aria-live="polite" className="sr-only">
+                            {tenants.data.length > 0
+                                ? `Showing ${tenants.from} to ${tenants.to} of ${tenants.total} tenants`
+                                : `No tenants match "${filters.search}"`}
+                        </p>
                         <div
+                            aria-busy={loading}
                             className={cn(
                                 'overflow-x-auto transition-opacity',
                                 loading && 'pointer-events-none opacity-60',
@@ -489,7 +501,7 @@ export default function AdminDashboard() {
                                                     <SearchX className="size-6 text-muted-foreground" />
                                                     <p className="text-muted-foreground text-sm">
                                                         No tenants match “
-                                                        {search.trim()}”
+                                                        {filters.search}”
                                                     </p>
                                                     <Button
                                                         variant="ghost"
@@ -705,10 +717,7 @@ export default function AdminDashboard() {
 
                         {tenants.data.length > 0 && (
                             <div className="flex flex-col items-center justify-between gap-4 border-border border-t px-4 py-3 sm:flex-row">
-                                <p
-                                    className="text-muted-foreground text-sm"
-                                    aria-live="polite"
-                                >
+                                <p className="text-muted-foreground text-sm">
                                     Showing{' '}
                                     <span className="font-medium text-foreground tabular-nums">
                                         {tenants.from}
@@ -730,6 +739,7 @@ export default function AdminDashboard() {
                                         </span>
                                         <Select
                                             value={String(tenants.per_page)}
+                                            disabled={loading}
                                             onValueChange={(value) =>
                                                 visit('/admin/dashboard', {
                                                     search:
