@@ -94,6 +94,12 @@ export function DataTable<T>({
     const onlyRef = useRef(only);
     onlyRef.current = only;
 
+    // The search value DataTable itself last requested. Lets us tell an
+    // externally-reset filter (e.g. a create/delete redirect clears `search`)
+    // apart from our own round-trip, so we can re-sync the box without clobbering
+    // a value the user is still typing.
+    const requestedSearchRef = useRef(filters.search);
+
     // Debounced server-side search (trimmed guard so no duplicate request fires).
     useEffect(() => {
         const q = search.trim();
@@ -103,6 +109,7 @@ export function DataTable<T>({
         }
 
         const timer = setTimeout(() => {
+            requestedSearchRef.current = q;
             router.get(
                 baseUrl,
                 { search: q || undefined, per_page: filters.per_page },
@@ -119,6 +126,16 @@ export function DataTable<T>({
 
         return () => clearTimeout(timer);
     }, [search, filters.search, filters.per_page, baseUrl]);
+
+    // Re-sync the search box when the server's `filters.search` changes for a
+    // reason other than our own debounced request (e.g. a create/delete redirect
+    // resets it) — otherwise the stale local query would re-hide fresh data.
+    useEffect(() => {
+        if (filters.search !== requestedSearchRef.current) {
+            requestedSearchRef.current = filters.search;
+            setSearch(filters.search);
+        }
+    }, [filters.search]);
 
     const reload = {
         only,
