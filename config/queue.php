@@ -37,7 +37,11 @@ return [
 
         'database' => [
             'driver' => 'database',
-            'connection' => env('DB_QUEUE_CONNECTION'),
+            // Pinned to the central DB: the queue is a shared pipeline read by a
+            // single central worker. Without this, jobs dispatched during a tenant
+            // request would target the (missing) tenant `jobs` table. Tenant context
+            // travels in the job payload (QueueTenancyBootstrapper), NOT the table.
+            'connection' => env('DB_QUEUE_CONNECTION', 'central'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
             'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
