@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { Archive, Building2, LayoutGrid } from 'lucide-react';
 import AdminLogo from '@/components/admin/admin-logo';
 import { AdminNavUser } from '@/components/admin/admin-nav-user';
 import { NavMain } from '@/components/nav-main';
@@ -19,6 +19,16 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: '/admin/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Tenants',
+        href: '/admin/tenants',
+        icon: Building2,
+    },
+    {
+        title: 'Archived',
+        href: '/admin/tenants/trashed',
+        icon: Archive,
     },
 ];
 
