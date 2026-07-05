@@ -31,16 +31,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('auth:central')->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
-        Route::get('tenants', [TenantController::class, 'index'])->name('tenants.index');
-        Route::post('tenants', [TenantController::class, 'store'])->name('tenants.store');
-        Route::get('tenants/trashed', [TenantController::class, 'trashed'])->name('tenants.trashed');
-        Route::delete('tenants/{tenant}', [TenantController::class, 'destroy'])->name('tenants.destroy');
-        Route::patch('tenants/{tenant}/restore', [TenantController::class, 'restore'])
-            ->withTrashed()
-            ->name('tenants.restore');
-        Route::delete('tenants/{tenant}/force', [TenantController::class, 'forceDestroy'])
-            ->withTrashed()
-            ->name('tenants.force-destroy');
+        Route::prefix('tenants')->name('tenants.')->group(function () {
+            Route::get('/', [TenantController::class, 'index'])->name('index');
+            Route::post('/', [TenantController::class, 'store'])->name('store');
+            Route::get('trashed', [TenantController::class, 'trashed'])->name('trashed');
+            Route::delete('{tenant}', [TenantController::class, 'destroy'])->name('destroy');
+            Route::patch('{tenant}/restore', [TenantController::class, 'restore'])
+                ->withTrashed()
+                ->name('restore');
+            Route::delete('{tenant}/force', [TenantController::class, 'forceDestroy'])
+                ->withTrashed()
+                ->name('force-destroy');
+        });
         Route::post('logout', [AdminSessionController::class, 'destroy'])->name('logout');
     });
 });
