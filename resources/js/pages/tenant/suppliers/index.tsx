@@ -124,7 +124,10 @@ export default function SuppliersIndex() {
             accessorKey: 'email',
             header: 'Email',
             cell: ({ row }) => row.original.email ?? '—',
-            meta: { className: 'hidden text-muted-foreground sm:table-cell' },
+            meta: {
+                className:
+                    'hidden max-w-md truncate text-muted-foreground sm:table-cell',
+            },
         },
         {
             accessorKey: 'phone',
