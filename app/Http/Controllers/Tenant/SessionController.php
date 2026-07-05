@@ -35,10 +35,10 @@ class SessionController
 
         $request->session()->regenerate();
 
-        // The resolver forgot the {tenant} param, so supply the slug explicitly.
-        return redirect()->intended(
-            route('tenant.dashboard', ['tenant' => tenant('slug')])
-        );
+        // Always land on this tenant's dashboard — never intended() (its stored URL
+        // may belong to central or another tenant). The resolver forgot the {tenant}
+        // param, so supply the slug explicitly.
+        return redirect()->route('tenant.dashboard', ['tenant' => tenant('slug')]);
     }
 
     public function destroy(Request $request): RedirectResponse

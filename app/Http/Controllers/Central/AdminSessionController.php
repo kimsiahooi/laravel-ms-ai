@@ -33,7 +33,9 @@ class AdminSessionController
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        // Always land on the admin dashboard — never intended(), whose stored URL
+        // may belong to the tenant/web world and would misroute the super-admin.
+        return redirect()->route('admin.dashboard');
     }
 
     public function destroy(Request $request): RedirectResponse

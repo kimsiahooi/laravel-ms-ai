@@ -15,6 +15,15 @@ it('logs a central super-admin into the admin dashboard', function () {
     $this->assertAuthenticatedAs($admin, 'central');
 });
 
+it('sends a super-admin to the admin dashboard even with a stale intended URL', function () {
+    CentralUser::create(['name' => 'Root', 'email' => 'root@example.com', 'password' => 'password']);
+
+    // A leftover intended URL (e.g. from the starter /dashboard) must not misroute.
+    $this->withSession(['url.intended' => 'http://laravel-ms-ai.test/dashboard'])
+        ->post('/admin/login', ['email' => 'root@example.com', 'password' => 'password'])
+        ->assertRedirect(route('admin.dashboard'));
+});
+
 it('rejects bad central credentials', function () {
     CentralUser::create(['name' => 'Root', 'email' => 'root@example.com', 'password' => 'password']);
 
