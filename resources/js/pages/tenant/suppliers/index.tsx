@@ -1,23 +1,19 @@
 import { Form, Head, router, usePage } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
-    ChevronLeft,
-    ChevronRight,
     LoaderCircle,
     MoreHorizontal,
     Pencil,
     Plus,
-    Search,
-    SearchX,
     Trash2,
     Truck,
-    X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -35,16 +31,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import TenantLayout from '@/layouts/tenant-layout';
-import { cn } from '@/lib/utils';
 
 type Supplier = {
     id: number;
@@ -56,26 +44,12 @@ type Supplier = {
     created_at: string;
 };
 
-type Paginator<T> = {
-    data: T[];
-    from: number | null;
-    to: number | null;
-    total: number;
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    prev_page_url: string | null;
-    next_page_url: string | null;
-};
-
 type PageProps = {
     suppliers: Paginator<Supplier>;
     filters: { search: string; per_page: number };
     tenant: { slug: string; name: string };
     flash: { success: string | null };
 };
-
-const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 function flashToast(page: { props: unknown }): void {
     const message = (page.props as { flash?: { success?: string | null } })
@@ -90,8 +64,6 @@ export default function SuppliersIndex() {
     const { suppliers, filters, tenant } = page.props as unknown as PageProps;
     const base = `/${tenant.slug}/suppliers`;
 
-    const [search, setSearch] = useState(filters.search);
-    const [loading, setLoading] = useState(false);
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState<Supplier | null>(null);
     const [name, setName] = useState('');
@@ -100,54 +72,6 @@ export default function SuppliersIndex() {
     const [address, setAddress] = useState('');
     const [notes, setNotes] = useState('');
     const [deleting, setDeleting] = useState<Supplier | null>(null);
-
-    const searchRef = useRef<HTMLInputElement>(null);
-
-    const listReload = {
-        only: ['suppliers', 'filters'],
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        onStart: () => setLoading(true),
-        onFinish: () => setLoading(false),
-    };
-
-    // Debounced server-side search (trimmed guard so no duplicate fires). Options
-    // are inlined (not `listReload`) so the effect's dep array stays exhaustive.
-    useEffect(() => {
-        const q = search.trim();
-
-        if (q === filters.search) {
-            return undefined;
-        }
-
-        const timer = setTimeout(() => {
-            router.get(
-                base,
-                { search: q || undefined, per_page: filters.per_page },
-                {
-                    only: ['suppliers', 'filters'],
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    onStart: () => setLoading(true),
-                    onFinish: () => setLoading(false),
-                },
-            );
-        }, 350);
-
-        return () => clearTimeout(timer);
-    }, [search, filters.search, filters.per_page, base]);
-
-    const visit = (
-        url: string | null,
-        data: Record<string, string | number | undefined> = {},
-    ) => {
-        if (url === null) {
-            return;
-        }
-        router.get(url, data, listReload);
-    };
 
     const resetForm = () => {
         setName('');
@@ -173,11 +97,6 @@ export default function SuppliersIndex() {
         setFormOpen(true);
     };
 
-    const clearSearch = () => {
-        setSearch('');
-        searchRef.current?.focus();
-    };
-
     const confirmDelete = () => {
         if (!deleting) {
             return;
@@ -190,6 +109,64 @@ export default function SuppliersIndex() {
             },
         });
     };
+
+    const columns: ColumnDef<Supplier>[] = [
+        {
+            accessorKey: 'name',
+            header: 'Name',
+            cell: ({ row }) => (
+                <span className="font-medium text-foreground">
+                    {row.original.name}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'email',
+            header: 'Email',
+            cell: ({ row }) => row.original.email ?? '—',
+            meta: { className: 'hidden text-muted-foreground sm:table-cell' },
+        },
+        {
+            accessorKey: 'phone',
+            header: 'Phone',
+            cell: ({ row }) => row.original.phone ?? '—',
+            meta: { className: 'hidden text-muted-foreground md:table-cell' },
+        },
+        {
+            id: 'actions',
+            header: () => <span className="sr-only">Actions</span>,
+            meta: { className: 'text-right' },
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label={`Actions for ${row.original.name}`}
+                        >
+                            <MoreHorizontal className="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onSelect={() => openEdit(row.original)}
+                        >
+                            <Pencil className="size-4" />
+                            Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => setDeleting(row.original)}
+                        >
+                            <Trash2 className="size-4" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        },
+    ];
 
     return (
         <TenantLayout
@@ -209,285 +186,44 @@ export default function SuppliersIndex() {
                 </p>
             </div>
 
-            {suppliers.total === 0 && filters.search === '' ? (
-                <Card>
-                    <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                        <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                            <Truck className="size-6" />
-                        </span>
-                        <div className="space-y-1">
-                            <h3 className="font-semibold text-lg">
-                                No suppliers yet
-                            </h3>
-                            <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                Add your first supplier to start tracking your
-                                vendors.
-                            </p>
-                        </div>
-                        <Button onClick={openCreate}>
-                            <Plus className="size-4" />
-                            New supplier
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardHeader className="gap-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2">
-                                <CardTitle>Suppliers</CardTitle>
-                                <Badge
-                                    variant="secondary"
-                                    className="tabular-nums"
-                                >
-                                    {suppliers.total}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="relative w-full sm:w-64">
-                                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        ref={searchRef}
-                                        value={search}
-                                        onChange={(event) =>
-                                            setSearch(event.target.value)
-                                        }
-                                        placeholder="Search name or email…"
-                                        aria-label="Search suppliers"
-                                        className="px-9"
-                                    />
-                                    {loading ? (
-                                        <LoaderCircle className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                                    ) : (
-                                        search !== '' && (
-                                            <button
-                                                type="button"
-                                                onClick={clearSearch}
-                                                aria-label="Clear search"
-                                                className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            >
-                                                <X className="size-3.5" />
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                                <Button
-                                    onClick={openCreate}
-                                    className="shrink-0"
-                                >
-                                    <Plus className="size-4" />
-                                    New supplier
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <p role="status" aria-live="polite" className="sr-only">
-                            {suppliers.data.length > 0
-                                ? `Showing ${suppliers.from} to ${suppliers.to} of ${suppliers.total} suppliers`
-                                : `No suppliers match "${filters.search}"`}
-                        </p>
-                        <div
-                            aria-busy={loading}
-                            className={cn(
-                                'overflow-x-auto transition-opacity',
-                                loading && 'pointer-events-none opacity-60',
-                            )}
-                        >
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-border border-b">
-                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                                            Name
-                                        </th>
-                                        <th className="hidden h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
-                                            Email
-                                        </th>
-                                        <th className="hidden h-10 px-4 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
-                                            Phone
-                                        </th>
-                                        <th className="h-10 px-4 text-right">
-                                            <span className="sr-only">
-                                                Actions
-                                            </span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {suppliers.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4}>
-                                                <div className="flex flex-col items-center gap-2 py-12 text-center">
-                                                    <SearchX className="size-6 text-muted-foreground" />
-                                                    <p className="text-muted-foreground text-sm">
-                                                        No suppliers match “
-                                                        {filters.search}”
-                                                    </p>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={clearSearch}
-                                                    >
-                                                        Clear search
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        suppliers.data.map((supplier) => (
-                                            <tr
-                                                key={supplier.id}
-                                                className="border-border border-b transition-colors last:border-0 hover:bg-muted/50"
-                                            >
-                                                <td className="px-4 py-3 font-medium text-foreground">
-                                                    {supplier.name}
-                                                </td>
-                                                <td className="hidden max-w-md truncate px-4 py-3 text-muted-foreground sm:table-cell">
-                                                    {supplier.email ?? '—'}
-                                                </td>
-                                                <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                                                    {supplier.phone ?? '—'}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger
-                                                            asChild
-                                                        >
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="size-8"
-                                                                aria-label={`Actions for ${supplier.name}`}
-                                                            >
-                                                                <MoreHorizontal className="size-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem
-                                                                onSelect={() =>
-                                                                    openEdit(
-                                                                        supplier,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="size-4" />
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                variant="destructive"
-                                                                onSelect={() =>
-                                                                    setDeleting(
-                                                                        supplier,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="size-4" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {suppliers.data.length > 0 && (
-                            <div className="flex flex-col items-center justify-between gap-4 border-border border-t px-4 py-3 sm:flex-row">
-                                <p className="text-muted-foreground text-sm">
-                                    Showing{' '}
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {suppliers.from}
-                                    </span>
-                                    –
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {suppliers.to}
-                                    </span>{' '}
-                                    of{' '}
-                                    <span className="font-medium text-foreground tabular-nums">
-                                        {suppliers.total}
-                                    </span>{' '}
-                                    suppliers
+            <DataTable
+                columns={columns}
+                paginator={suppliers}
+                filters={filters}
+                baseUrl={base}
+                only={['suppliers', 'filters']}
+                getRowId={(supplier) => String(supplier.id)}
+                title="Suppliers"
+                searchPlaceholder="Search name or email…"
+                toolbar={
+                    <Button onClick={openCreate} className="shrink-0">
+                        <Plus className="size-4" />
+                        New supplier
+                    </Button>
+                }
+                emptyState={
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
+                                <Truck className="size-6" />
+                            </span>
+                            <div className="space-y-1">
+                                <h3 className="font-semibold text-lg">
+                                    No suppliers yet
+                                </h3>
+                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
+                                    Add your first supplier to start tracking
+                                    your vendors.
                                 </p>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="hidden text-muted-foreground text-sm sm:inline">
-                                            Per page
-                                        </span>
-                                        <Select
-                                            value={String(suppliers.per_page)}
-                                            disabled={loading}
-                                            onValueChange={(value) =>
-                                                visit(base, {
-                                                    search:
-                                                        filters.search ||
-                                                        undefined,
-                                                    per_page: Number(value),
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                className="h-8 w-17"
-                                                aria-label="Rows per page"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {PER_PAGE_OPTIONS.map((n) => (
-                                                    <SelectItem
-                                                        key={n}
-                                                        value={String(n)}
-                                                    >
-                                                        {n}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8"
-                                            disabled={
-                                                !suppliers.prev_page_url ||
-                                                loading
-                                            }
-                                            onClick={() =>
-                                                visit(suppliers.prev_page_url)
-                                            }
-                                            aria-label="Previous page"
-                                        >
-                                            <ChevronLeft className="size-4" />
-                                        </Button>
-                                        <span className="px-1 text-muted-foreground text-sm tabular-nums">
-                                            Page {suppliers.current_page} of{' '}
-                                            {suppliers.last_page}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8"
-                                            disabled={
-                                                !suppliers.next_page_url ||
-                                                loading
-                                            }
-                                            onClick={() =>
-                                                visit(suppliers.next_page_url)
-                                            }
-                                            aria-label="Next page"
-                                        >
-                                            <ChevronRight className="size-4" />
-                                        </Button>
-                                    </div>
-                                </div>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
+                            <Button onClick={openCreate}>
+                                <Plus className="size-4" />
+                                New supplier
+                            </Button>
+                        </CardContent>
+                    </Card>
+                }
+            />
 
             {/* Create / edit dialog */}
             <Dialog
