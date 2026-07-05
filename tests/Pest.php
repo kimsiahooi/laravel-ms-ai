@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +45,15 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Insert tenant rows WITHOUT firing TenantCreated, so list/stat tests don't
+ * provision (and later drop) a real database per row.
+ */
+function makeTenants(int $count): void
 {
-    // ..
+    Tenant::withoutEvents(function () use ($count) {
+        foreach (range(1, $count) as $i) {
+            Tenant::create(['name' => "Company {$i}", 'id' => "co-{$i}"]);
+        }
+    });
 }
