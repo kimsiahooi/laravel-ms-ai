@@ -186,6 +186,7 @@ export default function AdminTenantsIndex() {
     const [showPassword, setShowPassword] = useState(false);
     const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
     const [deleting, setDeleting] = useState<Tenant | null>(null);
+    const [deleteProcessing, setDeleteProcessing] = useState(false);
 
     const searchRef = useRef<HTMLInputElement>(null);
     const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -275,10 +276,14 @@ export default function AdminTenantsIndex() {
 
         router.delete(`/admin/tenants/${deleting.slug}`, {
             preserveScroll: true,
+            onStart: () => setDeleteProcessing(true),
+            onFinish: () => setDeleteProcessing(false),
             onSuccess: (page) => {
                 setDeleting(null);
                 flashToast(page);
             },
+            onError: () =>
+                toast.error('Could not delete the tenant. Please try again.'),
         });
     };
 
@@ -1083,6 +1088,10 @@ export default function AdminTenantsIndex() {
             <Dialog
                 open={deleting !== null}
                 onOpenChange={(next) => {
+                    if (deleteProcessing) {
+                        return;
+                    }
+
                     if (!next) {
                         setDeleting(null);
                     }
@@ -1102,6 +1111,7 @@ export default function AdminTenantsIndex() {
                         <Button
                             type="button"
                             variant="ghost"
+                            disabled={deleteProcessing}
                             onClick={() => setDeleting(null)}
                         >
                             Cancel
@@ -1109,9 +1119,14 @@ export default function AdminTenantsIndex() {
                         <Button
                             type="button"
                             variant="destructive"
+                            disabled={deleteProcessing}
                             onClick={confirmDelete}
                         >
-                            <Trash2 className="size-4" />
+                            {deleteProcessing ? (
+                                <LoaderCircle className="size-4 animate-spin" />
+                            ) : (
+                                <Trash2 className="size-4" />
+                            )}
                             Delete
                         </Button>
                     </DialogFooter>

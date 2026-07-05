@@ -132,6 +132,7 @@ export default function AdminTenantsTrashed() {
     const [restoring, setRestoring] = useState<TrashedTenant | null>(null);
     const [purging, setPurging] = useState<TrashedTenant | null>(null);
     const [confirmText, setConfirmText] = useState('');
+    const [processing, setProcessing] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
 
     // Debounced server-side search (trimmed guard mirrors the index page).
@@ -189,10 +190,16 @@ export default function AdminTenantsTrashed() {
             {},
             {
                 preserveScroll: true,
+                onStart: () => setProcessing(true),
+                onFinish: () => setProcessing(false),
                 onSuccess: (page) => {
                     setRestoring(null);
                     flashToast(page);
                 },
+                onError: () =>
+                    toast.error(
+                        'Could not restore the tenant. Please try again.',
+                    ),
             },
         );
     };
@@ -209,10 +216,14 @@ export default function AdminTenantsTrashed() {
 
         router.delete(`/admin/tenants/${purging.slug}/force`, {
             preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onFinish: () => setProcessing(false),
             onSuccess: (page) => {
                 closePurge();
                 flashToast(page);
             },
+            onError: () =>
+                toast.error('Could not delete the tenant. Please try again.'),
         });
     };
 
@@ -446,6 +457,16 @@ export default function AdminTenantsTrashed() {
                                                                     Delete
                                                                     permanently
                                                                 </DropdownMenuItem>
+                                                                <DropdownMenuSeparator className="md:hidden" />
+                                                                <div
+                                                                    className="px-2 py-1.5 text-muted-foreground text-xs md:hidden"
+                                                                    suppressHydrationWarning
+                                                                >
+                                                                    Deleted{' '}
+                                                                    {timeAgo(
+                                                                        tenant.deleted_at,
+                                                                    )}
+                                                                </div>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                     </div>
@@ -559,6 +580,10 @@ export default function AdminTenantsTrashed() {
             <Dialog
                 open={restoring !== null}
                 onOpenChange={(next) => {
+                    if (processing) {
+                        return;
+                    }
+
                     if (!next) {
                         setRestoring(null);
                     }
@@ -576,12 +601,21 @@ export default function AdminTenantsTrashed() {
                         <Button
                             type="button"
                             variant="ghost"
+                            disabled={processing}
                             onClick={() => setRestoring(null)}
                         >
                             Cancel
                         </Button>
-                        <Button type="button" onClick={confirmRestore}>
-                            <RotateCcw className="size-4" />
+                        <Button
+                            type="button"
+                            disabled={processing}
+                            onClick={confirmRestore}
+                        >
+                            {processing ? (
+                                <LoaderCircle className="size-4 animate-spin" />
+                            ) : (
+                                <RotateCcw className="size-4" />
+                            )}
                             Restore
                         </Button>
                     </DialogFooter>
@@ -592,6 +626,10 @@ export default function AdminTenantsTrashed() {
             <Dialog
                 open={purging !== null}
                 onOpenChange={(next) => {
+                    if (processing) {
+                        return;
+                    }
+
                     if (!next) {
                         closePurge();
                     }
@@ -622,12 +660,14 @@ export default function AdminTenantsTrashed() {
                             autoComplete="off"
                             placeholder={purging?.slug}
                             className="font-mono"
+                            disabled={processing}
                         />
                     </div>
                     <DialogFooter>
                         <Button
                             type="button"
                             variant="ghost"
+                            disabled={processing}
                             onClick={closePurge}
                         >
                             Cancel
@@ -635,10 +675,16 @@ export default function AdminTenantsTrashed() {
                         <Button
                             type="button"
                             variant="destructive"
-                            disabled={confirmText !== purging?.slug}
+                            disabled={
+                                confirmText !== purging?.slug || processing
+                            }
                             onClick={confirmPurge}
                         >
-                            <Trash2 className="size-4" />
+                            {processing ? (
+                                <LoaderCircle className="size-4 animate-spin" />
+                            ) : (
+                                <Trash2 className="size-4" />
+                            )}
                             Delete permanently
                         </Button>
                     </DialogFooter>
