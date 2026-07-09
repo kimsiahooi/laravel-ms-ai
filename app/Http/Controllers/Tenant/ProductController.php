@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Requests\Tenant\ProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -63,5 +65,21 @@ class ProductController
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
         ]);
+    }
+
+    public function store(ProductRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        unset($data['remove_image']);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        } else {
+            unset($data['image']);
+        }
+
+        Product::create($data);
+
+        return back()->with('success', 'Product created.');
     }
 }

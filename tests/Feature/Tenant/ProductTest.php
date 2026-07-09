@@ -57,3 +57,84 @@ it('searches products by name, sku or barcode', function () {
             ->where('products.data.0.sku', 'P-001')
         );
 });
+
+it('creates a product with category, supplier and defaults min_stock to 0', function () {
+    [$categoryId, $supplierId] = $this->tenant->run(function () {
+        return [
+            Category::create(['name' => 'Widgets'])->id,
+            Supplier::create(['name' => 'Acme Supply'])->id,
+        ];
+    });
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->post('/acme/products', [
+            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
+            'category_id' => $categoryId, 'supplier_id' => $supplierId,
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHas('success');
+
+    $this->tenant->run(function () use ($categoryId, $supplierId) {
+        $product = Product::firstWhere('sku', 'P-001');
+        expect($product)->not->toBeNull()
+            ->and($product->min_stock)->toBe(0)
+            ->and($product->category_id)->toBe($categoryId)
+            ->and($product->supplier_id)->toBe($supplierId)
+            ->and($product->image)->toBeNull();
+    });
+});
+
+it('requires name, sku and unit', function () {
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->post('/acme/products', [])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHasErrors(['name', 'sku', 'unit']);
+});
+
+it('rejects a duplicate sku', function () {
+    $this->tenant->run(fn () => Product::create([
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
+    ]));
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->post('/acme/products', ['name' => 'Other', 'sku' => 'P-001', 'unit' => 'pcs'])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHasErrors('sku');
+});
+
+it('rejects a trashed category or supplier', function () {
+    $categoryId = $this->tenant->run(function () {
+        $category = Category::create(['name' => 'Widgets']);
+        $category->delete();
+
+        return $category->id;
+    });
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->post('/acme/products', [
+            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
+            'category_id' => $categoryId,
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHasErrors('category_id');
+});
+
+it('rejects a non-integer min_stock', function () {
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->post('/acme/products', [
+            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
+            'min_stock' => '1.5',
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHasErrors('min_stock');
+});
