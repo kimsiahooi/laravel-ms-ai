@@ -68,7 +68,7 @@ class Product extends Model
         return Attribute::get(
             fn (): ?string => $this->image === null
                 ? null
-                : tenant_asset($this->image),
+                : url('/'.tenant('id').'/storage/'.$this->image),
         );
     }
 }

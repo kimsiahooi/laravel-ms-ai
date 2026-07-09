@@ -9,6 +9,7 @@ use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\SupplierController;
+use App\Http\Controllers\Tenant\TenantStorageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -72,6 +73,12 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('products', ProductController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+
+            // Serve tenant public uploads (product images, etc.) under the tenant
+            // prefix so InitializeTenancyByPath suffixes the disk to this tenant.
+            Route::get('storage/{path}', TenantStorageController::class)
+                ->where('path', '.*')
+                ->name('storage');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

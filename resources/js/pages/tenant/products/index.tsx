@@ -155,8 +155,14 @@ export default function ProductsIndex() {
         setBarcode(product.barcode ?? '');
         setUnit(product.unit);
         setMinStock(String(product.min_stock ?? 0));
-        setCategoryId(product.category_id ? String(product.category_id) : '');
-        setSupplierId(product.supplier_id ? String(product.supplier_id) : '');
+        const catId = product.category_id ? String(product.category_id) : '';
+        setCategoryId(
+            categoryOptions.some((o) => o.value === catId) ? catId : '',
+        );
+        const supId = product.supplier_id ? String(product.supplier_id) : '';
+        setSupplierId(
+            supplierOptions.some((o) => o.value === supId) ? supId : '',
+        );
         setDescription(product.description ?? '');
         setPreview(product.image_url);
         setRemoveImage(false);

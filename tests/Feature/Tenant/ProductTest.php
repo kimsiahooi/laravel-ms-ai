@@ -253,3 +253,25 @@ it('soft-deletes a product', function () {
             ->and(Product::withTrashed()->find($id))->not->toBeNull();
     });
 });
+
+it('serves an uploaded product image over HTTP', function () {
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')->post('/acme/products', [
+        'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
+        'image' => UploadedFile::fake()->image('widget.jpg', 80, 80),
+    ])->assertRedirect('/acme/products');
+
+    $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
+
+    $this->get("/acme/storage/{$path}")
+        ->assertOk()
+        ->assertHeader('content-type', 'image/jpeg');
+});
+
+it('returns 404 for a missing tenant storage file', function () {
+    loginAsAcmeUser();
+
+    $this->get('/acme/storage/products/does-not-exist.jpg')
+        ->assertNotFound();
+});
