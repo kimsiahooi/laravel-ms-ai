@@ -51,8 +51,11 @@ export function Combobox({
         setOpen(false);
     };
 
+    // `modal` matters when the combobox is used inside a Dialog: the popover is
+    // portaled, and Radix sets pointer-events:none on the body while a modal
+    // Dialog is open, which otherwise blocks clicking an option. modal restores it.
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal>
             <PopoverTrigger asChild>
                 <Button
                     id={id}
