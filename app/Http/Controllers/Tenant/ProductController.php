@@ -108,6 +108,14 @@ class ProductController
         return back()->with('success', 'Product updated.');
     }
 
+    public function destroy(Product $product): RedirectResponse
+    {
+        // Soft delete; the image file is kept so a restore stays intact.
+        $product->delete();
+
+        return back()->with('success', 'Product deleted.');
+    }
+
     private function deleteImage(Product $product): void
     {
         if ($product->image !== null) {

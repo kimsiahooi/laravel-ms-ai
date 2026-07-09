@@ -235,3 +235,21 @@ it('deletes the previous image file when replacing it', function () {
             ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
     });
 });
+
+it('soft-deletes a product', function () {
+    $id = $this->tenant->run(fn () => Product::create([
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
+    ])->id);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->delete("/acme/products/{$id}")
+        ->assertRedirect('/acme/products')
+        ->assertSessionHas('success');
+
+    $this->tenant->run(function () use ($id) {
+        expect(Product::find($id))->toBeNull()
+            ->and(Product::withTrashed()->find($id))->not->toBeNull();
+    });
+});
