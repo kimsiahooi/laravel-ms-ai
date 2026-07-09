@@ -6,10 +6,10 @@ use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\ProductController;
+use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\SupplierController;
-use App\Http\Controllers\Tenant\TenantStorageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -74,12 +74,12 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::resource('products', ProductController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
-            // Serve private tenant uploads (product images, …). The file path is
-            // passed as a `?path=` query param, NOT a URL segment, so the request
-            // URL never ends in a static extension (.png/.jpg/…). Some nginx setups
-            // (e.g. CloudPanel) serve extension URLs straight from the docroot with
-            // `try_files $uri =404` and never reach Laravel; the query param avoids that.
-            Route::get('storage', TenantStorageController::class)->name('storage');
+            // Serve a product's image at an extension-less URL (ends in `/image`,
+            // not `.png`/`.jpg`/…). Some nginx setups (e.g. CloudPanel) serve
+            // extension URLs straight from the docroot with `try_files $uri =404`
+            // and never reach Laravel; an extension-less path avoids that.
+            Route::get('products/{product}/image', ProductImageController::class)
+                ->name('products.image');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

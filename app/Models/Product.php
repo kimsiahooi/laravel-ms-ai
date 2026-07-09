@@ -63,19 +63,19 @@ class Product extends Model
     }
 
     /**
-     * Public URL for the stored image, resolved through the tenant storage route
-     * (tenant_asset() can't be used here — its route is domain-identified, but this
-     * app is path/slug-identified). Null when no image is set. Only valid inside a
-     * tenant context (all product routes are).
+     * Public URL for the stored image, served through the per-product image route
+     * (extension-less so nginx routes it to Laravel; tenant_asset() can't be used —
+     * its route is domain-identified, but this app is path/slug-identified). Null
+     * when no image is set. Only valid inside a tenant context (all product routes are).
      */
     protected function imageUrl(): Attribute
     {
         return Attribute::get(
             fn (): ?string => $this->image === null
                 ? null
-                : route('tenant.storage', [
+                : route('tenant.products.image', [
                     'tenant' => tenant('id'),
-                    'path' => $this->image,
+                    'product' => $this->id,
                 ]),
         );
     }

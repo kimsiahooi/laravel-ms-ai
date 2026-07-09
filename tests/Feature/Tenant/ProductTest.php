@@ -257,7 +257,7 @@ it('soft-deletes a product', function () {
     });
 });
 
-it('serves an uploaded product image over HTTP', function () {
+it('serves a product image over HTTP', function () {
     Storage::fake('assets');
     loginAsAcmeUser();
 
@@ -266,29 +266,29 @@ it('serves an uploaded product image over HTTP', function () {
         'image' => UploadedFile::fake()->image('widget.jpg', 80, 80),
     ])->assertRedirect('/acme/products');
 
-    $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
+    $id = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->id);
 
-    $this->get("/acme/storage?path={$path}")
+    $this->get("/acme/products/{$id}/image")
         ->assertOk()
         ->assertHeader('content-type', 'image/jpeg');
 });
 
-it('returns 404 for a missing tenant storage file', function () {
+it('returns 404 when the product image file is missing', function () {
     Storage::fake('assets');
+    $id = $this->tenant->run(fn () => Product::create([
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
+        'image' => 'products/does-not-exist.jpg',
+    ])->id);
+
     loginAsAcmeUser();
 
-    $this->get('/acme/storage?path=products/does-not-exist.jpg')
-        ->assertNotFound();
+    $this->get("/acme/products/{$id}/image")->assertNotFound();
 });
 
-it('does not serve another tenant’s asset', function () {
-    Storage::fake('assets');
-    // globex has a file at its own products/ path on the shared assets disk.
-    Storage::disk('assets')->put('globex/products/secret.jpg', 'private-bytes');
-
+it('404s the image route for a product not in the current tenant', function () {
+    // Route-model binding resolves {product} in the ACTIVE tenant's DB, so a
+    // product id that isn't acme's (e.g. another tenant's) can't be reached.
     loginAsAcmeUser();
 
-    // Authenticated as acme: the serve route prepends acme's slug, so the same
-    // relative path resolves to assets/acme/products/… (empty), never globex's.
-    $this->get('/acme/storage?path=products/secret.jpg')->assertNotFound();
+    $this->get('/acme/products/999999/image')->assertNotFound();
 });
