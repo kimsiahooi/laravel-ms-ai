@@ -122,14 +122,23 @@ Route::resource('products', ProductController::class)
   so it is not per-tenant suffixed; isolation is by the `{slug}` path segment plus the serve
   guard. It is never `storage:link`-ed, so images can't be exposed publicly. `storage/assets`
   is git-ignored (tracked `.gitignore`, contents ignored).
-- **Serve:** a dedicated tenant-prefixed route `GET {tenant}/storage/{path}` (name
-  `tenant.storage`, controller `TenantStorageController`, under `auth:web`) streams the file
-  from `Storage::disk('assets')`. Guards: reject `..`; **require the path to start with the
-  active tenant's slug** (`str_starts_with($path, tenant('id').'/')`) so one tenant can't read
-  another's files on the shared disk; then 404 if missing. The `image_url` accessor builds
-  `route('tenant.storage', ['tenant' => tenant('id'), 'path' => $image])`. **No `storage:link`**
-  is used — images are private (served through PHP behind auth), and the route is reusable by
-  future private uploads (avatars, logos).
+- **Serve:** a dedicated tenant-prefixed route `GET {tenant}/storage` (name `tenant.storage`,
+  controller `TenantStorageController`, under `auth:web`) streams the file from
+  `Storage::disk('assets')`. The slug-free path arrives as a **`?path=` query param** (NOT a
+  URL segment) so the request URL never ends in a static extension — see the nginx note below.
+  Guards: reject empty/`..`; `scopeAsset()` **prepends the active tenant's slug** (from tenancy,
+  never user input) so the lookup is always within `assets/{slug}/…` and one tenant can't read
+  another's files; then 404 if missing. The `image_url` accessor builds
+  `route('tenant.storage', ['tenant' => tenant('id'), 'path' => $image])` →
+  `/{slug}/storage?path={image}`. **No `storage:link`** is used — images are private (served
+  through PHP behind auth), and the route is reusable by future private uploads (avatars, logos).
+
+  > ⚠️ nginx gotcha (prod): CloudPanel's nginx serves any URL ending in a static extension
+  > (`.png`/`.jpg`/`.webp`/…) straight from the docroot with `try_files $uri =404`, so a
+  > path-segment URL like `/{slug}/storage/products/{hash}.png` **404s at nginx and never
+  > reaches Laravel** (works locally under Herd, breaks in production). Passing the path as a
+  > `?path=` query keeps the URL path extension-less (`/{slug}/storage`), so nginx routes it to
+  > Laravel. Any future asset-serving route must do the same.
 
   > ⚠️ Correction (as-built): the original design assumed `tenant_asset()` / the tenancy
   > package's asset route. That route is guarded by `InitializeTenancyByDomain`, but this app

@@ -268,7 +268,7 @@ it('serves an uploaded product image over HTTP', function () {
 
     $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
 
-    $this->get("/acme/storage/{$path}")
+    $this->get("/acme/storage?path={$path}")
         ->assertOk()
         ->assertHeader('content-type', 'image/jpeg');
 });
@@ -277,7 +277,7 @@ it('returns 404 for a missing tenant storage file', function () {
     Storage::fake('assets');
     loginAsAcmeUser();
 
-    $this->get('/acme/storage/products/does-not-exist.jpg')
+    $this->get('/acme/storage?path=products/does-not-exist.jpg')
         ->assertNotFound();
 });
 
@@ -290,5 +290,5 @@ it('does not serve another tenant’s asset', function () {
 
     // Authenticated as acme: the serve route prepends acme's slug, so the same
     // relative path resolves to assets/acme/products/… (empty), never globex's.
-    $this->get('/acme/storage/products/secret.jpg')->assertNotFound();
+    $this->get('/acme/storage?path=products/secret.jpg')->assertNotFound();
 });

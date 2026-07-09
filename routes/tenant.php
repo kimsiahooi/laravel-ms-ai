@@ -74,11 +74,12 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::resource('products', ProductController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
-            // Serve tenant public uploads (product images, etc.) under the tenant
-            // prefix so InitializeTenancyByPath suffixes the disk to this tenant.
-            Route::get('storage/{path}', TenantStorageController::class)
-                ->where('path', '.*')
-                ->name('storage');
+            // Serve private tenant uploads (product images, …). The file path is
+            // passed as a `?path=` query param, NOT a URL segment, so the request
+            // URL never ends in a static extension (.png/.jpg/…). Some nginx setups
+            // (e.g. CloudPanel) serve extension URLs straight from the docroot with
+            // `try_files $uri =404` and never reach Laravel; the query param avoids that.
+            Route::get('storage', TenantStorageController::class)->name('storage');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });
