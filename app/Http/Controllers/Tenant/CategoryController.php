@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\CategoryRequest;
 use App\Models\Category;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,12 +23,7 @@ class CategoryController
         $perPage = $this->perPage($request);
 
         $categories = Category::query()
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $group) use ($search): void {
-                    $group->where('name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
-                });
-            })
+            ->search($search)
             ->latest()
             ->paginate($perPage)
             ->withQueryString()

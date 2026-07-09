@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +33,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class Product extends Model
 {
+    use Searchable;
     use SoftDeletes;
+
+    protected array $searchable = ['name', 'sku', 'barcode'];
 
     /**
      * @return array<string, string>

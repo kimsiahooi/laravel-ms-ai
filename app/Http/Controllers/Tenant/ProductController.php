@@ -9,7 +9,6 @@ use App\Http\Requests\Tenant\ProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -38,13 +37,7 @@ class ProductController
 
         $products = Product::query()
             ->with(['category', 'supplier'])
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $group) use ($search): void {
-                    $group->where('name', 'like', "%{$search}%")
-                        ->orWhere('sku', 'like', "%{$search}%")
-                        ->orWhere('barcode', 'like', "%{$search}%");
-                });
-            })
+            ->search($search)
             ->latest()
             ->paginate($perPage)
             ->withQueryString()

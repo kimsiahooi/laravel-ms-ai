@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,12 +23,7 @@ class CustomerController
         $perPage = $this->perPage($request);
 
         $customers = Customer::query()
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $group) use ($search): void {
-                    $group->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
+            ->search($search)
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
