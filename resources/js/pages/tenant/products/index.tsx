@@ -10,7 +10,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Combobox } from '@/components/combobox';
 import { DataTable, type Paginator } from '@/components/data-table';
@@ -102,6 +102,30 @@ export default function ProductsIndex() {
     const [deleting, setDeleting] = useState<Product | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
+    // Route every preview change through here so a replaced blob: URL is revoked
+    // (server image_url values are left alone). Prevents leaking the Blob.
+    const previewRef = useRef<string | null>(null);
+    const setPreview = (next: string | null) => {
+        if (
+            previewRef.current?.startsWith('blob:') &&
+            previewRef.current !== next
+        ) {
+            URL.revokeObjectURL(previewRef.current);
+        }
+        previewRef.current = next;
+        setImagePreview(next);
+    };
+
+    // Revoke any outstanding blob: URL when the page unmounts.
+    useEffect(
+        () => () => {
+            if (previewRef.current?.startsWith('blob:')) {
+                URL.revokeObjectURL(previewRef.current);
+            }
+        },
+        [],
+    );
+
     const resetForm = () => {
         setName('');
         setSku('');
@@ -111,7 +135,7 @@ export default function ProductsIndex() {
         setCategoryId('');
         setSupplierId('');
         setDescription('');
-        setImagePreview(null);
+        setPreview(null);
         setRemoveImage(false);
         if (fileRef.current) {
             fileRef.current.value = '';
@@ -134,7 +158,7 @@ export default function ProductsIndex() {
         setCategoryId(product.category_id ? String(product.category_id) : '');
         setSupplierId(product.supplier_id ? String(product.supplier_id) : '');
         setDescription(product.description ?? '');
-        setImagePreview(product.image_url);
+        setPreview(product.image_url);
         setRemoveImage(false);
         if (fileRef.current) {
             fileRef.current.value = '';
@@ -145,13 +169,13 @@ export default function ProductsIndex() {
     const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            setImagePreview(URL.createObjectURL(file));
+            setPreview(URL.createObjectURL(file));
             setRemoveImage(false);
         }
     };
 
     const clearImage = () => {
-        setImagePreview(null);
+        setPreview(null);
         setRemoveImage(true);
         if (fileRef.current) {
             fileRef.current.value = '';
