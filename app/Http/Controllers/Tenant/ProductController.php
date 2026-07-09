@@ -20,12 +20,10 @@ class ProductController
     /** @var array<int, int> */
     private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
-    private const IMAGE_DIRECTORY = 'products';
-
-    // Private disk (storage/app/private, per-tenant suffixed) — NOT the `public`
-    // disk, so images can never be exposed by `storage:link`. They are served
-    // only through the auth-gated TenantStorageController, which reads this disk.
-    private const IMAGE_DISK = 'local';
+    // Private, central disk. Product images live at assets/{tenant-slug}/... and
+    // are served only through the auth-gated tenant.storage route — never the
+    // `public` disk, so they can't be exposed by `storage:link`.
+    private const IMAGE_DISK = 'assets';
 
     public function index(Request $request): Response
     {
@@ -81,7 +79,7 @@ class ProductController
         unset($data['remove_image']);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store(self::IMAGE_DIRECTORY, self::IMAGE_DISK);
+            $data['image'] = $request->file('image')->store(tenant('id'), self::IMAGE_DISK);
         } else {
             unset($data['image']);
         }
@@ -100,7 +98,7 @@ class ProductController
         // A newly uploaded file takes precedence over a remove_image flag.
         if ($request->hasFile('image')) {
             $this->deleteImage($product);
-            $data['image'] = $request->file('image')->store(self::IMAGE_DIRECTORY, self::IMAGE_DISK);
+            $data['image'] = $request->file('image')->store(tenant('id'), self::IMAGE_DISK);
         } elseif ($removeImage) {
             $this->deleteImage($product);
             $data['image'] = null;

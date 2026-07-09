@@ -141,7 +141,8 @@ it('rejects a non-integer min_stock', function () {
         ->assertSessionHasErrors('min_stock');
 });
 
-it('stores an uploaded image on the tenant private disk', function () {
+it('stores an uploaded image under the tenant assets folder', function () {
+    Storage::fake('assets');
     loginAsAcmeUser();
 
     $this->from('/acme/products')
@@ -152,15 +153,16 @@ it('stores an uploaded image on the tenant private disk', function () {
         ->assertRedirect('/acme/products')
         ->assertSessionHas('success');
 
-    $this->tenant->run(function () {
-        $product = Product::firstWhere('sku', 'P-001');
-        expect($product->image)->not->toBeNull()
-            ->and(str_starts_with($product->image, 'products/'))->toBeTrue()
-            ->and(Storage::disk('local')->exists($product->image))->toBeTrue();
-    });
+    $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
+
+    // Stored under assets/{slug}/... and present on the (central) assets disk.
+    expect($path)->not->toBeNull()
+        ->and(str_starts_with($path, 'acme/'))->toBeTrue();
+    Storage::disk('assets')->assertExists($path);
 });
 
 it('updates a product and replaces its image', function () {
+    Storage::fake('assets');
     $id = $this->tenant->run(fn () => Product::create([
         'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
     ])->id);
@@ -175,20 +177,24 @@ it('updates a product and replaces its image', function () {
         ->assertRedirect('/acme/products')
         ->assertSessionHas('success');
 
-    $this->tenant->run(function () use ($id) {
+    $path = $this->tenant->run(function () use ($id) {
         $product = Product::find($id);
         expect($product->name)->toBe('Widget A')
             ->and($product->min_stock)->toBe(5)
-            ->and($product->image)->not->toBeNull()
-            ->and(Storage::disk('local')->exists($product->image))->toBeTrue();
+            ->and($product->image)->not->toBeNull();
+
+        return $product->image;
     });
+
+    Storage::disk('assets')->assertExists($path);
 });
 
 it('removes a product image when remove_image is set', function () {
+    Storage::fake('assets');
     $id = $this->tenant->run(function () {
         return Product::create([
             'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
-            'image' => 'products/existing.jpg',
+            'image' => 'acme/existing.jpg',
         ])->id;
     });
 
@@ -208,15 +214,12 @@ it('removes a product image when remove_image is set', function () {
 });
 
 it('deletes the previous image file when replacing it', function () {
-    $id = $this->tenant->run(function () {
-        $path = UploadedFile::fake()->image('old.jpg')->store('products', 'local');
+    Storage::fake('assets');
+    Storage::disk('assets')->put('acme/old.jpg', 'old-bytes');
 
-        return Product::create([
-            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => $path,
-        ])->id;
-    });
-
-    $oldPath = $this->tenant->run(fn () => Product::find($id)->image);
+    $id = $this->tenant->run(fn () => Product::create([
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => 'acme/old.jpg',
+    ])->id);
 
     loginAsAcmeUser();
 
@@ -228,12 +231,11 @@ it('deletes the previous image file when replacing it', function () {
         ->assertRedirect('/acme/products')
         ->assertSessionHas('success');
 
-    $this->tenant->run(function () use ($id, $oldPath) {
-        $product = Product::find($id);
-        expect($product->image)->not->toBe($oldPath)
-            ->and(Storage::disk('local')->exists($oldPath))->toBeFalse()
-            ->and(Storage::disk('local')->exists($product->image))->toBeTrue();
-    });
+    $newPath = $this->tenant->run(fn () => Product::find($id)->image);
+
+    expect($newPath)->not->toBe('acme/old.jpg');
+    Storage::disk('assets')->assertMissing('acme/old.jpg');
+    Storage::disk('assets')->assertExists($newPath);
 });
 
 it('soft-deletes a product', function () {
@@ -255,6 +257,7 @@ it('soft-deletes a product', function () {
 });
 
 it('serves an uploaded product image over HTTP', function () {
+    Storage::fake('assets');
     loginAsAcmeUser();
 
     $this->from('/acme/products')->post('/acme/products', [
@@ -270,8 +273,20 @@ it('serves an uploaded product image over HTTP', function () {
 });
 
 it('returns 404 for a missing tenant storage file', function () {
+    Storage::fake('assets');
     loginAsAcmeUser();
 
-    $this->get('/acme/storage/products/does-not-exist.jpg')
+    $this->get('/acme/storage/acme/does-not-exist.jpg')
         ->assertNotFound();
+});
+
+it('does not serve another tenant’s asset', function () {
+    Storage::fake('assets');
+    Storage::disk('assets')->put('globex/secret.jpg', 'private-bytes');
+
+    loginAsAcmeUser();
+
+    // Authenticated as acme, but the path belongs to globex → blocked by the
+    // slug guard even though the file exists on the shared assets disk.
+    $this->get('/acme/storage/globex/secret.jpg')->assertNotFound();
 });

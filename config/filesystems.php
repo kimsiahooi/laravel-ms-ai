@@ -47,6 +47,17 @@ return [
             'report' => false,
         ],
 
+        // Tenant uploads (product images, etc.). Private + central (NOT in
+        // tenancy.filesystem.disks, so not per-tenant suffixed); files are
+        // namespaced by tenant slug in the path (assets/{slug}/...) and served
+        // only through the auth-gated tenant.storage route. Never symlinked.
+        'assets' => [
+            'driver' => 'local',
+            'root' => storage_path('assets'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

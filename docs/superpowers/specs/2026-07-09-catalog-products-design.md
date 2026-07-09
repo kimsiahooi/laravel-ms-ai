@@ -115,14 +115,18 @@ Route::resource('products', ProductController::class)
 
 ## 7. Image handling
 
-- **Store:** `$path = $request->file('image')->store('products', 'local')` on the **private**
-  `local` disk (`storage/app/private`). The `FilesystemTenancyBootstrapper` suffixes
-  `storage_path()` per tenant, so files land in the active tenant's own folder — no
-  cross-tenant leakage. Using `local` (not `public`) means the images can **never** be exposed
-  by `storage:link`; they are reachable only through the auth-gated serving route below.
+- **Store:** `$path = $request->file('image')->store(tenant('id'), 'assets')` on the dedicated
+  **`assets`** disk (`config/filesystems.php`, root `storage/assets`). Files land at
+  `storage/assets/{slug}/{hash}.ext` (the DB `image` column holds `{slug}/{hash}.ext`). The
+  `assets` disk is **private + central** — deliberately **not** in `tenancy.filesystem.disks`,
+  so it is not per-tenant suffixed; isolation is by the `{slug}` path segment plus the serve
+  guard. It is never `storage:link`-ed, so images can't be exposed publicly. `storage/assets`
+  is git-ignored (tracked `.gitignore`, contents ignored).
 - **Serve:** a dedicated tenant-prefixed route `GET {tenant}/storage/{path}` (name
   `tenant.storage`, controller `TenantStorageController`, under `auth:web`) streams the file
-  from `Storage::disk('local')` with a path-traversal guard. The `image_url` accessor builds
+  from `Storage::disk('assets')`. Guards: reject `..`; **require the path to start with the
+  active tenant's slug** (`str_starts_with($path, tenant('id').'/')`) so one tenant can't read
+  another's files on the shared disk; then 404 if missing. The `image_url` accessor builds
   `route('tenant.storage', ['tenant' => tenant('id'), 'path' => $image])`. **No `storage:link`**
   is used — images are private (served through PHP behind auth), and the route is reusable by
   future private uploads (avatars, logos).
@@ -131,9 +135,9 @@ Route::resource('products', ProductController::class)
   > package's asset route. That route is guarded by `InitializeTenancyByDomain`, but this app
   > is **path/slug**-identified with no domains, so it 500s (`Tenant::domains()` undefined).
   > Vite assets dodge it because `ViteBundler` uses `global_asset()`. A tenant-prefixed route
-  > (so `InitializeTenancyByPath` runs and suffixes the disk) is the correct mechanism here.
+  > (so `InitializeTenancyByPath` runs) is the correct mechanism here.
 - **Replace:** on update with a new file, delete the previous file
-  (`Storage::disk('local')->delete($old)`) then store the new one.
+  (`Storage::disk('assets')->delete($old)`) then store the new one.
 - **Remove:** when `remove_image` is truthy and no new file is uploaded, delete the file and
   set `image = null`.
 - **Soft delete:** file is retained (record is restorable).
