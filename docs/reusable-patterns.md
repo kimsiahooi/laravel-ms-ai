@@ -41,13 +41,22 @@ had it **twice**).
 Added a search test per catalog resource (Category/Supplier/Customer/RawMaterial — Product
 already had one) so each `$searchable` column set is verified.
 
-### 3. 🔜 `FormRequest::authorize()` boilerplate → base/trait  · **Proposed (low)**
+### 3. ✅ Per-tenant image store/delete → `InteractsWithTenantAssets` trait  · **DONE**
+**Was:** `ProductController` held `storeImage()`/`deleteImage()` + an `IMAGE_DISK` const, and
+`TenantStorageController` repeated the same disk name + `tenant('id').'/'` prefix — the store and
+serve sides could silently drift apart.
+**Now:** `app/Http/Controllers/Concerns/InteractsWithTenantAssets.php` — `storeAsset($file,
+$directory)` / `deleteAsset(?$path)` / `scopeAsset($path)` / `assetDisk()`. Parameterized by
+directory, so every entity reuses it (products now → `products`; future avatars/logos → their own
+dir). Both controllers `use` it, so the `assets` disk + slug-scoping live in one place.
+
+### 4. 🔜 `FormRequest::authorize()` boilerplate → base/trait  · **Proposed (low)**
 **What:** every tenant `FormRequest` repeats `authorize(): bool { return $this->user() !== null; }`.
 **Proposal:** a `TenantFormRequest` base class (or an `AuthorizesTenantUser` trait) providing the
 default `authorize()`. **Impact:** small but removes copy-paste from every request.
 **Risk:** low.
 
-### 4. 🔜 `min_stock` blank→0 coercion → shared `prepareForValidation`  · **Proposed (low)**
+### 5. 🔜 `min_stock` blank→0 coercion → shared `prepareForValidation`  · **Proposed (low)**
 **What:** `RawMaterialRequest` and `ProductRequest` share the same
 `prepareForValidation()` coercing blank `min_stock` to `0`.
 **Proposal:** a small `NormalizesNumericInput` trait (or a `mergeDefault()` helper). Only 2
@@ -124,10 +133,10 @@ identical dropdown block in all 5 catalog pages' `actions` column (net −96 lin
 
 ## Status
 
-**Done:** `ResolvesPerPage` trait (B1) · `Searchable` scope (B2) · `ComboboxField` (F3) · `RowActions` (F4).
+**Done:** `ResolvesPerPage` (B1) · `Searchable` scope (B2) · `InteractsWithTenantAssets` (B3) · `ComboboxField` (F3) · `RowActions` (F4).
 
 **Remaining:**
 - `useResourceDialog` hook (F2) — biggest remaining; touches 5 pages → verify dialogs after.
 - Delete flow (`<ConfirmDeleteDialog>` + `useDelete`) — 7 pages.
-- Backend `TenantFormRequest` base for `authorize()` (B3) + `min_stock` coercion (B4) — small.
+- Backend `TenantFormRequest` base for `authorize()` (B4) + `min_stock` coercion (B5) — small.
 - Flash-toast consolidation (F1) — intentionally **skipped** (see item 1).

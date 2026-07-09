@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenantAssets;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\ProductRequest;
 use App\Models\Category;
@@ -11,22 +12,16 @@ use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductController
 {
+    use InteractsWithTenantAssets;
     use ResolvesPerPage;
 
-    // Private, central disk. Product images live at
-    // assets/{tenant-slug}/products/{hash} and are served only through the
-    // auth-gated tenant.storage route — never the `public` disk, so they can't be
-    // exposed by `storage:link`. The DB stores the slug-free `products/{hash}`.
-    private const IMAGE_DISK = 'assets';
-
+    // Product images live at assets/{tenant-slug}/products/{hash}; the DB stores
+    // the slug-free `products/{hash}`. See InteractsWithTenantAssets.
     private const IMAGE_DIRECTORY = 'products';
 
     public function index(Request $request): Response
@@ -74,7 +69,7 @@ class ProductController
         unset($data['remove_image']);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $this->storeImage($request->file('image'));
+            $data['image'] = $this->storeAsset($request->file('image'), self::IMAGE_DIRECTORY);
         } else {
             unset($data['image']);
         }
@@ -92,10 +87,10 @@ class ProductController
 
         // A newly uploaded file takes precedence over a remove_image flag.
         if ($request->hasFile('image')) {
-            $this->deleteImage($product);
-            $data['image'] = $this->storeImage($request->file('image'));
+            $this->deleteAsset($product->image);
+            $data['image'] = $this->storeAsset($request->file('image'), self::IMAGE_DIRECTORY);
         } elseif ($removeImage) {
-            $this->deleteImage($product);
+            $this->deleteAsset($product->image);
             $data['image'] = null;
         } else {
             unset($data['image']);
@@ -112,24 +107,5 @@ class ProductController
         $product->delete();
 
         return back()->with('success', 'Product deleted.');
-    }
-
-    /**
-     * Store an upload at assets/{slug}/products/{hash} and return the slug-free
-     * path (products/{hash}) to persist — the active tenant's slug is re-derived
-     * when serving/deleting, so it never appears twice in the URL.
-     */
-    private function storeImage(UploadedFile $file): string
-    {
-        $stored = $file->store(tenant('id').'/'.self::IMAGE_DIRECTORY, self::IMAGE_DISK);
-
-        return Str::after($stored, tenant('id').'/');
-    }
-
-    private function deleteImage(Product $product): void
-    {
-        if ($product->image !== null) {
-            Storage::disk(self::IMAGE_DISK)->delete(tenant('id').'/'.$product->image);
-        }
     }
 }
