@@ -47,12 +47,15 @@ abstract class TestCase extends BaseTestCase
 
         // Free slugs via a mass query-builder delete (no model events / no DDL).
         if (class_exists(Tenant::class)) {
-            // Remove any file uploads left in each test tenant's suffixed
-            // storage dir (storage/tenant<key>). Scoped to tenants in the TEST
-            // central DB, so dev/prod tenant storage is never touched.
+            // Remove file uploads left in each test tenant's suffixed storage dir.
+            // Hard-guarded to the dedicated `msai_test_tenant_*` suffix (set in
+            // phpunit.xml) so it can NEVER delete dev/prod tenant storage, which
+            // uses the default `tenant` suffix on the same shared filesystem.
             $suffixBase = (string) config('tenancy.filesystem.suffix_base', 'tenant');
-            foreach (Tenant::withTrashed()->pluck('id') as $key) {
-                File::deleteDirectory(storage_path($suffixBase.$key));
+            if (str_starts_with($suffixBase, 'msai_test_tenant')) {
+                foreach (Tenant::withTrashed()->pluck('id') as $key) {
+                    File::deleteDirectory(storage_path($suffixBase.$key));
+                }
             }
 
             Tenant::withTrashed()->forceDelete();

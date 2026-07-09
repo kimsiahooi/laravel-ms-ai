@@ -206,3 +206,32 @@ it('removes a product image when remove_image is set', function () {
         expect(Product::find($id)->image)->toBeNull();
     });
 });
+
+it('deletes the previous image file when replacing it', function () {
+    $id = $this->tenant->run(function () {
+        $path = UploadedFile::fake()->image('old.jpg')->store('products', 'public');
+
+        return Product::create([
+            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => $path,
+        ])->id;
+    });
+
+    $oldPath = $this->tenant->run(fn () => Product::find($id)->image);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->put("/acme/products/{$id}", [
+            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'min_stock' => 0,
+            'image' => UploadedFile::fake()->image('new.jpg'),
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHas('success');
+
+    $this->tenant->run(function () use ($id, $oldPath) {
+        $product = Product::find($id);
+        expect($product->image)->not->toBe($oldPath)
+            ->and(Storage::disk('public')->exists($oldPath))->toBeFalse()
+            ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
+    });
+});

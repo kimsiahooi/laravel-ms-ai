@@ -31,6 +31,7 @@
         <env name="DB_PASSWORD" value=""/>
         <env name="DB_URL" value=""/>
         <env name="TENANCY_DB_PREFIX" value="msai_test_tenant_"/>
+        <env name="TENANCY_FILESYSTEM_SUFFIX_BASE" value="msai_test_tenant_"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

@@ -20,6 +20,8 @@ class ProductController
     /** @var array<int, int> */
     private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
+    private const IMAGE_DIRECTORY = 'products';
+
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
@@ -74,7 +76,7 @@ class ProductController
         unset($data['remove_image']);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $request->file('image')->store(self::IMAGE_DIRECTORY, 'public');
         } else {
             unset($data['image']);
         }
@@ -90,9 +92,10 @@ class ProductController
         $removeImage = (bool) ($data['remove_image'] ?? false);
         unset($data['remove_image']);
 
+        // A newly uploaded file takes precedence over a remove_image flag.
         if ($request->hasFile('image')) {
             $this->deleteImage($product);
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $request->file('image')->store(self::IMAGE_DIRECTORY, 'public');
         } elseif ($removeImage) {
             $this->deleteImage($product);
             $data['image'] = null;
