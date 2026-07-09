@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -14,17 +15,13 @@ use Inertia\Response;
 
 class CustomerController
 {
-    /** @var array<int, int> */
-    private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+    use ResolvesPerPage;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
 
-        $perPage = (int) $request->integer('per_page', 10);
-        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
-            $perPage = 10;
-        }
+        $perPage = $this->perPage($request);
 
         $customers = Customer::query()
             ->when($search !== '', function (Builder $query) use ($search): void {

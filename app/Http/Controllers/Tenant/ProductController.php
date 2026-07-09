@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\ProductRequest;
 use App\Models\Category;
 use App\Models\Product;
@@ -19,8 +20,7 @@ use Inertia\Response;
 
 class ProductController
 {
-    /** @var array<int, int> */
-    private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+    use ResolvesPerPage;
 
     // Private, central disk. Product images live at
     // assets/{tenant-slug}/products/{hash} and are served only through the
@@ -34,10 +34,7 @@ class ProductController
     {
         $search = trim((string) $request->string('search'));
 
-        $perPage = (int) $request->integer('per_page', 10);
-        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
-            $perPage = 10;
-        }
+        $perPage = $this->perPage($request);
 
         $products = Product::query()
             ->with(['category', 'supplier'])

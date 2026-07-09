@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Central;
 
 use App\Actions\ProvisionTenant;
+use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Central\StoreTenantRequest;
 use App\Models\Tenant;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -15,17 +16,13 @@ use Inertia\Response;
 
 class TenantController
 {
-    /** @var array<int, int> */
-    private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+    use ResolvesPerPage;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
 
-        $perPage = (int) $request->integer('per_page', 10);
-        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
-            $perPage = 10;
-        }
+        $perPage = $this->perPage($request);
 
         $tenants = Tenant::query()
             ->when($search !== '', function (Builder $query) use ($search): void {
@@ -72,10 +69,7 @@ class TenantController
     {
         $search = trim((string) $request->string('search'));
 
-        $perPage = (int) $request->integer('per_page', 10);
-        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
-            $perPage = 10;
-        }
+        $perPage = $this->perPage($request);
 
         $tenants = Tenant::onlyTrashed()
             ->when($search !== '', function (Builder $query) use ($search): void {
