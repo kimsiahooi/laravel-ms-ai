@@ -100,24 +100,34 @@ focused pass.
 **Impact:** trims boilerplate on every catalog page. **Risk:** medium (per-page field differences;
 verify each dialog still opens/edits/resets). **Files:** the 6 `*/index.tsx` with dialogs.
 
-### 3. 🔜 `ComboboxField` (Label + Combobox + InputError) → component  · **Proposed (low)**
-**What:** `products/index.tsx` repeats the `<Label>` + `<Combobox>` + `<InputError>` block
-per FK picker (category, supplier). Orders/BOM/production will add more FK pickers.
-**Proposal:** `resources/js/components/combobox-field.tsx` — `<ComboboxField label options value
-onChange error name />` (renders the label, the combobox, the hidden input, and the error).
-**Impact:** small now (2 uses), compounding as more entity pickers arrive. **Risk:** low
-(self-contained, types + build verify).
+### 3. ✅ `ComboboxField` (Label + Combobox + InputError) → component  · **DONE**
+`resources/js/components/combobox-field.tsx` — `<ComboboxField id label options value onChange
+error placeholder searchPlaceholder emptyText />` wraps the label + combobox + wired error.
+Used by the products form's category/supplier pickers; ready for Orders/BOM pickers.
 
-### 4. ℹ️ Already extracted (good) — keep reusing
+### 4. ✅ `RowActions` (Edit/Delete dropdown column) → component  · **DONE**
+`resources/js/components/row-actions.tsx` — `<RowActions label onEdit onDelete />`. Replaced the
+identical dropdown block in all 5 catalog pages' `actions` column (net −96 lines with F3).
+
+### 5. ℹ️ Already extracted (good) — keep reusing
 - `DataTable` (`resources/js/components/data-table.tsx`) — server-side list, used by 7 pages.
 - `Combobox` (`resources/js/components/combobox.tsx`) — searchable FK picker.
+- `ComboboxField` / `RowActions` — see items 3–4.
 - `useFlashToast` — the global toast hook (see item 1).
+
+> **Tooling note:** this repo's Biome config marks `lint/correctness/noUnusedImports` as an
+> _unsafe_ fix, so `bun run check` only warns about dead imports. After removing usages in a
+> refactor, run `bunx biome check --write --unsafe <files>` (scoped to the touched files) to
+> drop them.
 
 ---
 
-## Suggested order
+## Status
 
-1. ✅ `ResolvesPerPage` trait — done.
-2. Flash-toast consolidation (item F1) — highest impact; do as a focused pass with a browser smoke.
-3. `ComboboxField` (F3) — quick, unlocks cleaner Orders/BOM forms.
-4. `useResourceDialog` (F2) + backend `TenantFormRequest` base (B3) + search scope (B2).
+**Done:** `ResolvesPerPage` trait (B1) · `Searchable` scope (B2) · `ComboboxField` (F3) · `RowActions` (F4).
+
+**Remaining:**
+- `useResourceDialog` hook (F2) — biggest remaining; touches 5 pages → verify dialogs after.
+- Delete flow (`<ConfirmDeleteDialog>` + `useDelete`) — 7 pages.
+- Backend `TenantFormRequest` base for `authorize()` (B3) + `min_stock` coercion (B4) — small.
+- Flash-toast consolidation (F1) — intentionally **skipped** (see item 1).
