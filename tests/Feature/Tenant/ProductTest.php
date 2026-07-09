@@ -155,10 +155,11 @@ it('stores an uploaded image under the tenant assets folder', function () {
 
     $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
 
-    // Stored under assets/{slug}/... and present on the (central) assets disk.
+    // DB path is slug-free (products/{hash}); the file lives under the tenant's
+    // slug folder on the (central) assets disk: assets/acme/products/{hash}.
     expect($path)->not->toBeNull()
-        ->and(str_starts_with($path, 'acme/'))->toBeTrue();
-    Storage::disk('assets')->assertExists($path);
+        ->and(str_starts_with($path, 'products/'))->toBeTrue();
+    Storage::disk('assets')->assertExists("acme/{$path}");
 });
 
 it('updates a product and replaces its image', function () {
@@ -186,7 +187,7 @@ it('updates a product and replaces its image', function () {
         return $product->image;
     });
 
-    Storage::disk('assets')->assertExists($path);
+    Storage::disk('assets')->assertExists("acme/{$path}");
 });
 
 it('removes a product image when remove_image is set', function () {
@@ -194,7 +195,7 @@ it('removes a product image when remove_image is set', function () {
     $id = $this->tenant->run(function () {
         return Product::create([
             'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
-            'image' => 'acme/existing.jpg',
+            'image' => 'products/existing.jpg',
         ])->id;
     });
 
@@ -215,10 +216,10 @@ it('removes a product image when remove_image is set', function () {
 
 it('deletes the previous image file when replacing it', function () {
     Storage::fake('assets');
-    Storage::disk('assets')->put('acme/old.jpg', 'old-bytes');
+    Storage::disk('assets')->put('acme/products/old.jpg', 'old-bytes');
 
     $id = $this->tenant->run(fn () => Product::create([
-        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => 'acme/old.jpg',
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => 'products/old.jpg',
     ])->id);
 
     loginAsAcmeUser();
@@ -233,9 +234,9 @@ it('deletes the previous image file when replacing it', function () {
 
     $newPath = $this->tenant->run(fn () => Product::find($id)->image);
 
-    expect($newPath)->not->toBe('acme/old.jpg');
-    Storage::disk('assets')->assertMissing('acme/old.jpg');
-    Storage::disk('assets')->assertExists($newPath);
+    expect($newPath)->not->toBe('products/old.jpg');
+    Storage::disk('assets')->assertMissing('acme/products/old.jpg');
+    Storage::disk('assets')->assertExists("acme/{$newPath}");
 });
 
 it('soft-deletes a product', function () {
@@ -276,17 +277,18 @@ it('returns 404 for a missing tenant storage file', function () {
     Storage::fake('assets');
     loginAsAcmeUser();
 
-    $this->get('/acme/storage/acme/does-not-exist.jpg')
+    $this->get('/acme/storage/products/does-not-exist.jpg')
         ->assertNotFound();
 });
 
 it('does not serve another tenant’s asset', function () {
     Storage::fake('assets');
-    Storage::disk('assets')->put('globex/secret.jpg', 'private-bytes');
+    // globex has a file at its own products/ path on the shared assets disk.
+    Storage::disk('assets')->put('globex/products/secret.jpg', 'private-bytes');
 
     loginAsAcmeUser();
 
-    // Authenticated as acme, but the path belongs to globex → blocked by the
-    // slug guard even though the file exists on the shared assets disk.
-    $this->get('/acme/storage/globex/secret.jpg')->assertNotFound();
+    // Authenticated as acme: the serve route prepends acme's slug, so the same
+    // relative path resolves to assets/acme/products/… (empty), never globex's.
+    $this->get('/acme/storage/products/secret.jpg')->assertNotFound();
 });
