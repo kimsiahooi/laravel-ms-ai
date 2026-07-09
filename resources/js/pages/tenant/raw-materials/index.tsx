@@ -1,17 +1,11 @@
 import { Form, Head, router, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import {
-    Boxes,
-    LoaderCircle,
-    MoreHorizontal,
-    Pencil,
-    Plus,
-    Trash2,
-} from 'lucide-react';
+import { Boxes, LoaderCircle, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
+import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -23,12 +17,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TenantLayout from '@/layouts/tenant-layout';
@@ -147,33 +135,11 @@ export default function RawMaterialsIndex() {
             header: () => <span className="sr-only">Actions</span>,
             meta: { className: 'text-right' },
             cell: ({ row }) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8"
-                            aria-label={`Actions for ${row.original.name}`}
-                        >
-                            <MoreHorizontal className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                            onSelect={() => openEdit(row.original)}
-                        >
-                            <Pencil className="size-4" />
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => setDeleting(row.original)}
-                        >
-                            <Trash2 className="size-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <RowActions
+                    label={row.original.name}
+                    onEdit={() => openEdit(row.original)}
+                    onDelete={() => setDeleting(row.original)}
+                />
             ),
         },
     ];

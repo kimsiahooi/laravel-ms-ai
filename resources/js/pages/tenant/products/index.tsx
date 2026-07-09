@@ -3,18 +3,17 @@ import type { ColumnDef } from '@tanstack/react-table';
 import {
     ImageIcon,
     LoaderCircle,
-    MoreHorizontal,
     Package,
-    Pencil,
     Plus,
     Trash2,
     X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Combobox } from '@/components/combobox';
+import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
+import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -26,12 +25,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -268,33 +261,11 @@ export default function ProductsIndex() {
             header: () => <span className="sr-only">Actions</span>,
             meta: { className: 'text-right' },
             cell: ({ row }) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8"
-                            aria-label={`Actions for ${row.original.name}`}
-                        >
-                            <MoreHorizontal className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                            onSelect={() => openEdit(row.original)}
-                        >
-                            <Pencil className="size-4" />
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => setDeleting(row.original)}
-                        >
-                            <Trash2 className="size-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <RowActions
+                    label={row.original.name}
+                    onEdit={() => openEdit(row.original)}
+                    onDelete={() => setDeleting(row.original)}
+                />
             ),
         },
     ];
@@ -506,56 +477,28 @@ export default function ProductsIndex() {
                                             message={errors.unit}
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="category">
-                                            Category
-                                        </Label>
-                                        <Combobox
-                                            id="category"
-                                            options={categoryOptions}
-                                            value={categoryId}
-                                            onChange={setCategoryId}
-                                            placeholder="Select category"
-                                            searchPlaceholder="Search categories…"
-                                            emptyText="No categories."
-                                            invalid={!!errors.category_id}
-                                            describedBy={
-                                                errors.category_id
-                                                    ? 'category-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="category-error"
-                                            role="alert"
-                                            message={errors.category_id}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="supplier">
-                                            Supplier
-                                        </Label>
-                                        <Combobox
-                                            id="supplier"
-                                            options={supplierOptions}
-                                            value={supplierId}
-                                            onChange={setSupplierId}
-                                            placeholder="Select supplier"
-                                            searchPlaceholder="Search suppliers…"
-                                            emptyText="No suppliers."
-                                            invalid={!!errors.supplier_id}
-                                            describedBy={
-                                                errors.supplier_id
-                                                    ? 'supplier-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="supplier-error"
-                                            role="alert"
-                                            message={errors.supplier_id}
-                                        />
-                                    </div>
+                                    <ComboboxField
+                                        id="category"
+                                        label="Category"
+                                        options={categoryOptions}
+                                        value={categoryId}
+                                        onChange={setCategoryId}
+                                        error={errors.category_id}
+                                        placeholder="Select category"
+                                        searchPlaceholder="Search categories…"
+                                        emptyText="No categories."
+                                    />
+                                    <ComboboxField
+                                        id="supplier"
+                                        label="Supplier"
+                                        options={supplierOptions}
+                                        value={supplierId}
+                                        onChange={setSupplierId}
+                                        error={errors.supplier_id}
+                                        placeholder="Select supplier"
+                                        searchPlaceholder="Search suppliers…"
+                                        emptyText="No suppliers."
+                                    />
                                     <div className="space-y-2">
                                         <Label htmlFor="min_stock">
                                             Min stock
