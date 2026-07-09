@@ -4,6 +4,8 @@ use App\Actions\ProvisionTenant;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -137,4 +139,70 @@ it('rejects a non-integer min_stock', function () {
         ])
         ->assertRedirect('/acme/products')
         ->assertSessionHasErrors('min_stock');
+});
+
+it('stores an uploaded image on the tenant public disk', function () {
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->post('/acme/products', [
+            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
+            'image' => UploadedFile::fake()->image('widget.jpg', 200, 200),
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHas('success');
+
+    $this->tenant->run(function () {
+        $product = Product::firstWhere('sku', 'P-001');
+        expect($product->image)->not->toBeNull()
+            ->and(str_starts_with($product->image, 'products/'))->toBeTrue()
+            ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
+    });
+});
+
+it('updates a product and replaces its image', function () {
+    $id = $this->tenant->run(fn () => Product::create([
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
+    ])->id);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->put("/acme/products/{$id}", [
+            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs', 'min_stock' => 5,
+            'image' => UploadedFile::fake()->image('new.png', 150, 150),
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHas('success');
+
+    $this->tenant->run(function () use ($id) {
+        $product = Product::find($id);
+        expect($product->name)->toBe('Widget A')
+            ->and($product->min_stock)->toBe(5)
+            ->and($product->image)->not->toBeNull()
+            ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
+    });
+});
+
+it('removes a product image when remove_image is set', function () {
+    $id = $this->tenant->run(function () {
+        return Product::create([
+            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
+            'image' => 'products/existing.jpg',
+        ])->id;
+    });
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/products')
+        ->put("/acme/products/{$id}", [
+            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'min_stock' => 0,
+            'remove_image' => '1',
+        ])
+        ->assertRedirect('/acme/products')
+        ->assertSessionHas('success');
+
+    $this->tenant->run(function () use ($id) {
+        expect(Product::find($id)->image)->toBeNull();
+    });
 });

@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -81,5 +82,33 @@ class ProductController
         Product::create($data);
 
         return back()->with('success', 'Product created.');
+    }
+
+    public function update(ProductRequest $request, Product $product): RedirectResponse
+    {
+        $data = $request->validated();
+        $removeImage = (bool) ($data['remove_image'] ?? false);
+        unset($data['remove_image']);
+
+        if ($request->hasFile('image')) {
+            $this->deleteImage($product);
+            $data['image'] = $request->file('image')->store('products', 'public');
+        } elseif ($removeImage) {
+            $this->deleteImage($product);
+            $data['image'] = null;
+        } else {
+            unset($data['image']);
+        }
+
+        $product->update($data);
+
+        return back()->with('success', 'Product updated.');
+    }
+
+    private function deleteImage(Product $product): void
+    {
+        if ($product->image !== null) {
+            Storage::disk('public')->delete($product->image);
+        }
     }
 }
