@@ -118,9 +118,17 @@ Route::resource('products', ProductController::class)
 - **Store:** `$path = $request->file('image')->store('products', 'public')`. The
   `FilesystemTenancyBootstrapper` suffixes `storage_path()` per tenant, so files land in the
   active tenant's own storage folder — no cross-tenant leakage.
-- **Serve:** `tenant_asset($path)` (via the `image_url` accessor). This streams through the
-  tenant-asset route already registered by the tenancy package (same route serving Vite
-  assets), so it works with **no `storage:link`**.
+- **Serve:** a dedicated tenant-prefixed route `GET {tenant}/storage/{path}` (name
+  `tenant.storage`, controller `TenantStorageController`, under `auth:web`) streams the file
+  from `Storage::disk('public')` with a path-traversal guard. The `image_url` accessor builds
+  `url('/'.tenant('id').'/storage/'.$image)`. **No `storage:link`** is needed (streamed
+  through PHP), and the shared serving route is reusable by future uploads (avatars, logos).
+
+  > ⚠️ Correction (as-built): the original design assumed `tenant_asset()` / the tenancy
+  > package's asset route. That route is guarded by `InitializeTenancyByDomain`, but this app
+  > is **path/slug**-identified with no domains, so it 500s (`Tenant::domains()` undefined).
+  > Vite assets dodge it because `ViteBundler` uses `global_asset()`. A tenant-prefixed route
+  > (so `InitializeTenancyByPath` runs and suffixes the disk) is the correct mechanism here.
 - **Replace:** on update with a new file, delete the previous file
   (`Storage::disk('public')->delete($old)`) then store the new one.
 - **Remove:** when `remove_image` is truthy and no new file is uploaded, delete the file and
@@ -149,8 +157,11 @@ Uses `Storage::fake('public')`. Covers:
 - index renders `tenant/products/index` and passes `products`, `filters`, `categories`,
   `suppliers`.
 - search matches name / sku / barcode; pagination + `per_page` respected.
-- store creates a product with and without an image; asserts the file exists on the faked
-  disk and the `image` path is persisted.
+- store creates a product with and without an image; asserts the `image` path is persisted
+  and the file exists on the tenant's `public` disk (checked **inside `$tenant->run()`** —
+  `Storage::fake` is defeated by the tenancy filesystem bootstrapper, so tests use the real
+  tenant-suffixed disk; `TestCase` cleans those dirs, hard-guarded to the `msai_test_tenant_`
+  suffix). Also covered: the served image returns HTTP 200 (`GET {tenant}/storage/{path}`).
 - validation: required `name` / `sku` / `unit` / `min_stock`; `sku` uniqueness;
   `category_id` / `supplier_id` reject a **trashed** id; `min_stock` integer + blank→0.
 - update: changes fields; a new image replaces + deletes the old file; `remove_image` clears
