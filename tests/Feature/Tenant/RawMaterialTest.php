@@ -99,3 +99,19 @@ it('soft-deletes a raw material', function () {
             ->and(RawMaterial::withTrashed()->find($id))->not->toBeNull();
     });
 });
+
+it('searches raw materials by name or sku', function () {
+    $this->tenant->run(function () {
+        RawMaterial::create(['name' => 'Steel Rod', 'sku' => 'RM-001', 'unit' => 'kg']);
+        RawMaterial::create(['name' => 'Copper Wire', 'sku' => 'RM-002', 'unit' => 'm']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/raw-materials?search=RM-002')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('rawMaterials.data', 1)
+            ->where('rawMaterials.data.0.sku', 'RM-002')
+        );
+});

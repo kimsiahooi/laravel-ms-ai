@@ -98,3 +98,19 @@ it('soft-deletes a category', function () {
             ->and(Category::withTrashed()->find($id))->not->toBeNull();
     });
 });
+
+it('searches categories by name or description', function () {
+    $this->tenant->run(function () {
+        Category::create(['name' => 'Fasteners', 'description' => 'nuts and bolts']);
+        Category::create(['name' => 'Adhesives', 'description' => 'glue']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/categories?search=bolts')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('categories.data', 1)
+            ->where('categories.data.0.name', 'Fasteners')
+        );
+});

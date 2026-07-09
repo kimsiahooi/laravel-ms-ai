@@ -31,15 +31,15 @@ had it **twice**).
 `$perPage = $this->perPage($request);`. Override `$perPageOptions` per controller if needed.
 **Impact:** removed ~40 duplicated lines across 6 files.
 
-### 2. 🔜 Searchable-index query → a scope/helper  · **Proposed (medium)**
-**What:** the 5 catalog `index()` methods share the same shape — a grouped `OR LIKE`
-search over N columns, then `->latest()->paginate($perPage)->withQueryString()->through(...)`.
-Only the **columns** and the **`through` map** differ.
-**Proposal:** a query helper/scope, e.g. `scopeSearch(Builder $q, ?string $term, array $columns)`
-(a shared trait/macro), used as `Model::query()->search($search, ['name','sku','barcode'])`.
-Keep the `->through()` map in each controller (it's genuinely per-resource).
-**Impact:** removes the repeated closure in 5 controllers. **Risk:** low-medium (behavior
-identical, backed by existing search tests). **Files:** the 5 `Tenant/*Controller.php`.
+### 2. ✅ Searchable-index query → `Searchable` model scope  · **DONE**
+**Was:** the 5 catalog `index()` methods each repeated a grouped `OR LIKE` search closure
+(`->when($search !== '', fn => where(group => …))`); only the columns differed.
+**Now:** `app/Models/Concerns/Searchable.php` — models declare
+`protected array $searchable = ['name', …]` and `use Searchable;`, and controllers call
+`->search($search)`. The `->through()` map stays per-controller (genuinely per-resource).
+**Impact:** removed the closure from 5 controllers (and the now-unused `Builder` import).
+Added a search test per catalog resource (Category/Supplier/Customer/RawMaterial — Product
+already had one) so each `$searchable` column set is verified.
 
 ### 3. 🔜 `FormRequest::authorize()` boilerplate → base/trait  · **Proposed (low)**
 **What:** every tenant `FormRequest` repeats `authorize(): bool { return $this->user() !== null; }`.

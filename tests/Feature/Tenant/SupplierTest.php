@@ -104,3 +104,19 @@ it('soft-deletes a supplier', function () {
             ->and(Supplier::withTrashed()->find($id))->not->toBeNull();
     });
 });
+
+it('searches suppliers by name or email', function () {
+    $this->tenant->run(function () {
+        Supplier::create(['name' => 'Acme Metals', 'email' => 'metals@acme.test']);
+        Supplier::create(['name' => 'Bolt Co', 'email' => 'sales@bolt.test']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/suppliers?search=sales@bolt')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('suppliers.data', 1)
+            ->where('suppliers.data.0.name', 'Bolt Co')
+        );
+});

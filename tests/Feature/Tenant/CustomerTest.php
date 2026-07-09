@@ -104,3 +104,19 @@ it('soft-deletes a customer', function () {
             ->and(Customer::withTrashed()->find($id))->not->toBeNull();
     });
 });
+
+it('searches customers by name or email', function () {
+    $this->tenant->run(function () {
+        Customer::create(['name' => 'Globex', 'email' => 'buyer@globex.test']);
+        Customer::create(['name' => 'Initech', 'email' => 'ap@initech.test']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/customers?search=ap@initech')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('customers.data', 1)
+            ->where('customers.data.0.name', 'Initech')
+        );
+});
