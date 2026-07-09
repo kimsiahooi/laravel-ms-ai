@@ -141,7 +141,7 @@ it('rejects a non-integer min_stock', function () {
         ->assertSessionHasErrors('min_stock');
 });
 
-it('stores an uploaded image on the tenant public disk', function () {
+it('stores an uploaded image on the tenant private disk', function () {
     loginAsAcmeUser();
 
     $this->from('/acme/products')
@@ -156,7 +156,7 @@ it('stores an uploaded image on the tenant public disk', function () {
         $product = Product::firstWhere('sku', 'P-001');
         expect($product->image)->not->toBeNull()
             ->and(str_starts_with($product->image, 'products/'))->toBeTrue()
-            ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
+            ->and(Storage::disk('local')->exists($product->image))->toBeTrue();
     });
 });
 
@@ -180,7 +180,7 @@ it('updates a product and replaces its image', function () {
         expect($product->name)->toBe('Widget A')
             ->and($product->min_stock)->toBe(5)
             ->and($product->image)->not->toBeNull()
-            ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
+            ->and(Storage::disk('local')->exists($product->image))->toBeTrue();
     });
 });
 
@@ -209,7 +209,7 @@ it('removes a product image when remove_image is set', function () {
 
 it('deletes the previous image file when replacing it', function () {
     $id = $this->tenant->run(function () {
-        $path = UploadedFile::fake()->image('old.jpg')->store('products', 'public');
+        $path = UploadedFile::fake()->image('old.jpg')->store('products', 'local');
 
         return Product::create([
             'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => $path,
@@ -231,8 +231,8 @@ it('deletes the previous image file when replacing it', function () {
     $this->tenant->run(function () use ($id, $oldPath) {
         $product = Product::find($id);
         expect($product->image)->not->toBe($oldPath)
-            ->and(Storage::disk('public')->exists($oldPath))->toBeFalse()
-            ->and(Storage::disk('public')->exists($product->image))->toBeTrue();
+            ->and(Storage::disk('local')->exists($oldPath))->toBeFalse()
+            ->and(Storage::disk('local')->exists($product->image))->toBeTrue();
     });
 });
 

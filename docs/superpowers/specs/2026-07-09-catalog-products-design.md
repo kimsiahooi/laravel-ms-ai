@@ -115,14 +115,17 @@ Route::resource('products', ProductController::class)
 
 ## 7. Image handling
 
-- **Store:** `$path = $request->file('image')->store('products', 'public')`. The
-  `FilesystemTenancyBootstrapper` suffixes `storage_path()` per tenant, so files land in the
-  active tenant's own storage folder — no cross-tenant leakage.
+- **Store:** `$path = $request->file('image')->store('products', 'local')` on the **private**
+  `local` disk (`storage/app/private`). The `FilesystemTenancyBootstrapper` suffixes
+  `storage_path()` per tenant, so files land in the active tenant's own folder — no
+  cross-tenant leakage. Using `local` (not `public`) means the images can **never** be exposed
+  by `storage:link`; they are reachable only through the auth-gated serving route below.
 - **Serve:** a dedicated tenant-prefixed route `GET {tenant}/storage/{path}` (name
   `tenant.storage`, controller `TenantStorageController`, under `auth:web`) streams the file
-  from `Storage::disk('public')` with a path-traversal guard. The `image_url` accessor builds
-  `url('/'.tenant('id').'/storage/'.$image)`. **No `storage:link`** is needed (streamed
-  through PHP), and the shared serving route is reusable by future uploads (avatars, logos).
+  from `Storage::disk('local')` with a path-traversal guard. The `image_url` accessor builds
+  `route('tenant.storage', ['tenant' => tenant('id'), 'path' => $image])`. **No `storage:link`**
+  is used — images are private (served through PHP behind auth), and the route is reusable by
+  future private uploads (avatars, logos).
 
   > ⚠️ Correction (as-built): the original design assumed `tenant_asset()` / the tenancy
   > package's asset route. That route is guarded by `InitializeTenancyByDomain`, but this app
@@ -130,7 +133,7 @@ Route::resource('products', ProductController::class)
   > Vite assets dodge it because `ViteBundler` uses `global_asset()`. A tenant-prefixed route
   > (so `InitializeTenancyByPath` runs and suffixes the disk) is the correct mechanism here.
 - **Replace:** on update with a new file, delete the previous file
-  (`Storage::disk('public')->delete($old)`) then store the new one.
+  (`Storage::disk('local')->delete($old)`) then store the new one.
 - **Remove:** when `remove_image` is truthy and no new file is uploaded, delete the file and
   set `image = null`.
 - **Soft delete:** file is retained (record is restorable).
