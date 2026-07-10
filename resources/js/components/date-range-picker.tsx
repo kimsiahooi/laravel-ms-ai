@@ -350,7 +350,7 @@ export function DateRangePicker({
                             onSelect={(_selected, day) => pickDay(day)}
                             defaultMonth={range?.from}
                         />
-                        <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-2 gap-3">
                             <TimeSelect
                                 idPrefix="range-from-time"
                                 label="From time"
