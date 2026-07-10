@@ -17,17 +17,27 @@ use App\Models\SalesOrder;
 use App\Models\StockMovement;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController
 {
-    /** Trailing window (inclusive of today) for the two time-series charts. */
+    /** Default trailing window (inclusive of today) for the time-series charts. */
     private const TREND_DAYS = 30;
 
-    public function __invoke(): Response
+    /** Hard cap on a hand-edited range so the per-day scaffold can't run away. */
+    private const MAX_RANGE_DAYS = 366;
+
+    public function __invoke(Request $request): Response
     {
+        // The two time-series charts + the "units made" figure follow a
+        // user-selected date range, resolved in the caller's OWN timezone (sent
+        // by the browser). Everything else on the dashboard is a live snapshot.
+        [$from, $to, $tz, $days] = $this->resolveRange($request);
+
         // On-hand summed per stockable, split by morph alias. Reused by the
         // low-stock KPI, the reorder list, and the SKU count. Never-stocked items
         // simply have no row here, which is exactly "0 on hand".
@@ -57,7 +67,6 @@ class DashboardController
                 ],
                 'production_in_progress' => [
                     'pending' => $this->pending(ProductionOrder::class, ProductionOrderStatus::Pending),
-                    'completed_units_30d' => $this->completedUnits(),
                 ],
                 'skus_in_stock' => [
                     'count' => $inStockProducts + $inStockMaterials,
@@ -65,13 +74,18 @@ class DashboardController
                     'materials' => $inStockMaterials,
                 ],
             ],
-            'stockActivity' => $this->stockActivity(),
+            'range' => [
+                'from' => $days[0]['date'],
+                'to' => $days[array_key_last($days)]['date'],
+                'units_made' => $this->completedUnits($from, $to),
+            ],
+            'stockActivity' => $this->stockActivity($from, $to, $tz, $days),
             'orderPipeline' => [
                 'purchase' => $this->statusCounts(PurchaseOrder::class, PurchaseOrderStatus::cases()),
                 'sales' => $this->statusCounts(SalesOrder::class, SalesOrderStatus::cases()),
                 'production' => $this->statusCounts(ProductionOrder::class, ProductionOrderStatus::cases()),
             ],
-            'throughput' => $this->throughput(),
+            'throughput' => $this->throughput($from, $to, $tz, $days),
             'onHandByWarehouse' => $this->onHandByWarehouse(),
             'reorderList' => $lowStock->sortByDesc('deficit')->take(8)->values()->all(),
             'recentMovements' => StockMovement::query()
@@ -178,31 +192,34 @@ class DashboardController
         ))->values();
     }
 
-    /** Total finished units produced in the trailing window. */
-    private function completedUnits(): float
+    /** Total finished units produced within the range. */
+    private function completedUnits(CarbonInterface $from, CarbonInterface $to): float
     {
         return (float) ProductionOrder::query()
             ->where('status', ProductionOrderStatus::Completed)
-            ->where('completed_at', '>=', $this->windowStart())
+            ->whereBetween('completed_at', [$from->utc(), $to->utc()])
             ->get(['quantity'])
             ->sum(fn (ProductionOrder $o): float => (float) $o->quantity);
     }
 
     /**
-     * Units in vs out per day for the trailing window. Bucketed in PHP (not SQL
-     * date functions) so it behaves identically on MySQL and the SQLite test DB.
+     * Units in vs out per day across the range. Rows are filtered by UTC instants
+     * (timestamps are stored UTC) but bucketed by the caller's LOCAL day, so a day
+     * on the chart matches the user's own calendar. Bucketing is done in PHP (not
+     * SQL date functions) so it behaves identically on MySQL and the SQLite tests.
      *
+     * @param  array<int, array{date: string, label: string}>  $days
      * @return array<int, array{date: string, label: string, in: float, out: float}>
      */
-    private function stockActivity(): array
+    private function stockActivity(CarbonInterface $from, CarbonInterface $to, string $tz, array $days): array
     {
         $byDay = StockMovement::query()
-            ->where('created_at', '>=', $this->windowStart())
+            ->whereBetween('created_at', [$from->utc(), $to->utc()])
             ->get(['quantity', 'created_at'])
-            ->groupBy(fn (StockMovement $m): string => $m->created_at->format('Y-m-d'));
+            ->groupBy(fn (StockMovement $m): string => $m->created_at->setTimezone($tz)->format('Y-m-d'));
 
-        return $this->fillDays(function (CarbonInterface $day) use ($byDay): array {
-            $rows = $byDay->get($day->format('Y-m-d'), collect());
+        return array_map(function (array $day) use ($byDay): array {
+            $rows = $byDay->get($day['date'], collect());
             $in = 0.0;
             $out = 0.0;
             foreach ($rows as $m) {
@@ -210,27 +227,28 @@ class DashboardController
                 $q >= 0 ? $in += $q : $out += -$q;
             }
 
-            return ['in' => $in, 'out' => $out];
-        });
+            return array_merge($day, ['in' => $in, 'out' => $out]);
+        }, $days);
     }
 
     /**
-     * Finished units produced per day for the trailing window (zero-filled).
+     * Finished units produced per (local) day across the range, zero-filled.
      *
+     * @param  array<int, array{date: string, label: string}>  $days
      * @return array<int, array{date: string, label: string, units: float}>
      */
-    private function throughput(): array
+    private function throughput(CarbonInterface $from, CarbonInterface $to, string $tz, array $days): array
     {
         $byDay = ProductionOrder::query()
             ->where('status', ProductionOrderStatus::Completed)
-            ->where('completed_at', '>=', $this->windowStart())
+            ->whereBetween('completed_at', [$from->utc(), $to->utc()])
             ->get(['quantity', 'completed_at'])
-            ->groupBy(fn (ProductionOrder $o): string => $o->completed_at->format('Y-m-d'));
+            ->groupBy(fn (ProductionOrder $o): string => $o->completed_at->setTimezone($tz)->format('Y-m-d'));
 
-        return $this->fillDays(fn (CarbonInterface $day): array => [
-            'units' => (float) $byDay->get($day->format('Y-m-d'), collect())
+        return array_map(fn (array $day): array => array_merge($day, [
+            'units' => (float) $byDay->get($day['date'], collect())
                 ->sum(fn (ProductionOrder $o): float => (float) $o->quantity),
-        ]);
+        ]), $days);
     }
 
     /**
@@ -256,29 +274,65 @@ class DashboardController
             ->all();
     }
 
-    private function windowStart(): CarbonInterface
-    {
-        return now()->subDays(self::TREND_DAYS - 1)->startOfDay();
-    }
-
     /**
-     * Build one row per day across the trailing window (oldest first), merging in
-     * the per-day payload so gaps become explicit zeros and the axis is continuous.
+     * Resolve the requested date range in the caller's timezone. `from`/`to` are
+     * local YYYY-MM-DD dates and `tz` is the device's IANA zone; all default to a
+     * trailing 30-day window in the app timezone. Returns the local start/end
+     * instants, the resolved timezone, and a zero-filled per-day scaffold.
      *
-     * @param  callable(CarbonInterface): array<string, float>  $payload
-     * @return array<int, array<string, mixed>>
+     * @return array{0: CarbonInterface, 1: CarbonInterface, 2: string, 3: array<int, array{date: string, label: string}>}
      */
-    private function fillDays(callable $payload): array
+    private function resolveRange(Request $request): array
     {
-        $out = [];
-        for ($i = self::TREND_DAYS - 1; $i >= 0; $i--) {
-            $day = now()->subDays($i)->startOfDay();
-            $out[] = array_merge([
-                'date' => $day->format('Y-m-d'),
-                'label' => $day->format('M j'),
-            ], $payload($day));
+        $tz = $this->safeTimezone($request->string('tz')->toString());
+        $today = Date::now($tz)->startOfDay();
+
+        $from = $this->parseDate($request->string('from')->toString(), $tz)
+            ?? $today->subDays(self::TREND_DAYS - 1);
+        $to = $this->parseDate($request->string('to')->toString(), $tz) ?? $today;
+
+        if ($to->lt($from)) {
+            [$from, $to] = [$to, $from];
         }
 
-        return $out;
+        $from = $from->startOfDay();
+        if ($from->diffInDays($to) > self::MAX_RANGE_DAYS) {
+            $from = $to->subDays(self::MAX_RANGE_DAYS)->startOfDay();
+        }
+        $to = $to->endOfDay();
+
+        $days = [];
+        for ($cursor = $from; $cursor->lte($to); $cursor = $cursor->addDay()) {
+            $days[] = [
+                'date' => $cursor->format('Y-m-d'),
+                'label' => $cursor->format('M j'),
+            ];
+        }
+
+        return [$from, $to, $tz, $days];
+    }
+
+    /** A validated IANA timezone, falling back to the app timezone. */
+    private function safeTimezone(string $tz): string
+    {
+        if ($tz !== '' && in_array($tz, timezone_identifiers_list(), true)) {
+            return $tz;
+        }
+
+        return config('app.timezone') ?: 'UTC';
+    }
+
+    /** Parse a YYYY-MM-DD date in the given zone, or null if it isn't one. */
+    private function parseDate(string $value, string $tz): ?CarbonInterface
+    {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            return Date::createFromFormat('!Y-m-d', $value, $tz);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

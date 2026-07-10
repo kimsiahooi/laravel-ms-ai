@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Boxes, ClipboardList, Factory, PackageX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
@@ -15,6 +15,11 @@ import {
     YAxis,
 } from 'recharts';
 import { ChartCard } from '@/components/chart-card';
+import {
+    DateRangePicker,
+    type DateRangeValue,
+    formatRangeSpan,
+} from '@/components/date-range-picker';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +41,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { dashboard } from '@/routes/tenant';
 import products from '@/routes/tenant/products';
 import rawMaterials from '@/routes/tenant/raw-materials';
 import type { TenantBrand } from '@/types';
@@ -67,12 +73,10 @@ type PageProps = {
             production: number;
         };
         low_stock: { count: number; out_of_stock: number };
-        production_in_progress: {
-            pending: number;
-            completed_units_30d: number;
-        };
+        production_in_progress: { pending: number };
         skus_in_stock: { count: number; products: number; materials: number };
     };
+    range: { from: string; to: string; units_made: number };
     stockActivity: ActivityPoint[];
     orderPipeline: {
         purchase: Record<string, number>;
@@ -240,6 +244,7 @@ export default function TenantDashboard() {
         auth,
         tenant,
         kpis,
+        range,
         stockActivity,
         orderPipeline,
         throughput,
@@ -250,6 +255,27 @@ export default function TenantDashboard() {
 
     const [greeting, setGreeting] = useState('Welcome back');
     const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'there';
+
+    const rangeSpan = formatRangeSpan(range);
+
+    // Apply a new range: reload only the range-driven widgets, passing the device
+    // timezone so "Today"/"This week" resolve against the user's own calendar.
+    const applyRange = (next: DateRangeValue) => {
+        router.get(
+            dashboard.url({ tenant: tenant?.slug ?? '' }),
+            {
+                from: next.from,
+                to: next.to,
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            },
+            {
+                only: ['range', 'stockActivity', 'throughput'],
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -277,17 +303,23 @@ export default function TenantDashboard() {
         <TenantLayout>
             <Head title={`Dashboard — ${tenant?.name ?? 'Workspace'}`} />
 
-            <div className="flex flex-col gap-1">
-                <h1 className="font-semibold text-2xl tracking-tight">
-                    Dashboard
-                </h1>
-                <p
-                    className="text-muted-foreground text-sm"
-                    suppressHydrationWarning
-                >
-                    {greeting}, {firstName}. Here's how{' '}
-                    {tenant?.name ?? 'your workspace'} is doing.
-                </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-1">
+                    <h1 className="font-semibold text-2xl tracking-tight">
+                        Dashboard
+                    </h1>
+                    <p
+                        className="text-muted-foreground text-sm"
+                        suppressHydrationWarning
+                    >
+                        {greeting}, {firstName}. Here's how{' '}
+                        {tenant?.name ?? 'your workspace'} is doing.
+                    </p>
+                </div>
+                <DateRangePicker
+                    value={{ from: range.from, to: range.to }}
+                    onChange={applyRange}
+                />
             </div>
 
             {/* KPI row */}
@@ -317,7 +349,7 @@ export default function TenantDashboard() {
                     icon={Factory}
                     label="Production in progress"
                     value={kpis.production_in_progress.pending}
-                    sub={`${formatQuantity(kpis.production_in_progress.completed_units_30d)} units made · 30d`}
+                    sub={`${formatQuantity(range.units_made)} units made in range`}
                 />
                 <StatCard
                     icon={Boxes}
@@ -331,15 +363,15 @@ export default function TenantDashboard() {
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <ChartCard
                     title="Stock activity"
-                    description="Units moved in and out · last 30 days"
+                    description={`Units moved in and out · ${rangeSpan}`}
                     isEmpty={!hasActivity}
-                    emptyText="No stock movements in the last 30 days."
+                    emptyText="No stock movements in this range."
                 >
                     <ChartContainer
                         config={activityConfig}
                         className="h-[232px] w-full"
                         role="img"
-                        aria-label="Units moved in and out per day over the last 30 days"
+                        aria-label="Units moved in and out per day over the selected range"
                     >
                         <AreaChart
                             accessibilityLayer
@@ -462,15 +494,15 @@ export default function TenantDashboard() {
 
                 <ChartCard
                     title="Production output"
-                    description="Finished units per day · last 30 days"
+                    description={`Finished units per day · ${rangeSpan}`}
                     isEmpty={!hasThroughput}
-                    emptyText="No production completed in the last 30 days."
+                    emptyText="No production completed in this range."
                 >
                     <ChartContainer
                         config={throughputConfig}
                         className="h-[232px] w-full"
                         role="img"
-                        aria-label="Finished units produced per day over the last 30 days"
+                        aria-label="Finished units produced per day over the selected range"
                     >
                         <BarChart
                             accessibilityLayer

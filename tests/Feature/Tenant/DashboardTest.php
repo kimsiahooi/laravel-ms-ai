@@ -9,8 +9,10 @@ use App\Models\ProductionOrder;
 use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
 use App\Models\SalesOrder;
+use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Services\StockService;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -88,7 +90,7 @@ it('renders dashboard aggregates for a seeded workspace', function () {
             ->where('kpis.low_stock.count', 2)
             ->where('kpis.low_stock.out_of_stock', 1)
             ->where('kpis.production_in_progress.pending', 1)
-            ->where('kpis.production_in_progress.completed_units_30d', fn ($v) => (float) $v === 4.0)
+            ->where('range.units_made', fn ($v) => (float) $v === 4.0)
             ->where('kpis.skus_in_stock.count', 3)
             ->where('orderPipeline.production.pending', 1)
             ->where('orderPipeline.production.completed', 1)
@@ -140,5 +142,58 @@ it('renders a zeroed dashboard for a fresh workspace', function () {
             ->has('reorderList', 0)
             ->has('onHandByWarehouse', 0)
             ->has('stockActivity', 30)
+        );
+});
+
+it('windows the time-series to a requested date range and echoes it back', function () {
+    loginAsAcmeUser();
+
+    // A fixed 7-day span (independent of "today").
+    $this->get('/acme/dashboard?from=2026-07-04&to=2026-07-10&tz=UTC')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('range.from', '2026-07-04')
+            ->where('range.to', '2026-07-10')
+            ->has('stockActivity', 7)   // one point per day in the span
+            ->has('throughput', 7)
+            ->where('stockActivity.0.label', 'Jul 4')
+            ->where('stockActivity.6.label', 'Jul 10')
+        );
+});
+
+it('buckets a movement by the caller timezone day, not the UTC day', function () {
+    test()->tenant->run(function () {
+        $warehouse = Warehouse::create(['name' => 'Main']);
+        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 0]);
+
+        $movement = StockMovement::create([
+            'location_id' => $location->id,
+            'stockable_type' => 'product',
+            'stockable_id' => $widget->id,
+            'quantity' => 5,
+            'reason' => 'adjustment',
+        ]);
+
+        // Pin the stored (UTC) timestamp to 22:30 on Jul 9 — which is 06:30 on
+        // Jul 10 in Kuala Lumpur (UTC+8).
+        DB::table('stock_movements')->where('id', $movement->id)
+            ->update(['created_at' => '2026-07-09 22:30:00']);
+    });
+
+    loginAsAcmeUser();
+
+    // In KL the movement lands on Jul 10, so a KL Jul-10 window sees it.
+    $this->get('/acme/dashboard?from=2026-07-10&to=2026-07-10&tz=Asia/Kuala_Lumpur')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('stockActivity', 1)
+            ->where('stockActivity.0.in', fn ($v) => (float) $v === 5.0)
+        );
+
+    // In UTC the same instant is still Jul 9, so a UTC Jul-10 window misses it.
+    $this->get('/acme/dashboard?from=2026-07-10&to=2026-07-10&tz=UTC')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('stockActivity.0.in', fn ($v) => (float) $v === 0.0)
         );
 });
