@@ -1,24 +1,19 @@
-import { Form, Head, router, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { FolderTree, LoaderCircle, Plus, Trash2 } from 'lucide-react';
+import { FolderTree, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
+import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useDelete } from '@/hooks/use-delete';
+import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 
 type Category = {
@@ -48,38 +43,24 @@ export default function CategoriesIndex() {
     const { categories, filters, tenant } = page.props as unknown as PageProps;
     const base = `/${tenant.slug}/categories`;
 
-    const [formOpen, setFormOpen] = useState(false);
-    const [editing, setEditing] = useState<Category | null>(null);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [deleting, setDeleting] = useState<Category | null>(null);
 
-    const openCreate = () => {
-        setEditing(null);
-        setName('');
-        setDescription('');
-        setFormOpen(true);
-    };
+    const dialog = useResourceDialog<Category>({
+        onCreate: () => {
+            setName('');
+            setDescription('');
+        },
+        onEdit: (category) => {
+            setName(category.name);
+            setDescription(category.description ?? '');
+        },
+    });
 
-    const openEdit = (category: Category) => {
-        setEditing(category);
-        setName(category.name);
-        setDescription(category.description ?? '');
-        setFormOpen(true);
-    };
-
-    const confirmDelete = () => {
-        if (!deleting) {
-            return;
-        }
-        router.delete(`${base}/${deleting.id}`, {
-            preserveScroll: true,
-            onSuccess: (deleted) => {
-                setDeleting(null);
-                flashToast(deleted);
-            },
-        });
-    };
+    const del = useDelete<Category>({
+        baseUrl: base,
+        onDeleted: flashToast,
+    });
 
     const columns: ColumnDef<Category>[] = [
         {
@@ -107,8 +88,8 @@ export default function CategoriesIndex() {
             cell: ({ row }) => (
                 <RowActions
                     label={row.original.name}
-                    onEdit={() => openEdit(row.original)}
-                    onDelete={() => setDeleting(row.original)}
+                    onEdit={() => dialog.openEdit(row.original)}
+                    onDelete={() => del.request(row.original)}
                 />
             ),
         },
@@ -142,7 +123,7 @@ export default function CategoriesIndex() {
                 title="Categories"
                 searchPlaceholder="Search name or description…"
                 toolbar={
-                    <Button onClick={openCreate} className="shrink-0">
+                    <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
                         New category
                     </Button>
@@ -162,7 +143,7 @@ export default function CategoriesIndex() {
                                     organizing your products.
                                 </p>
                             </div>
-                            <Button onClick={openCreate}>
+                            <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
                                 New category
                             </Button>
@@ -171,158 +152,91 @@ export default function CategoriesIndex() {
                 }
             />
 
-            {/* Create / edit dialog */}
-            <Dialog
-                open={formOpen}
-                onOpenChange={(next) => {
-                    if (!next) {
-                        setFormOpen(false);
-                    }
+            <ResourceFormDialog
+                open={dialog.open}
+                onOpenChange={dialog.onOpenChange}
+                editing={dialog.editing}
+                entityLabel="category"
+                baseUrl={base}
+                onSuccess={flashToast}
+                description={{
+                    create: 'Add a category to organize your products.',
+                    edit: 'Update this category.',
                 }}
             >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {editing ? 'Edit category' : 'New category'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {editing
-                                ? 'Update this category.'
-                                : 'Add a category to organize your products.'}
-                        </DialogDescription>
-                    </DialogHeader>
+                {({ errors }) => (
+                    <>
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
+                                id="name"
+                                name="name"
+                                value={name}
+                                onChange={(event) =>
+                                    setName(event.target.value)
+                                }
+                                required
+                                autoFocus
+                                placeholder="e.g. Fasteners"
+                                aria-invalid={!!errors.name}
+                                aria-describedby={
+                                    errors.name ? 'name-error' : undefined
+                                }
+                            />
+                            <InputError
+                                id="name-error"
+                                role="alert"
+                                message={errors.name}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">
+                                Description{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </Label>
+                            <Input
+                                id="description"
+                                name="description"
+                                value={description}
+                                onChange={(event) =>
+                                    setDescription(event.target.value)
+                                }
+                                placeholder="Short description"
+                                aria-invalid={!!errors.description}
+                                aria-describedby={
+                                    errors.description
+                                        ? 'description-error'
+                                        : undefined
+                                }
+                            />
+                            <InputError
+                                id="description-error"
+                                role="alert"
+                                message={errors.description}
+                            />
+                        </div>
+                    </>
+                )}
+            </ResourceFormDialog>
 
-                    <Form
-                        key={editing?.id ?? 'new'}
-                        action={editing ? `${base}/${editing.id}` : base}
-                        method={editing ? 'put' : 'post'}
-                        disableWhileProcessing
-                        onSuccess={(saved) => {
-                            setFormOpen(false);
-                            flashToast(saved);
-                        }}
-                        className="space-y-4"
-                    >
-                        {({ processing, errors }) => (
-                            <>
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Name</Label>
-                                    <Input
-                                        id="name"
-                                        name="name"
-                                        value={name}
-                                        onChange={(event) =>
-                                            setName(event.target.value)
-                                        }
-                                        required
-                                        autoFocus
-                                        placeholder="e.g. Fasteners"
-                                        aria-invalid={!!errors.name}
-                                        aria-describedby={
-                                            errors.name
-                                                ? 'name-error'
-                                                : undefined
-                                        }
-                                    />
-                                    <InputError
-                                        id="name-error"
-                                        role="alert"
-                                        message={errors.name}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">
-                                        Description{' '}
-                                        <span className="font-normal text-muted-foreground">
-                                            (optional)
-                                        </span>
-                                    </Label>
-                                    <Input
-                                        id="description"
-                                        name="description"
-                                        value={description}
-                                        onChange={(event) =>
-                                            setDescription(event.target.value)
-                                        }
-                                        placeholder="Short description"
-                                        aria-invalid={!!errors.description}
-                                        aria-describedby={
-                                            errors.description
-                                                ? 'description-error'
-                                                : undefined
-                                        }
-                                    />
-                                    <InputError
-                                        id="description-error"
-                                        role="alert"
-                                        message={errors.description}
-                                    />
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            disabled={processing}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </DialogClose>
-                                    <Button type="submit" disabled={processing}>
-                                        {processing ? (
-                                            <>
-                                                <LoaderCircle className="size-4 animate-spin" />
-                                                Saving…
-                                            </>
-                                        ) : editing ? (
-                                            'Save changes'
-                                        ) : (
-                                            'Create category'
-                                        )}
-                                    </Button>
-                                </DialogFooter>
-                            </>
-                        )}
-                    </Form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete confirmation */}
-            <Dialog
-                open={deleting !== null}
+            <ConfirmDeleteDialog
+                item={del.deleting}
                 onOpenChange={(next) => {
                     if (!next) {
-                        setDeleting(null);
+                        del.cancel();
                     }
                 }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete category</DialogTitle>
-                        <DialogDescription>
-                            Remove “{deleting?.name}” from your catalog?
-                            Products keep their data but lose this category.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setDeleting(null)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={confirmDelete}
-                        >
-                            <Trash2 className="size-4" />
-                            Delete
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                onConfirm={del.confirm}
+                title="Delete category"
+                description={
+                    <>
+                        Remove “{del.deleting?.name}” from your catalog?
+                        Products keep their data but lose this category.
+                    </>
+                }
+            />
         </TenantLayout>
     );
 }
