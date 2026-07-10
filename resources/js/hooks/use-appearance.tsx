@@ -26,6 +26,7 @@ const setCookie = (name: string, value: string, days = 365): void => {
     }
 
     const maxAge = days * 24 * 60 * 60;
+    // biome-ignore lint/suspicious/noDocumentCookie: theme is persisted in a cookie so the server can render the correct theme on first paint; the CookieStore API isn't available during SSR.
     document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
@@ -58,7 +59,11 @@ const subscribe = (callback: () => void) => {
     return () => listeners.delete(callback);
 };
 
-const notify = (): void => listeners.forEach((listener) => listener());
+const notify = (): void => {
+    for (const listener of listeners) {
+        listener();
+    }
+};
 
 const mediaQuery = (): MediaQueryList | null => {
     if (typeof window === 'undefined') {

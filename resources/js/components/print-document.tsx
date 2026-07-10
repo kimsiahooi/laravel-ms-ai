@@ -47,7 +47,7 @@ export function PrintItemsTable({
                     </tr>
                 ) : (
                     rows.map((row) => (
-                        <tr key={row.key} className="border-b border-border/60">
+                        <tr key={row.key} className="border-border/60 border-b">
                             {head.map((label, index) => (
                                 <td
                                     key={`${row.key}:${label}`}

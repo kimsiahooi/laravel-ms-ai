@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 
-type UseDeleteOptions<T> = {
+type UseDeleteOptions = {
     /** Resource base URL, e.g. `/${tenant.slug}/products`. */
     baseUrl: string;
     /** Optional callback with the fresh page after a successful delete. (Success toasts come from the global useFlashToast hook.) */
@@ -16,7 +16,7 @@ type UseDeleteOptions<T> = {
 export function useDelete<T extends { id: number }>({
     baseUrl,
     onDeleted,
-}: UseDeleteOptions<T>) {
+}: UseDeleteOptions) {
     const [deleting, setDeleting] = useState<T | null>(null);
 
     const request = (item: T) => setDeleting(item);

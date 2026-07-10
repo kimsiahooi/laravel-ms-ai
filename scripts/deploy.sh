@@ -54,7 +54,10 @@ main() {
     # NOTE: the Pest suite is intentionally NOT run here. It runs under the
     # `testing` env against dedicated `*_test` databases (not prod), so it belongs
     # in CI / local pre-deploy, not on the server.
-    bun run check:ci
+    # `check:deploy` gates on errors only, so advisory warnings don't clutter the
+    # deploy log (they still surface in `bun run check` locally and in CI). Errors
+    # still abort the deploy here — before the pm2 restart below.
+    bun run check:deploy
     bun run types:check
 
     echo "▶ [8c/9] Re-caching config / routes / views for production…"

@@ -9,6 +9,7 @@
         "ignoreUnknown": true,
         "includes": [
             "**",
+            "!public",
             "!resources/css",
             "!resources/js/components/ui",
             "!resources/js/types/generated.d.ts",
