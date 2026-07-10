@@ -45,48 +45,104 @@ const timeOf = (date: Date): string => format(date, 'HH:mm');
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
-// 30-minute slots across the day for the time dropdowns.
-const TIME_SLOTS = Array.from(
-    { length: 48 },
-    (_, i) => `${pad(Math.floor(i / 2))}:${i % 2 ? '30' : '00'}`,
-);
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const MINUTES = Array.from({ length: 60 }, (_, i) => pad(i));
+const MERIDIEMS = ['AM', 'PM'];
 
-// The slots plus the current value, so an off-grid time (e.g. a preset's "now")
-// still appears as a selectable option instead of showing blank.
-function timeOptions(current: string): string[] {
-    return TIME_SLOTS.includes(current)
-        ? TIME_SLOTS
-        : [...TIME_SLOTS, current].sort();
+// "HH:mm" (24h) -> the three dropdown values (12-hour clock).
+function to12(value: string): {
+    hour: string;
+    minute: string;
+    meridiem: string;
+} {
+    const [h, m] = value.split(':').map(Number);
+    const hour24 = h || 0;
+    return {
+        hour: String(hour24 % 12 === 0 ? 12 : hour24 % 12),
+        minute: pad(m || 0),
+        meridiem: hour24 < 12 ? 'AM' : 'PM',
+    };
 }
 
-function TimeSelect({
+// The three dropdown values -> "HH:mm" (24h).
+function to24(hour: string, minute: string, meridiem: string): string {
+    let h = Number(hour) % 12;
+    if (meridiem === 'PM') h += 12;
+    return `${pad(h)}:${minute}`;
+}
+
+function TimeCol({
     id,
     label,
+    options,
     value,
     onChange,
 }: {
     id: string;
     label: string;
+    options: string[];
     value: string;
     onChange: (value: string) => void;
 }) {
     return (
+        <Select value={value} onValueChange={onChange}>
+            <SelectTrigger id={id} aria-label={label} className="flex-1">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+                {options.map((option) => (
+                    <SelectItem key={option} value={option}>
+                        {option}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+
+// A time field as three dropdowns: hour, minute, and AM/PM.
+function TimeSelect({
+    idPrefix,
+    label,
+    value,
+    onChange,
+}: {
+    idPrefix: string;
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    const { hour, minute, meridiem } = to12(value);
+    const set = (h: string, m: string, mer: string) =>
+        onChange(to24(h, m, mer));
+
+    return (
         <div className="space-y-1">
-            <Label htmlFor={id} className="text-muted-foreground text-xs">
-                {label}
-            </Label>
-            <Select value={value} onValueChange={onChange}>
-                <SelectTrigger id={id} className="w-full">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-56">
-                    {timeOptions(value).map((slot) => (
-                        <SelectItem key={slot} value={slot}>
-                            {slot}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <Label className="text-muted-foreground text-xs">{label}</Label>
+            <div className="flex items-center gap-1">
+                <TimeCol
+                    id={`${idPrefix}-hour`}
+                    label={`${label} hour`}
+                    options={HOURS_12}
+                    value={hour}
+                    onChange={(h) => set(h, minute, meridiem)}
+                />
+                <span className="text-muted-foreground">:</span>
+                <TimeCol
+                    id={`${idPrefix}-minute`}
+                    label={`${label} minute`}
+                    options={MINUTES}
+                    value={minute}
+                    onChange={(m) => set(hour, m, meridiem)}
+                />
+                <TimeCol
+                    id={`${idPrefix}-meridiem`}
+                    label={`${label} AM or PM`}
+                    options={MERIDIEMS}
+                    value={meridiem}
+                    onChange={(mer) => set(hour, minute, mer)}
+                />
+            </div>
         </div>
     );
 }
@@ -268,15 +324,33 @@ export function DateRangePicker({
                             mode="range"
                             numberOfMonths={2}
                             selected={range}
-                            onSelect={(next) => {
-                                setRange(next);
+                            onSelect={(_selected, day) => {
                                 setPresetKey(null);
+                                // Keep the range complete and just move the
+                                // nearest endpoint, so an extra ("3rd") click
+                                // never clears the whole selection.
+                                setRange((prev) => {
+                                    if (!prev?.from || !prev?.to) {
+                                        return { from: day, to: day };
+                                    }
+                                    const t = day.getTime();
+                                    if (t < prev.from.getTime()) {
+                                        return { from: day, to: prev.to };
+                                    }
+                                    if (t > prev.to.getTime()) {
+                                        return { from: prev.from, to: day };
+                                    }
+                                    return t - prev.from.getTime() <=
+                                        prev.to.getTime() - t
+                                        ? { from: day, to: prev.to }
+                                        : { from: prev.from, to: day };
+                                });
                             }}
                             defaultMonth={range?.from}
                         />
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-3">
                             <TimeSelect
-                                id="range-from-time"
+                                idPrefix="range-from-time"
                                 label="From time"
                                 value={fromTime}
                                 onChange={(v) => {
@@ -285,7 +359,7 @@ export function DateRangePicker({
                                 }}
                             />
                             <TimeSelect
-                                id="range-to-time"
+                                idPrefix="range-to-time"
                                 label="To time"
                                 value={toTime}
                                 onChange={(v) => {
