@@ -4,6 +4,7 @@ import {
     ArrowRightLeft,
     Boxes,
     Contact,
+    Factory,
     FolderTree,
     MapPin,
     Package,
@@ -91,4 +92,10 @@ export const salesOrderMeta: ResourceMeta = {
     singular: 'sales order',
     plural: 'Sales orders',
     icon: Receipt,
+};
+
+export const productionOrderMeta: ResourceMeta = {
+    singular: 'production order',
+    plural: 'Production orders',
+    icon: Factory,
 };

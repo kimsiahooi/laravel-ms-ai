@@ -8,6 +8,7 @@ use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\LocationController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
+use App\Http\Controllers\Tenant\ProductionOrderController;
 use App\Http\Controllers\Tenant\PurchaseOrderController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SalesOrderController;
@@ -114,6 +115,15 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('sales-orders.fulfill');
             Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
                 ->name('sales-orders.cancel');
+
+            // Manufacturing — make a product by consuming its bill of materials.
+            Route::resource('production-orders', ProductionOrderController::class)
+                ->parameters(['production-orders' => 'productionOrder'])
+                ->only(['index', 'store', 'destroy']);
+            Route::post('production-orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete'])
+                ->name('production-orders.complete');
+            Route::post('production-orders/{productionOrder}/cancel', [ProductionOrderController::class, 'cancel'])
+                ->name('production-orders.cancel');
 
             // Serve a product's image at an extension-less URL (ends in `/image`,
             // not `.png`/`.jpg`/…). Some nginx setups (e.g. CloudPanel) serve

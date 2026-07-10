@@ -4,6 +4,7 @@ import {
     ArrowRightLeft,
     Boxes,
     Contact,
+    Factory,
     FolderTree,
     LayoutGrid,
     MapPin,
@@ -29,6 +30,7 @@ import { dashboard } from '@/routes/tenant';
 import categories from '@/routes/tenant/categories';
 import customers from '@/routes/tenant/customers';
 import locations from '@/routes/tenant/locations';
+import productionOrders from '@/routes/tenant/production-orders';
 import products from '@/routes/tenant/products';
 import purchaseOrders from '@/routes/tenant/purchase-orders';
 import rawMaterials from '@/routes/tenant/raw-materials';
@@ -107,6 +109,11 @@ export function TenantSidebar() {
             title: 'Sales orders',
             href: salesOrders.index.url({ tenant: slug }),
             icon: Receipt,
+        },
+        {
+            title: 'Production orders',
+            href: productionOrders.index.url({ tenant: slug }),
+            icon: Factory,
         },
     ];
 

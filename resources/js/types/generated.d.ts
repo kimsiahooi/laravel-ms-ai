@@ -49,6 +49,24 @@ unit: string,
 created_at: string,
 bom: App.Data.BomItemData[],
 };
+export type ProductionOrderData = {
+id: number,
+product: string,
+quantity: number,
+status: string,
+status_label: string,
+item_count: number,
+completed_at: string | null,
+created_at: string,
+items: App.Data.ProductionOrderItemData[],
+};
+export type ProductionOrderItemData = {
+id: number,
+raw_material_id: number | null,
+name: string,
+quantity_per_unit: number,
+quantity_required: number,
+};
 export type PurchaseOrderData = {
 id: number,
 supplier: string | null,
