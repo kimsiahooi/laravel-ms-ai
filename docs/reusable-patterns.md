@@ -125,7 +125,22 @@ Used by the products form's category/supplier pickers; ready for Orders/BOM pick
 `resources/js/components/row-actions.tsx` — `<RowActions label onEdit onDelete />`. Replaced the
 identical dropdown block in all 5 catalog pages' `actions` column (net −96 lines with F3).
 
-### 5. ℹ️ Already extracted (good) — keep reusing
+### 5. ✅ Shared Inertia prop types → `@/types/page`  · **DONE**
+Every list page re-declared the same three prop shapes inline. Extracted to
+`resources/js/types/page.ts` (re-exported via `@/types`): `ResourceFilters`
+(`{ search; per_page }`), `TenantBrand` (`{ slug; name }`), `FlashSuccess`
+(`{ success }`), and a `TenantPageProps` composite of all three. Tenant catalog pages now
+write `type PageProps = TenantPageProps & { products: Paginator<Product> }`; admin
+tenants/login reuse the granular types. Removed 15+ duplicated field declarations across
+9 pages and killed a duplicate local `TenantBrand` in `tenant/login`.
+
+### 6. ✅ Typed page-props accessor → `usePageProps<T>()`  · **DONE**
+`resources/js/hooks/use-page-props.ts` — `usePageProps<T>()` wraps the one unavoidable
+`usePage().props as unknown as T` cast so pages stop repeating it. Replaced the double-cast
+(and a stray `const page = usePage()`) in 10 pages. (`welcome.tsx` keeps its natively-typed
+`usePage().props` — no cast there, nothing to abstract.)
+
+### 7. ℹ️ Already extracted (good) — keep reusing
 - `DataTable` (`resources/js/components/data-table.tsx`) — server-side list, used by 7 pages.
 - `Combobox` (`resources/js/components/combobox.tsx`) — searchable FK picker.
 - `ComboboxField` / `RowActions` — see items 3–4.
@@ -142,7 +157,8 @@ identical dropdown block in all 5 catalog pages' `actions` column (net −96 lin
 
 **Done:** `ResolvesPerPage` (B1) · `Searchable` scope (B2) · `InteractsWithTenantAssets` (B3) ·
 `useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
-`ComboboxField` (F3) · `RowActions` (F4). Also: `spatie/laravel-data` DTO pilot on Products.
+`ComboboxField` (F3) · `RowActions` (F4) · shared prop types `@/types/page` (F5) ·
+`usePageProps` (F6). Also: `spatie/laravel-data` DTO pilot on Products.
 
 **Remaining:**
 - Backend `TenantFormRequest` base for `authorize()` (B4) + `min_stock` coercion (B5) — small.

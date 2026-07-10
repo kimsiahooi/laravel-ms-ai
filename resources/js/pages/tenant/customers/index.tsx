@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Contact, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -14,8 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useDelete } from '@/hooks/use-delete';
+import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import type { TenantPageProps } from '@/types';
 
 type Customer = {
     id: number;
@@ -27,11 +29,8 @@ type Customer = {
     created_at: string;
 };
 
-type PageProps = {
+type PageProps = TenantPageProps & {
     customers: Paginator<Customer>;
-    filters: { search: string; per_page: number };
-    tenant: { slug: string; name: string };
-    flash: { success: string | null };
 };
 
 function flashToast(page: { props: unknown }): void {
@@ -43,8 +42,7 @@ function flashToast(page: { props: unknown }): void {
 }
 
 export default function CustomersIndex() {
-    const page = usePage();
-    const { customers, filters, tenant } = page.props as unknown as PageProps;
+    const { customers, filters, tenant } = usePageProps<PageProps>();
     const base = `/${tenant.slug}/customers`;
 
     const [name, setName] = useState('');

@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     ArrowRight,
     Building2,
@@ -9,6 +9,7 @@ import {
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -64,7 +65,7 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
-    const { auth, stats } = usePage().props as unknown as PageProps;
+    const { auth, stats } = usePageProps<PageProps>();
     const [greeting, setGreeting] = useState('Welcome back');
 
     const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'Admin';

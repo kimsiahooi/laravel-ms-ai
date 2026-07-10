@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ImageIcon, Package, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -15,19 +15,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useDelete } from '@/hooks/use-delete';
+import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import type { TenantPageProps } from '@/types';
 
 type Product = App.Data.ProductData;
 type Option = App.Data.OptionData;
 
-type PageProps = {
+type PageProps = TenantPageProps & {
     products: Paginator<Product>;
-    filters: { search: string; per_page: number };
     categories: Option[];
     suppliers: Option[];
-    tenant: { slug: string; name: string };
-    flash: { success: string | null };
 };
 
 function flashToast(page: { props: unknown }): void {
@@ -39,9 +38,8 @@ function flashToast(page: { props: unknown }): void {
 }
 
 export default function ProductsIndex() {
-    const page = usePage();
     const { products, filters, categories, suppliers, tenant } =
-        page.props as unknown as PageProps;
+        usePageProps<PageProps>();
     const base = `/${tenant.slug}/products`;
 
     const categoryOptions = categories.map((c) => ({

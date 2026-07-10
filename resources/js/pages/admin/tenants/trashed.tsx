@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     ArchiveX,
@@ -32,8 +32,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
+import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { timeAgo } from '@/lib/format';
+import type { FlashSuccess, ResourceFilters } from '@/types';
 
 type TrashedTenant = {
     name: string;
@@ -43,8 +45,8 @@ type TrashedTenant = {
 
 type PageProps = {
     tenants: Paginator<TrashedTenant>;
-    filters: { search: string; per_page: number };
-    flash: { success: string | null };
+    filters: ResourceFilters;
+    flash: FlashSuccess;
 };
 
 function flashToast(page: { props: unknown }): void {
@@ -55,7 +57,7 @@ function flashToast(page: { props: unknown }): void {
 }
 
 export default function AdminTenantsTrashed() {
-    const { tenants, filters } = usePage().props as unknown as PageProps;
+    const { tenants, filters } = usePageProps<PageProps>();
     const getInitials = useInitials();
 
     const [restoring, setRestoring] = useState<TrashedTenant | null>(null);

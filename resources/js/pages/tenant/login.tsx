@@ -1,4 +1,4 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import {
     ArrowRight,
     Database,
@@ -24,8 +24,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-type TenantBrand = { slug: string; name: string };
+import { usePageProps } from '@/hooks/use-page-props';
+import type { TenantBrand } from '@/types';
 
 const HIGHLIGHTS = [
     {
@@ -46,7 +46,7 @@ const HIGHLIGHTS = [
 ];
 
 export default function TenantLogin() {
-    const { tenant } = usePage().props as unknown as { tenant: TenantBrand };
+    const { tenant } = usePageProps<{ tenant: TenantBrand }>();
     const [showPassword, setShowPassword] = useState(false);
 
     return (

@@ -1,4 +1,4 @@
-import { Form, Head, Link, router, usePage } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     Archive,
@@ -46,9 +46,11 @@ import {
 } from '@/components/ui/tooltip';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { useInitials } from '@/hooks/use-initials';
+import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { absoluteDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import type { FlashSuccess, ResourceFilters } from '@/types';
 
 type Tenant = {
     name: string;
@@ -58,8 +60,8 @@ type Tenant = {
 
 type PageProps = {
     tenants: Paginator<Tenant>;
-    filters: { search: string; per_page: number };
-    flash: { success: string | null };
+    filters: ResourceFilters;
+    flash: FlashSuccess;
 };
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -81,7 +83,7 @@ function flashToast(page: { props: unknown }): void {
 }
 
 export default function AdminTenantsIndex() {
-    const { tenants, filters } = usePage().props as unknown as PageProps;
+    const { tenants, filters } = usePageProps<PageProps>();
     const getInitials = useInitials();
     const [, copy] = useClipboard();
 

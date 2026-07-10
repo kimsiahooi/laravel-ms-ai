@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { FolderTree, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -13,8 +13,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDelete } from '@/hooks/use-delete';
+import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import type { TenantPageProps } from '@/types';
 
 type Category = {
     id: number;
@@ -23,11 +25,8 @@ type Category = {
     created_at: string;
 };
 
-type PageProps = {
+type PageProps = TenantPageProps & {
     categories: Paginator<Category>;
-    filters: { search: string; per_page: number };
-    tenant: { slug: string; name: string };
-    flash: { success: string | null };
 };
 
 function flashToast(page: { props: unknown }): void {
@@ -39,8 +38,7 @@ function flashToast(page: { props: unknown }): void {
 }
 
 export default function CategoriesIndex() {
-    const page = usePage();
-    const { categories, filters, tenant } = page.props as unknown as PageProps;
+    const { categories, filters, tenant } = usePageProps<PageProps>();
     const base = `/${tenant.slug}/categories`;
 
     const [name, setName] = useState('');

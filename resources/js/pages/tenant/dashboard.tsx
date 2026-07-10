@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { AtSign, Link2, Sparkles, UserRound } from 'lucide-react';
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 import {
@@ -7,11 +7,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
+import type { TenantBrand } from '@/types';
 
 type PageProps = {
     auth: { user: { name: string; email: string } | null };
-    tenant: { slug: string; name: string } | null;
+    tenant: TenantBrand | null;
 };
 
 function InfoTile({
@@ -39,7 +41,7 @@ function InfoTile({
 }
 
 export default function TenantDashboard() {
-    const { auth, tenant } = usePage().props as unknown as PageProps;
+    const { auth, tenant } = usePageProps<PageProps>();
     const [greeting, setGreeting] = useState('Welcome back');
 
     const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'there';
