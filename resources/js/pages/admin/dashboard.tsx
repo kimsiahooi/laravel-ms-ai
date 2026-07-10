@@ -13,6 +13,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { index as tenantsIndex } from '@/routes/admin/tenants';
 
 type Stats = {
     total: number;
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
                     </p>
                 </div>
                 <Button asChild>
-                    <Link href="/admin/tenants">
+                    <Link href={tenantsIndex.url()}>
                         Manage tenants
                         <ArrowRight className="size-4" />
                     </Link>

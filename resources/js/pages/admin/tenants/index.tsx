@@ -50,6 +50,9 @@ import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { absoluteDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { dashboard } from '@/routes/admin';
+import { destroy, index, store, trashed } from '@/routes/admin/tenants';
+import { login as tenantLogin } from '@/routes/tenant';
 import type { ResourceFilters } from '@/types';
 
 type Tenant = {
@@ -132,7 +135,7 @@ export default function AdminTenantsIndex() {
             return;
         }
 
-        router.delete(`/admin/tenants/${deleting.slug}`, {
+        router.delete(destroy.url({ tenant: deleting.slug }), {
             preserveScroll: true,
             onStart: () => setDeleteProcessing(true),
             onFinish: () => setDeleteProcessing(false),
@@ -249,7 +252,7 @@ export default function AdminTenantsIndex() {
             meta: { className: 'text-right' },
             cell: ({ row }) => {
                 const tenant = row.original;
-                const loginPath = `/${tenant.slug}/login`;
+                const loginPath = tenantLogin.url({ tenant: tenant.slug });
 
                 return (
                     <div className="flex items-center justify-end gap-1">
@@ -339,8 +342,8 @@ export default function AdminTenantsIndex() {
     return (
         <CentralAdminLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: '/admin/dashboard' },
-                { title: 'Tenants', href: '/admin/tenants' },
+                { title: 'Dashboard', href: dashboard.url() },
+                { title: 'Tenants', href: index.url() },
             ]}
         >
             <Head title="Tenants" />
@@ -355,7 +358,7 @@ export default function AdminTenantsIndex() {
                     </p>
                 </div>
                 <Button asChild variant="outline">
-                    <Link href="/admin/tenants/trashed">
+                    <Link href={trashed.url()}>
                         <Archive className="size-4" />
                         Archived
                     </Link>
@@ -366,7 +369,7 @@ export default function AdminTenantsIndex() {
                 columns={columns}
                 paginator={tenants}
                 filters={filters}
-                baseUrl="/admin/tenants"
+                baseUrl={index.url()}
                 only={['tenants', 'filters']}
                 getRowId={(tenant) => tenant.slug}
                 title="Tenants"
@@ -436,7 +439,7 @@ export default function AdminTenantsIndex() {
                     </DialogHeader>
 
                     <Form
-                        action="/admin/tenants"
+                        action={store.url()}
                         method="post"
                         resetOnSuccess
                         disableWhileProcessing

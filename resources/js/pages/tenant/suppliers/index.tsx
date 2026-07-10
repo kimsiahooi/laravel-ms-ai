@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus, Truck } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
@@ -12,10 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { supplierMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { dashboard } from '@/routes/tenant';
+import suppliersRoutes from '@/routes/tenant/suppliers';
 import type { TenantPageProps } from '@/types';
 
 type Supplier = App.Data.SupplierData;
@@ -26,7 +29,7 @@ type PageProps = TenantPageProps & {
 
 export default function SuppliersIndex() {
     const { suppliers, filters, tenant } = usePageProps<PageProps>();
-    const base = `/${tenant.slug}/suppliers`;
+    const base = suppliersRoutes.index.url({ tenant: tenant.slug });
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -99,15 +102,18 @@ export default function SuppliersIndex() {
     return (
         <TenantLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: `/${tenant.slug}/dashboard` },
-                { title: 'Suppliers', href: base },
+                {
+                    title: 'Dashboard',
+                    href: dashboard.url({ tenant: tenant.slug }),
+                },
+                { title: supplierMeta.plural, href: base },
             ]}
         >
-            <Head title="Suppliers" />
+            <Head title={supplierMeta.plural} />
 
             <div className="flex flex-col gap-1">
                 <h1 className="font-semibold text-2xl tracking-tight">
-                    Suppliers
+                    {supplierMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Manage the vendors that supply your catalog.
@@ -121,23 +127,23 @@ export default function SuppliersIndex() {
                 baseUrl={base}
                 only={['suppliers', 'filters']}
                 getRowId={(supplier) => String(supplier.id)}
-                title="Suppliers"
+                title={supplierMeta.plural}
                 searchPlaceholder="Search name or email…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
-                        New supplier
+                        New {supplierMeta.singular}
                     </Button>
                 }
                 emptyState={
                     <EmptyState
-                        icon={Truck}
-                        title="No suppliers yet"
+                        icon={supplierMeta.icon}
+                        title={`No ${supplierMeta.plural.toLowerCase()} yet`}
                         description="Add your first supplier to start tracking your vendors."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
-                                New supplier
+                                New {supplierMeta.singular}
                             </Button>
                         }
                     />
@@ -148,7 +154,7 @@ export default function SuppliersIndex() {
                 open={dialog.open}
                 onOpenChange={dialog.onOpenChange}
                 editing={dialog.editing}
-                entityLabel="supplier"
+                entityLabel={supplierMeta.singular}
                 baseUrl={base}
             >
                 {({ errors }) => (

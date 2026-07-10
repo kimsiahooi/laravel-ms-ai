@@ -24,6 +24,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { store as loginStore } from '@/routes/admin/login';
 
 const HIGHLIGHTS = [
     {
@@ -152,7 +153,7 @@ export default function AdminLogin() {
 
                         <CardContent>
                             <Form
-                                action="/admin/login"
+                                action={loginStore.url()}
                                 method="post"
                                 resetOnSuccess={['password']}
                                 disableWhileProcessing

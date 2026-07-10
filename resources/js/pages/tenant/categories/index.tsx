@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { FolderTree, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
@@ -11,10 +11,13 @@ import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { categoryMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { dashboard } from '@/routes/tenant';
+import categoriesRoutes from '@/routes/tenant/categories';
 import type { TenantPageProps } from '@/types';
 
 type Category = App.Data.CategoryData;
@@ -25,7 +28,7 @@ type PageProps = TenantPageProps & {
 
 export default function CategoriesIndex() {
     const { categories, filters, tenant } = usePageProps<PageProps>();
-    const base = `/${tenant.slug}/categories`;
+    const base = categoriesRoutes.index.url({ tenant: tenant.slug });
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -81,15 +84,18 @@ export default function CategoriesIndex() {
     return (
         <TenantLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: `/${tenant.slug}/dashboard` },
-                { title: 'Categories', href: base },
+                {
+                    title: 'Dashboard',
+                    href: dashboard.url({ tenant: tenant.slug }),
+                },
+                { title: categoryMeta.plural, href: base },
             ]}
         >
-            <Head title="Categories" />
+            <Head title={categoryMeta.plural} />
 
             <div className="flex flex-col gap-1">
                 <h1 className="font-semibold text-2xl tracking-tight">
-                    Categories
+                    {categoryMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Group the products in your catalog.
@@ -103,23 +109,23 @@ export default function CategoriesIndex() {
                 baseUrl={base}
                 only={['categories', 'filters']}
                 getRowId={(category) => String(category.id)}
-                title="Categories"
+                title={categoryMeta.plural}
                 searchPlaceholder="Search name or description…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
-                        New category
+                        New {categoryMeta.singular}
                     </Button>
                 }
                 emptyState={
                     <EmptyState
-                        icon={FolderTree}
-                        title="No categories yet"
+                        icon={categoryMeta.icon}
+                        title={`No ${categoryMeta.plural.toLowerCase()} yet`}
                         description="Create your first category to start organizing your products."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
-                                New category
+                                New {categoryMeta.singular}
                             </Button>
                         }
                     />
@@ -130,7 +136,7 @@ export default function CategoriesIndex() {
                 open={dialog.open}
                 onOpenChange={dialog.onOpenChange}
                 editing={dialog.editing}
-                entityLabel="category"
+                entityLabel={categoryMeta.singular}
                 baseUrl={base}
                 description={{
                     create: 'Add a category to organize your products.',

@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Boxes, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
@@ -11,11 +11,14 @@ import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { rawMaterialMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
+import { dashboard } from '@/routes/tenant';
+import rawMaterialsRoutes from '@/routes/tenant/raw-materials';
 import type { TenantPageProps } from '@/types';
 
 type RawMaterial = App.Data.RawMaterialData;
@@ -26,7 +29,7 @@ type PageProps = TenantPageProps & {
 
 export default function RawMaterialsIndex() {
     const { rawMaterials, filters, tenant } = usePageProps<PageProps>();
-    const base = `/${tenant.slug}/raw-materials`;
+    const base = rawMaterialsRoutes.index.url({ tenant: tenant.slug });
 
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
@@ -102,15 +105,18 @@ export default function RawMaterialsIndex() {
     return (
         <TenantLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: `/${tenant.slug}/dashboard` },
-                { title: 'Raw materials', href: base },
+                {
+                    title: 'Dashboard',
+                    href: dashboard.url({ tenant: tenant.slug }),
+                },
+                { title: rawMaterialMeta.plural, href: base },
             ]}
         >
-            <Head title="Raw materials" />
+            <Head title={rawMaterialMeta.plural} />
 
             <div className="flex flex-col gap-1">
                 <h1 className="font-semibold text-2xl tracking-tight">
-                    Raw materials
+                    {rawMaterialMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Manage the raw materials that feed your production.
@@ -124,23 +130,23 @@ export default function RawMaterialsIndex() {
                 baseUrl={base}
                 only={['rawMaterials', 'filters']}
                 getRowId={(rawMaterial) => String(rawMaterial.id)}
-                title="Raw materials"
+                title={rawMaterialMeta.plural}
                 searchPlaceholder="Search name or SKU…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
-                        New raw material
+                        New {rawMaterialMeta.singular}
                     </Button>
                 }
                 emptyState={
                     <EmptyState
-                        icon={Boxes}
-                        title="No raw materials yet"
+                        icon={rawMaterialMeta.icon}
+                        title={`No ${rawMaterialMeta.plural.toLowerCase()} yet`}
                         description="Add your first raw material to start tracking your stock."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
-                                New raw material
+                                New {rawMaterialMeta.singular}
                             </Button>
                         }
                     />
@@ -151,7 +157,7 @@ export default function RawMaterialsIndex() {
                 open={dialog.open}
                 onOpenChange={dialog.onOpenChange}
                 editing={dialog.editing}
-                entityLabel="raw material"
+                entityLabel={rawMaterialMeta.singular}
                 baseUrl={base}
             >
                 {({ errors }) => (

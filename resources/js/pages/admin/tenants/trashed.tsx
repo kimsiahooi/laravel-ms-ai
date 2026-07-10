@@ -35,6 +35,8 @@ import { useInitials } from '@/hooks/use-initials';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { timeAgo } from '@/lib/format';
+import { dashboard } from '@/routes/admin';
+import { forceDestroy, index, restore, trashed } from '@/routes/admin/tenants';
 import type { ResourceFilters } from '@/types';
 
 type TrashedTenant = {
@@ -63,7 +65,7 @@ export default function AdminTenantsTrashed() {
         }
 
         router.patch(
-            `/admin/tenants/${restoring.slug}/restore`,
+            restore.url({ tenant: restoring.slug }),
             {},
             {
                 preserveScroll: true,
@@ -90,7 +92,7 @@ export default function AdminTenantsTrashed() {
             return;
         }
 
-        router.delete(`/admin/tenants/${purging.slug}/force`, {
+        router.delete(forceDestroy.url({ tenant: purging.slug }), {
             preserveScroll: true,
             onStart: () => setProcessing(true),
             onFinish: () => setProcessing(false),
@@ -208,9 +210,9 @@ export default function AdminTenantsTrashed() {
     return (
         <CentralAdminLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: '/admin/dashboard' },
-                { title: 'Tenants', href: '/admin/tenants' },
-                { title: 'Archived', href: '/admin/tenants/trashed' },
+                { title: 'Dashboard', href: dashboard.url() },
+                { title: 'Tenants', href: index.url() },
+                { title: 'Archived', href: trashed.url() },
             ]}
         >
             <Head title="Archived tenants" />
@@ -226,7 +228,7 @@ export default function AdminTenantsTrashed() {
                     </p>
                 </div>
                 <Button asChild variant="outline">
-                    <Link href="/admin/tenants">
+                    <Link href={index.url()}>
                         <ArrowLeft className="size-4" />
                         Back to tenants
                     </Link>
@@ -237,7 +239,7 @@ export default function AdminTenantsTrashed() {
                 columns={columns}
                 paginator={tenants}
                 filters={filters}
-                baseUrl="/admin/tenants/trashed"
+                baseUrl={trashed.url()}
                 only={['tenants', 'filters']}
                 getRowId={(tenant) => tenant.slug}
                 title="Archived"

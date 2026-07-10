@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Contact, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
@@ -12,10 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { customerMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { dashboard } from '@/routes/tenant';
+import customersRoutes from '@/routes/tenant/customers';
 import type { TenantPageProps } from '@/types';
 
 type Customer = App.Data.CustomerData;
@@ -26,7 +29,7 @@ type PageProps = TenantPageProps & {
 
 export default function CustomersIndex() {
     const { customers, filters, tenant } = usePageProps<PageProps>();
-    const base = `/${tenant.slug}/customers`;
+    const base = customersRoutes.index.url({ tenant: tenant.slug });
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -99,15 +102,18 @@ export default function CustomersIndex() {
     return (
         <TenantLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: `/${tenant.slug}/dashboard` },
-                { title: 'Customers', href: base },
+                {
+                    title: 'Dashboard',
+                    href: dashboard.url({ tenant: tenant.slug }),
+                },
+                { title: customerMeta.plural, href: base },
             ]}
         >
-            <Head title="Customers" />
+            <Head title={customerMeta.plural} />
 
             <div className="flex flex-col gap-1">
                 <h1 className="font-semibold text-2xl tracking-tight">
-                    Customers
+                    {customerMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Manage the customers who buy from your catalog.
@@ -121,23 +127,23 @@ export default function CustomersIndex() {
                 baseUrl={base}
                 only={['customers', 'filters']}
                 getRowId={(customer) => String(customer.id)}
-                title="Customers"
+                title={customerMeta.plural}
                 searchPlaceholder="Search name or email…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
-                        New customer
+                        New {customerMeta.singular}
                     </Button>
                 }
                 emptyState={
                     <EmptyState
-                        icon={Contact}
-                        title="No customers yet"
+                        icon={customerMeta.icon}
+                        title={`No ${customerMeta.plural.toLowerCase()} yet`}
                         description="Add your first customer to start tracking your buyers."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
-                                New customer
+                                New {customerMeta.singular}
                             </Button>
                         }
                     />
@@ -148,7 +154,7 @@ export default function CustomersIndex() {
                 open={dialog.open}
                 onOpenChange={dialog.onOpenChange}
                 editing={dialog.editing}
-                entityLabel="customer"
+                entityLabel={customerMeta.singular}
                 baseUrl={base}
             >
                 {({ errors }) => (

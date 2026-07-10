@@ -25,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePageProps } from '@/hooks/use-page-props';
+import { store as loginStore } from '@/routes/tenant/login';
 import type { TenantBrand } from '@/types';
 
 const HIGHLIGHTS = [
@@ -146,7 +147,7 @@ export default function TenantLogin() {
 
                         <CardContent>
                             <Form
-                                action={`/${tenant.slug}/login`}
+                                action={loginStore.url({ tenant: tenant.slug })}
                                 method="post"
                                 resetOnSuccess={['password']}
                                 disableWhileProcessing

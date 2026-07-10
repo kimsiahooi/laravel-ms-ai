@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ImageIcon, Package, Plus, X } from 'lucide-react';
+import { ImageIcon, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
@@ -13,11 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { productMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
+import { dashboard } from '@/routes/tenant';
+import productsRoutes from '@/routes/tenant/products';
 import type { TenantPageProps } from '@/types';
 
 type Product = App.Data.ProductData;
@@ -32,7 +35,7 @@ type PageProps = TenantPageProps & {
 export default function ProductsIndex() {
     const { products, filters, categories, suppliers, tenant } =
         usePageProps<PageProps>();
-    const base = `/${tenant.slug}/products`;
+    const base = productsRoutes.index.url({ tenant: tenant.slug });
 
     const categoryOptions = categories.map((c) => ({
         value: String(c.id),
@@ -218,15 +221,18 @@ export default function ProductsIndex() {
     return (
         <TenantLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: `/${tenant.slug}/dashboard` },
-                { title: 'Products', href: base },
+                {
+                    title: 'Dashboard',
+                    href: dashboard.url({ tenant: tenant.slug }),
+                },
+                { title: productMeta.plural, href: base },
             ]}
         >
-            <Head title="Products" />
+            <Head title={productMeta.plural} />
 
             <div className="flex flex-col gap-1">
                 <h1 className="font-semibold text-2xl tracking-tight">
-                    Products
+                    {productMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Manage the finished goods in your catalog.
@@ -240,23 +246,23 @@ export default function ProductsIndex() {
                 baseUrl={base}
                 only={['products', 'filters']}
                 getRowId={(product) => String(product.id)}
-                title="Products"
+                title={productMeta.plural}
                 searchPlaceholder="Search name, SKU or barcode…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
-                        New product
+                        New {productMeta.singular}
                     </Button>
                 }
                 emptyState={
                     <EmptyState
-                        icon={Package}
-                        title="No products yet"
+                        icon={productMeta.icon}
+                        title={`No ${productMeta.plural.toLowerCase()} yet`}
                         description="Add your first product to start building your catalog."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
-                                New product
+                                New {productMeta.singular}
                             </Button>
                         }
                     />
@@ -267,7 +273,7 @@ export default function ProductsIndex() {
                 open={dialog.open}
                 onOpenChange={dialog.onOpenChange}
                 editing={dialog.editing}
-                entityLabel="product"
+                entityLabel={productMeta.singular}
                 baseUrl={base}
                 contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
             >
