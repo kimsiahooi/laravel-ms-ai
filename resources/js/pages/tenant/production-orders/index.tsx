@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Ban, Factory, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -125,9 +125,15 @@ export default function ProductionOrdersIndex() {
             accessorKey: 'id',
             header: 'MO #',
             cell: ({ row }) => (
-                <span className="font-medium text-foreground tabular-nums">
+                <Link
+                    href={productionRoutes.show.url({
+                        tenant: tenant.slug,
+                        productionOrder: row.original.id,
+                    })}
+                    className="font-medium text-primary tabular-nums hover:underline"
+                >
                     #{row.original.id}
-                </span>
+                </Link>
             ),
         },
         {

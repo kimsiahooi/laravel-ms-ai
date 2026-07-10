@@ -74,6 +74,21 @@ it('redirects a guest from the sales orders page to the tenant login', function 
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
+it('shows a printable sales order document', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    $soId = makePendingSo($customer, $widget);
+
+    loginAsAcmeUser();
+
+    $this->get("/acme/sales-orders/{$soId}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/sales-orders/show')
+            ->where('order.id', $soId)
+            ->has('order.items', 1)
+        );
+});
+
 it('creates a sales order with line items and snapshots', function () {
     ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
 

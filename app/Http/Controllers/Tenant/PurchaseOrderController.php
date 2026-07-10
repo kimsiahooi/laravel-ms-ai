@@ -55,6 +55,15 @@ class PurchaseOrderController
         ]);
     }
 
+    public function show(PurchaseOrder $purchaseOrder): Response
+    {
+        $purchaseOrder->load(['supplier', 'items']);
+
+        return Inertia::render('tenant/purchase-orders/show', [
+            'order' => PurchaseOrderData::from($purchaseOrder),
+        ]);
+    }
+
     public function store(PurchaseOrderRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request): void {

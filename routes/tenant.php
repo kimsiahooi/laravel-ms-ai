@@ -102,7 +102,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // Orders
             Route::resource('purchase-orders', PurchaseOrderController::class)
                 ->parameters(['purchase-orders' => 'purchaseOrder'])
-                ->only(['index', 'store', 'update', 'destroy']);
+                ->only(['index', 'show', 'store', 'update', 'destroy']);
             Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
                 ->name('purchase-orders.receive');
             Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
@@ -110,7 +110,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
 
             Route::resource('sales-orders', SalesOrderController::class)
                 ->parameters(['sales-orders' => 'salesOrder'])
-                ->only(['index', 'store', 'update', 'destroy']);
+                ->only(['index', 'show', 'store', 'update', 'destroy']);
             Route::post('sales-orders/{salesOrder}/fulfill', [SalesOrderController::class, 'fulfill'])
                 ->name('sales-orders.fulfill');
             Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
@@ -119,7 +119,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // Manufacturing — make a product by consuming its bill of materials.
             Route::resource('production-orders', ProductionOrderController::class)
                 ->parameters(['production-orders' => 'productionOrder'])
-                ->only(['index', 'store', 'destroy']);
+                ->only(['index', 'show', 'store', 'destroy']);
             Route::post('production-orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete'])
                 ->name('production-orders.complete');
             Route::post('production-orders/{productionOrder}/cancel', [ProductionOrderController::class, 'cancel'])

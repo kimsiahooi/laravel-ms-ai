@@ -57,6 +57,15 @@ class SalesOrderController
         ]);
     }
 
+    public function show(SalesOrder $salesOrder): Response
+    {
+        $salesOrder->load(['customer', 'items']);
+
+        return Inertia::render('tenant/sales-orders/show', [
+            'order' => SalesOrderData::from($salesOrder),
+        ]);
+    }
+
     public function store(SalesOrderRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request): void {

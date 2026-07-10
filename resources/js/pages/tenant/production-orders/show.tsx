@@ -1,0 +1,72 @@
+import { Head } from '@inertiajs/react';
+import { PrintDocument, PrintItemsTable } from '@/components/print-document';
+import { usePageProps } from '@/hooks/use-page-props';
+import PrintLayout from '@/layouts/print-layout';
+import { formatDate, formatQuantity } from '@/lib/format';
+import productionRoutes from '@/routes/tenant/production-orders';
+import type { TenantPageProps } from '@/types';
+
+type ProductionOrder = App.Data.ProductionOrderData;
+
+type PageProps = TenantPageProps & { order: ProductionOrder };
+
+function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
+    if (status === 'completed') return 'default';
+    if (status === 'cancelled') return 'outline';
+    return 'secondary';
+}
+
+export default function ProductionOrderShow() {
+    const { order, tenant } = usePageProps<PageProps>();
+
+    return (
+        <PrintLayout
+            backHref={productionRoutes.index.url({ tenant: tenant.slug })}
+        >
+            <Head title={`MO #${order.id}`} />
+
+            <PrintDocument
+                org={tenant.name}
+                docType="Work Order"
+                number={`MO #${order.id}`}
+                statusLabel={order.status_label}
+                statusVariant={statusVariant(order.status)}
+                party={{
+                    heading: 'Product to build',
+                    name: order.product,
+                    detail: `Build quantity: ${formatQuantity(order.quantity)}`,
+                }}
+                meta={[
+                    {
+                        label: 'Order date',
+                        value: formatDate(order.created_at),
+                    },
+                    ...(order.completed_at
+                        ? [
+                              {
+                                  label: 'Completed',
+                                  value: formatDate(order.completed_at),
+                              },
+                          ]
+                        : []),
+                    {
+                        label: 'Build qty',
+                        value: formatQuantity(order.quantity),
+                    },
+                ]}
+            >
+                <PrintItemsTable
+                    head={['Raw material', 'Per unit', 'Required']}
+                    rows={order.items.map((item) => ({
+                        key: item.id,
+                        cells: [
+                            item.name,
+                            formatQuantity(item.quantity_per_unit),
+                            formatQuantity(item.quantity_required),
+                        ],
+                    }))}
+                />
+            </PrintDocument>
+        </PrintLayout>
+    );
+}

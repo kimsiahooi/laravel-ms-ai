@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     Ban,
@@ -178,9 +178,15 @@ export default function PurchaseOrdersIndex() {
             accessorKey: 'id',
             header: 'PO #',
             cell: ({ row }) => (
-                <span className="font-medium text-foreground tabular-nums">
+                <Link
+                    href={poRoutes.show.url({
+                        tenant: tenant.slug,
+                        purchaseOrder: row.original.id,
+                    })}
+                    className="font-medium text-primary tabular-nums hover:underline"
+                >
                     #{row.original.id}
-                </span>
+                </Link>
             ),
         },
         {

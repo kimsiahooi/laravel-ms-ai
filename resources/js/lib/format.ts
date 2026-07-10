@@ -55,3 +55,28 @@ export function absoluteDate(iso: string): string {
         timeStyle: 'short',
     }).format(date);
 }
+
+/** Medium calendar date, no time — e.g. "Jul 10, 2026". */
+export function formatDate(iso: string): string {
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+        date,
+    );
+}
+
+/** Currency-formatted amount, falling back to "CODE 0.00" for unknown codes. */
+export function formatMoney(amount: number, currency: string): string {
+    try {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency,
+        }).format(amount);
+    } catch {
+        return `${currency} ${amount.toFixed(2)}`;
+    }
+}

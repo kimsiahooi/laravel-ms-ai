@@ -60,6 +60,21 @@ it('redirects a guest from the purchase orders page to the tenant login', functi
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
+it('shows a printable purchase order document', function () {
+    ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
+    $poId = makePendingPo($supplier, $steel);
+
+    loginAsAcmeUser();
+
+    $this->get("/acme/purchase-orders/{$poId}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/purchase-orders/show')
+            ->where('order.id', $poId)
+            ->has('order.items', 1)
+        );
+});
+
 it('creates a purchase order with line items and snapshots', function () {
     ['supplier' => $supplier, 'steel' => $steel, 'bolt' => $bolt] = seedPurchaseFixture();
 

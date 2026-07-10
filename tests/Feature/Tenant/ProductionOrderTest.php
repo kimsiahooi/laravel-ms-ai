@@ -88,6 +88,21 @@ it('redirects a guest from the production orders page to the tenant login', func
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
+it('shows a printable work order document', function () {
+    ['widget' => $widget] = seedProductionFixture();
+    $moId = makePendingMo($widget, 3);
+
+    loginAsAcmeUser();
+
+    $this->get("/acme/production-orders/{$moId}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/production-orders/show')
+            ->where('order.id', $moId)
+            ->has('order.items', 2)
+        );
+});
+
 it('creates a production order, exploding the BOM into snapshotted items', function () {
     ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt] = seedProductionFixture();
 

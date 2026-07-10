@@ -71,6 +71,15 @@ class ProductionOrderController
         ]);
     }
 
+    public function show(ProductionOrder $productionOrder): Response
+    {
+        $productionOrder->load(['product', 'items']);
+
+        return Inertia::render('tenant/production-orders/show', [
+            'order' => ProductionOrderData::from($productionOrder),
+        ]);
+    }
+
     public function store(ProductionOrderRequest $request): RedirectResponse
     {
         $product = Product::with('bomItems.rawMaterial')->findOrFail($request->integer('product_id'));
