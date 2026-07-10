@@ -178,12 +178,15 @@ call sites into one home; ready for future inventory/quantity columns).
 `useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
 `ComboboxField` (F3) · `RowActions` (F4) · shared prop types `@/types/page` (F5) ·
 `usePageProps` (F6) · `EmptyState` (F7) · `formatQuantity` (F8) · `flashToast` helper `@/lib/flash`.
-Also: `spatie/laravel-data` DTO pilot on Products.
+Also: `spatie/laravel-data` DTOs on **all 5 catalog resources** — Product (pilot) +
+RawMaterial / Category / Supplier / Customer. Each controller's `->through()` returns an
+`App\Data\XxxData` (snake_case, `#[TypeScript]`), and the page consumes the generated
+`App.Data.XxxData` type instead of a hand-written interface. Regenerate with `bun run
+types:generate`; the committed `resources/js/types/generated.d.ts` is reproducible.
 
 **Remaining:**
 - Backend `TenantFormRequest` base for `authorize()` (B4) + `min_stock` coercion (B5) — small.
 - Full flash-convention merge (F1) — **optional**; the helper is now shared, so only the
   Convention A→B migration (controllers + reactive hook + ~20 test assertions) is left.
-- Roll `laravel-data` out to the other resources (pilot proven on Products).
 - (Admin tenants pages keep their own archive/restore/force-delete flow — not part of the
   catalog dialog/delete abstractions.)

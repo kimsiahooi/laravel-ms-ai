@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\SupplierData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\SupplierRequest;
 use App\Models\Supplier;
@@ -27,15 +28,7 @@ class SupplierController
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Supplier $supplier): array => [
-                'id' => $supplier->id,
-                'name' => $supplier->name,
-                'email' => $supplier->email,
-                'phone' => $supplier->phone,
-                'address' => $supplier->address,
-                'notes' => $supplier->notes,
-                'created_at' => $supplier->created_at,
-            ]);
+            ->through(fn (Supplier $supplier): SupplierData => SupplierData::from($supplier));
 
         return Inertia::render('tenant/suppliers/index', [
             'suppliers' => $suppliers,

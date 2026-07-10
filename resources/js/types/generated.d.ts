@@ -1,5 +1,20 @@
 declare namespace App {
 namespace Data {
+export type CategoryData = {
+id: number,
+name: string,
+description: string | null,
+created_at: string,
+};
+export type CustomerData = {
+id: number,
+name: string,
+email: string | null,
+phone: string | null,
+address: string | null,
+notes: string | null,
+created_at: string,
+};
 export type OptionData = {
 id: number,
 name: string,
@@ -17,6 +32,23 @@ category: string | null,
 supplier: string | null,
 min_stock: number,
 unit: string,
+created_at: string,
+};
+export type RawMaterialData = {
+id: number,
+name: string,
+sku: string,
+unit: string,
+min_stock: string,
+created_at: string,
+};
+export type SupplierData = {
+id: number,
+name: string,
+email: string | null,
+phone: string | null,
+address: string | null,
+notes: string | null,
 created_at: string,
 };
 }

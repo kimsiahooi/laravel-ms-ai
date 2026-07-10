@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\CategoryData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\CategoryRequest;
 use App\Models\Category;
@@ -27,12 +28,7 @@ class CategoryController
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Category $category): array => [
-                'id' => $category->id,
-                'name' => $category->name,
-                'description' => $category->description,
-                'created_at' => $category->created_at,
-            ]);
+            ->through(fn (Category $category): CategoryData => CategoryData::from($category));
 
         return Inertia::render('tenant/categories/index', [
             'categories' => $categories,

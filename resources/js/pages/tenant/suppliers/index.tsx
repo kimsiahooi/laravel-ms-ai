@@ -19,15 +19,7 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { flashToast } from '@/lib/flash';
 import type { TenantPageProps } from '@/types';
 
-type Supplier = {
-    id: number;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    address: string | null;
-    notes: string | null;
-    created_at: string;
-};
+type Supplier = App.Data.SupplierData;
 
 type PageProps = TenantPageProps & {
     suppliers: Paginator<Supplier>;

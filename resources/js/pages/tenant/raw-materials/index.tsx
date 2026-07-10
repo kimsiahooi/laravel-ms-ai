@@ -19,14 +19,7 @@ import { flashToast } from '@/lib/flash';
 import { formatQuantity } from '@/lib/format';
 import type { TenantPageProps } from '@/types';
 
-type RawMaterial = {
-    id: number;
-    name: string;
-    sku: string;
-    unit: string;
-    min_stock: string;
-    created_at: string;
-};
+type RawMaterial = App.Data.RawMaterialData;
 
 type PageProps = TenantPageProps & {
     rawMaterials: Paginator<RawMaterial>;

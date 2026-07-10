@@ -18,12 +18,7 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { flashToast } from '@/lib/flash';
 import type { TenantPageProps } from '@/types';
 
-type Category = {
-    id: number;
-    name: string;
-    description: string | null;
-    created_at: string;
-};
+type Category = App.Data.CategoryData;
 
 type PageProps = TenantPageProps & {
     categories: Paginator<Category>;

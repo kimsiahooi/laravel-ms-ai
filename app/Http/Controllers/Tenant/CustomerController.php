@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\CustomerData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
@@ -27,15 +28,7 @@ class CustomerController
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Customer $customer): array => [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'email' => $customer->email,
-                'phone' => $customer->phone,
-                'address' => $customer->address,
-                'notes' => $customer->notes,
-                'created_at' => $customer->created_at,
-            ]);
+            ->through(fn (Customer $customer): CustomerData => CustomerData::from($customer));
 
         return Inertia::render('tenant/customers/index', [
             'customers' => $customers,

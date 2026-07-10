@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\RawMaterialData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\RawMaterialRequest;
 use App\Models\RawMaterial;
@@ -27,14 +28,7 @@ class RawMaterialController
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (RawMaterial $rawMaterial): array => [
-                'id' => $rawMaterial->id,
-                'name' => $rawMaterial->name,
-                'sku' => $rawMaterial->sku,
-                'unit' => $rawMaterial->unit,
-                'min_stock' => $rawMaterial->min_stock,
-                'created_at' => $rawMaterial->created_at,
-            ]);
+            ->through(fn (RawMaterial $rawMaterial): RawMaterialData => RawMaterialData::from($rawMaterial));
 
         return Inertia::render('tenant/raw-materials/index', [
             'rawMaterials' => $rawMaterials,
