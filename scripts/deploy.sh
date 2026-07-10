@@ -38,7 +38,17 @@ main() {
     echo "▶ [8/9] Building client + SSR bundles…"
     bun run build:ssr
 
-    echo "▶ [8b/9] Re-caching config / routes / views for production…"
+    echo "▶ [8b/9] Verifying the build (Biome + TypeScript)…"
+    # `set -euo pipefail` (top of file) means either check exiting non-zero
+    # aborts the deploy HERE — before the pm2 restart below — so a failed check
+    # leaves the currently-running SSR process untouched and serving.
+    # NOTE: the Pest suite is intentionally NOT run here. It runs under the
+    # `testing` env against dedicated `*_test` databases (not prod), so it belongs
+    # in CI / local pre-deploy, not on the server.
+    bun run check:ci
+    bun run types:check
+
+    echo "▶ [8c/9] Re-caching config / routes / views for production…"
     php artisan optimize
 
     echo "▶ [9/9] (Re)starting the Inertia SSR process under pm2…"
