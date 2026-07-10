@@ -15,13 +15,19 @@ import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 /**
  * An inclusive datetime range. `from`/`to` are ISO-8601 strings that carry their
@@ -36,6 +42,54 @@ const WEEK_OPTS = { weekStartsOn: 1 as const };
 // A local Date -> "2026-07-10T09:30:00+08:00" (offset is the browser's own).
 const toIso = (date: Date): string => format(date, "yyyy-MM-dd'T'HH:mm:ssxxx");
 const timeOf = (date: Date): string => format(date, 'HH:mm');
+
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+// 30-minute slots across the day for the time dropdowns.
+const TIME_SLOTS = Array.from(
+    { length: 48 },
+    (_, i) => `${pad(Math.floor(i / 2))}:${i % 2 ? '30' : '00'}`,
+);
+
+// The slots plus the current value, so an off-grid time (e.g. a preset's "now")
+// still appears as a selectable option instead of showing blank.
+function timeOptions(current: string): string[] {
+    return TIME_SLOTS.includes(current)
+        ? TIME_SLOTS
+        : [...TIME_SLOTS, current].sort();
+}
+
+function TimeSelect({
+    id,
+    label,
+    value,
+    onChange,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="space-y-1">
+            <Label htmlFor={id} className="text-muted-foreground text-xs">
+                {label}
+            </Label>
+            <Select value={value} onValueChange={onChange}>
+                <SelectTrigger id={id} className="w-full">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-56">
+                    {timeOptions(value).map((slot) => (
+                        <SelectItem key={slot} value={slot}>
+                            {slot}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    );
+}
 
 // Combine a calendar day with an "HH:mm" time into a local Date.
 function combine(day: Date, time: string, endOfMinute = false): Date {
@@ -212,7 +266,7 @@ export function DateRangePicker({
                     <div className="flex flex-col gap-3 p-2">
                         <Calendar
                             mode="range"
-                            numberOfMonths={1}
+                            numberOfMonths={2}
                             selected={range}
                             onSelect={(next) => {
                                 setRange(next);
@@ -221,40 +275,24 @@ export function DateRangePicker({
                             defaultMonth={range?.from}
                         />
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="range-from-time"
-                                    className="text-muted-foreground text-xs"
-                                >
-                                    From time
-                                </Label>
-                                <Input
-                                    id="range-from-time"
-                                    type="time"
-                                    value={fromTime}
-                                    onChange={(e) => {
-                                        setFromTime(e.target.value);
-                                        setPresetKey(null);
-                                    }}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="range-to-time"
-                                    className="text-muted-foreground text-xs"
-                                >
-                                    To time
-                                </Label>
-                                <Input
-                                    id="range-to-time"
-                                    type="time"
-                                    value={toTime}
-                                    onChange={(e) => {
-                                        setToTime(e.target.value);
-                                        setPresetKey(null);
-                                    }}
-                                />
-                            </div>
+                            <TimeSelect
+                                id="range-from-time"
+                                label="From time"
+                                value={fromTime}
+                                onChange={(v) => {
+                                    setFromTime(v);
+                                    setPresetKey(null);
+                                }}
+                            />
+                            <TimeSelect
+                                id="range-to-time"
+                                label="To time"
+                                value={toTime}
+                                onChange={(v) => {
+                                    setToTime(v);
+                                    setPresetKey(null);
+                                }}
+                            />
                         </div>
                         <Button
                             size="sm"
