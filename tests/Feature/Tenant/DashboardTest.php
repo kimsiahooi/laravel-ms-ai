@@ -96,8 +96,8 @@ it('renders dashboard aggregates for a seeded workspace', function () {
             ->where('orderPipeline.production.completed', 1)
             ->has('reorderList', 2)
             ->where('reorderList.0.name', 'Bolt') // biggest deficit first
-            ->has('stockActivity', 30)
-            ->has('throughput', 30)
+            ->has('stockActivity', now()->day)
+            ->has('throughput', now()->day)
             ->has('onHandByWarehouse', 1)
             ->where('onHandByWarehouse.0.name', 'Main')
             ->has('recentMovements')
@@ -141,7 +141,7 @@ it('renders a zeroed dashboard for a fresh workspace', function () {
             ->where('kpis.skus_in_stock.count', 0)
             ->has('reorderList', 0)
             ->has('onHandByWarehouse', 0)
-            ->has('stockActivity', 30)
+            ->has('stockActivity', now()->day)
         );
 });
 

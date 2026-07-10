@@ -25,9 +25,6 @@ use Inertia\Response;
 
 class DashboardController
 {
-    /** Default trailing window (inclusive of today) for the time-series charts. */
-    private const TREND_DAYS = 30;
-
     /** Hard cap on a hand-edited range so the per-day scaffold can't run away. */
     private const MAX_RANGE_DAYS = 366;
 
@@ -289,8 +286,10 @@ class DashboardController
         $to = $this->parseDateTime($request->string('to')->toString());
 
         if ($from === null || $to === null) {
-            $to = Date::now();
-            $from = $to->subDays(self::TREND_DAYS - 1)->startOfDay();
+            // Default view: the current month, 1st 00:00 -> today 23:59.
+            $now = Date::now();
+            $from = $now->startOfMonth();
+            $to = $now->endOfDay();
         }
 
         if ($to->lt($from)) {

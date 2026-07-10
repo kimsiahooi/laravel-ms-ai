@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Boxes, ClipboardList, Factory, PackageX } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     Area,
     AreaChart,
@@ -19,6 +19,7 @@ import {
     DateRangePicker,
     type DateRangeValue,
     formatRangeDates,
+    thisMonthRange,
 } from '@/components/date-range-picker';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
@@ -273,6 +274,19 @@ export default function TenantDashboard() {
             },
         );
     };
+
+    // On a fresh visit (no explicit range in the URL), default to "This month"
+    // resolved in the device's own timezone. The server's default is UTC-based;
+    // this one-time reload makes the default device-accurate (12 AM → 11:59 PM).
+    const bootstrapped = useRef(false);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional one-time mount effect
+    useEffect(() => {
+        if (bootstrapped.current) return;
+        bootstrapped.current = true;
+        if (!new URLSearchParams(window.location.search).has('from')) {
+            applyRange(thisMonthRange());
+        }
+    }, []);
 
     useEffect(() => {
         const hour = new Date().getHours();

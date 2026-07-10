@@ -1,4 +1,5 @@
 import {
+    endOfDay,
     endOfMonth,
     endOfWeek,
     format,
@@ -11,7 +12,7 @@ import {
     subWeeks,
 } from 'date-fns';
 import { CalendarDays, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -69,6 +70,12 @@ function to24(hour: string, minute: string, meridiem: string): string {
     let h = Number(hour) % 12;
     if (meridiem === 'PM') h += 12;
     return `${pad(h)}:${minute}`;
+}
+
+// "HH:mm" (24h) -> "9:15 AM" for display.
+function time12(value: string): string {
+    const { hour, minute, meridiem } = to12(value);
+    return `${hour}:${minute} ${meridiem}`;
 }
 
 function TimeCol({
@@ -171,12 +178,12 @@ const PRESETS: Preset[] = [
     {
         key: 'today',
         label: 'Today',
-        compute: (n) => ({ from: startOfDay(n), to: n }),
+        compute: (n) => ({ from: startOfDay(n), to: endOfDay(n) }),
     },
     {
         key: 'this_week',
         label: 'This week',
-        compute: (n) => ({ from: startOfWeek(n, WEEK_OPTS), to: n }),
+        compute: (n) => ({ from: startOfWeek(n, WEEK_OPTS), to: endOfDay(n) }),
     },
     {
         key: 'last_week',
@@ -192,7 +199,7 @@ const PRESETS: Preset[] = [
     {
         key: 'this_month',
         label: 'This month',
-        compute: (n) => ({ from: startOfMonth(n), to: n }),
+        compute: (n) => ({ from: startOfMonth(n), to: endOfDay(n) }),
     },
     {
         key: 'last_month',
@@ -205,17 +212,17 @@ const PRESETS: Preset[] = [
     {
         key: 'last_7',
         label: 'Last 7 days',
-        compute: (n) => ({ from: startOfDay(subDays(n, 6)), to: n }),
+        compute: (n) => ({ from: startOfDay(subDays(n, 6)), to: endOfDay(n) }),
     },
     {
         key: 'last_30',
         label: 'Last 30 days',
-        compute: (n) => ({ from: startOfDay(subDays(n, 29)), to: n }),
+        compute: (n) => ({ from: startOfDay(subDays(n, 29)), to: endOfDay(n) }),
     },
     {
         key: 'last_90',
         label: 'Last 90 days',
-        compute: (n) => ({ from: startOfDay(subDays(n, 89)), to: n }),
+        compute: (n) => ({ from: startOfDay(subDays(n, 89)), to: endOfDay(n) }),
     },
 ];
 
@@ -227,6 +234,25 @@ export function formatRangeDates(value: DateRangeValue): string {
         return format(from, 'MMM d, yyyy');
     }
     return `${format(from, 'MMM d')} – ${format(to, 'MMM d, yyyy')}`;
+}
+
+/** The preset a value corresponds to (matched to the minute in local time), if any. */
+function matchPreset(value: DateRangeValue, now: Date): Preset | null {
+    const key = (d: Date) => format(d, 'yyyy-MM-dd HH:mm');
+    const vFrom = key(parseISO(value.from));
+    const vTo = key(parseISO(value.to));
+    return (
+        PRESETS.find((p) => {
+            const { from, to } = p.compute(now);
+            return key(from) === vFrom && key(to) === vTo;
+        }) ?? null
+    );
+}
+
+/** The default range: the current month (12:00 AM on the 1st → 11:59 PM today), local. */
+export function thisMonthRange(): DateRangeValue {
+    const now = new Date();
+    return { from: toIso(startOfMonth(now)), to: toIso(endOfDay(now)) };
 }
 
 /**
@@ -254,12 +280,17 @@ export function DateRangePicker({
     // false = a complete range is shown; the next click starts a fresh one.
     // true = a start is picked and the next click sets the end.
     const [pickingEnd, setPickingEnd] = useState(false);
+    // "now" is device-local and only known on the client, so preset matching for
+    // the trigger label is deferred to after mount (SSR shows the plain span).
+    const [now, setNow] = useState<Date | null>(null);
+    useEffect(() => setNow(new Date()), []);
 
     const syncToValue = () => {
         setRange({ from: parseISO(value.from), to: parseISO(value.to) });
         setFromTime(timeOf(parseISO(value.from)));
         setToTime(timeOf(parseISO(value.to)));
         setPickingEnd(false);
+        setPresetKey(matchPreset(value, new Date())?.key ?? null);
     };
 
     const pickPreset = (preset: Preset) => {
@@ -298,10 +329,19 @@ export function DateRangePicker({
         setOpen(false);
     };
 
-    const label = presetKey
-        ? (PRESETS.find((p) => p.key === presetKey)?.label ??
-          formatRangeDates(value))
-        : formatRangeDates(value);
+    // The trigger label reflects the APPLIED value: its preset name if it is one,
+    // else the date span.
+    const label =
+        (now ? matchPreset(value, now)?.label : null) ??
+        formatRangeDates(value);
+
+    // A live summary of what's being drafted, shown next to Apply.
+    const draftSummary =
+        range?.from && range?.to
+            ? `${format(range.from, 'MMM d')}, ${time12(fromTime)} → ${format(range.to, 'MMM d')}, ${time12(toTime)}`
+            : range?.from
+              ? `${format(range.from, 'MMM d')} — pick an end date`
+              : 'Pick a start date';
 
     return (
         <Popover
@@ -325,7 +365,10 @@ export function DateRangePicker({
             </PopoverTrigger>
             <PopoverContent align="end" className="w-auto p-0">
                 <div className="flex max-sm:flex-col">
-                    <div className="flex shrink-0 flex-col gap-1 border-b p-2 sm:border-r sm:border-b-0">
+                    <div className="flex shrink-0 flex-col gap-0.5 border-b p-2 sm:w-40 sm:border-r sm:border-b-0">
+                        <p className="px-2 pt-1 pb-1.5 font-medium text-muted-foreground text-xs">
+                            Quick ranges
+                        </p>
                         {PRESETS.map((preset) => (
                             <Button
                                 key={preset.key}
@@ -335,22 +378,24 @@ export function DateRangePicker({
                                         : 'ghost'
                                 }
                                 size="sm"
-                                className="justify-start"
+                                className="justify-start font-normal"
                                 onClick={() => pickPreset(preset)}
                             >
                                 {preset.label}
                             </Button>
                         ))}
                     </div>
-                    <div className="flex flex-col gap-3 p-2">
-                        <Calendar
-                            mode="range"
-                            numberOfMonths={2}
-                            selected={range}
-                            onSelect={(_selected, day) => pickDay(day)}
-                            defaultMonth={range?.from}
-                        />
-                        <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                        <div className="p-2">
+                            <Calendar
+                                mode="range"
+                                numberOfMonths={2}
+                                selected={range}
+                                onSelect={(_selected, day) => pickDay(day)}
+                                defaultMonth={range?.from}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 border-t p-3">
                             <TimeSelect
                                 idPrefix="range-from-time"
                                 label="From time"
@@ -370,13 +415,18 @@ export function DateRangePicker({
                                 }}
                             />
                         </div>
-                        <Button
-                            size="sm"
-                            onClick={apply}
-                            disabled={!range?.from || !range?.to}
-                        >
-                            Apply range
-                        </Button>
+                        <div className="flex items-center justify-between gap-3 border-t p-3">
+                            <span className="text-muted-foreground text-xs tabular-nums">
+                                {draftSummary}
+                            </span>
+                            <Button
+                                size="sm"
+                                onClick={apply}
+                                disabled={!range?.from || !range?.to}
+                            >
+                                Apply range
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </PopoverContent>
