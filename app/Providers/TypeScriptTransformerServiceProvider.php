@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use Spatie\LaravelData\Support\TypeScriptTransformer\DataTypeScriptTransformer;
 use Spatie\LaravelTypeScriptTransformer\TypeScriptTransformerApplicationServiceProvider as BaseTypeScriptTransformerServiceProvider;
 use Spatie\TypeScriptTransformer\Transformers\AttributedClassTransformer;
 use Spatie\TypeScriptTransformer\Transformers\EnumTransformer;
@@ -14,7 +13,6 @@ class TypeScriptTransformerServiceProvider extends BaseTypeScriptTransformerServ
     protected function configure(TypeScriptTransformerConfigFactory $config): void
     {
         $config
-            ->transformer(DataTypeScriptTransformer::class)
             ->transformer(AttributedClassTransformer::class)
             ->transformer(EnumTransformer::class)
             ->transformDirectories(app_path('Data'))
