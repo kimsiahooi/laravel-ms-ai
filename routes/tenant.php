@@ -79,6 +79,9 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('products', ProductController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+            // A product's bill of materials (its recipe).
+            Route::put('products/{product}/bom', [ProductController::class, 'updateBom'])
+                ->name('products.bom');
             Route::resource('warehouses', WarehouseController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('locations', LocationController::class)

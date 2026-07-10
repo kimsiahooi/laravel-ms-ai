@@ -1,6 +1,14 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ImageIcon, Plus, X } from 'lucide-react';
+import {
+    ImageIcon,
+    ListTree,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
@@ -8,8 +16,22 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
-import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,10 +52,15 @@ type PageProps = TenantPageProps & {
     products: Paginator<Product>;
     categories: Option[];
     suppliers: Option[];
+    rawMaterials: Option[];
 };
 
+// One BOM line in the recipe editor. `key` is a stable client id so React keeps
+// input focus across add/remove; the empty string means "not yet chosen".
+type BomLine = { key: number; rawMaterialId: string; quantity: string };
+
 export default function ProductsIndex() {
-    const { products, filters, categories, suppliers, tenant } =
+    const { products, filters, categories, suppliers, rawMaterials, tenant } =
         usePageProps<PageProps>();
     const base = productsRoutes.index.url({ tenant: tenant.slug });
 
@@ -44,6 +71,10 @@ export default function ProductsIndex() {
     const supplierOptions = suppliers.map((s) => ({
         value: String(s.id),
         label: s.name,
+    }));
+    const rawMaterialOptions = rawMaterials.map((m) => ({
+        value: String(m.id),
+        label: m.name,
     }));
 
     const [name, setName] = useState('');
@@ -125,6 +156,80 @@ export default function ProductsIndex() {
         onEdit: fillForm,
     });
     const del = useDelete<Product>({ baseUrl: base });
+
+    // Bill-of-materials editor. `bomProduct` doubles as the open/closed flag; its
+    // recipe is edited as a repeater, keyed by a client-side counter so focus and
+    // order survive add/remove.
+    const [bomProduct, setBomProduct] = useState<Product | null>(null);
+    const [bomLines, setBomLines] = useState<BomLine[]>([]);
+    const [bomErrors, setBomErrors] = useState<Record<string, string>>({});
+    const [bomSaving, setBomSaving] = useState(false);
+    const bomKey = useRef(0);
+
+    const blankBomLine = (): BomLine => ({
+        key: bomKey.current++,
+        rawMaterialId: '',
+        quantity: '1',
+    });
+
+    const openBom = (product: Product) => {
+        setBomErrors({});
+        setBomProduct(product);
+        setBomLines(
+            product.bom.length > 0
+                ? product.bom.map((item) => ({
+                      key: bomKey.current++,
+                      rawMaterialId: String(item.raw_material_id),
+                      quantity: String(item.quantity),
+                  }))
+                : [blankBomLine()],
+        );
+    };
+
+    const closeBom = () => {
+        setBomProduct(null);
+        setBomErrors({});
+    };
+
+    const addBomLine = () => setBomLines((prev) => [...prev, blankBomLine()]);
+    const removeBomLine = (key: number) =>
+        setBomLines((prev) => prev.filter((line) => line.key !== key));
+    const updateBomLine = (key: number, patch: Partial<BomLine>) =>
+        setBomLines((prev) =>
+            prev.map((line) =>
+                line.key === key ? { ...line, ...patch } : line,
+            ),
+        );
+
+    const saveBom = () => {
+        if (!bomProduct) {
+            return;
+        }
+        // Drop rows the user left without a raw material; the backend still
+        // validates quantity + duplicates on what remains.
+        const items = bomLines
+            .filter((line) => line.rawMaterialId !== '')
+            .map((line) => ({
+                raw_material_id: Number(line.rawMaterialId),
+                quantity: line.quantity,
+            }));
+
+        router.put(
+            productsRoutes.bom.url({
+                tenant: tenant.slug,
+                product: bomProduct.id,
+            }),
+            { items },
+            {
+                preserveScroll: true,
+                onStart: () => setBomSaving(true),
+                onFinish: () => setBomSaving(false),
+                onSuccess: closeBom,
+                onError: (errors) =>
+                    setBomErrors(errors as Record<string, string>),
+            },
+        );
+    };
 
     const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -209,11 +314,39 @@ export default function ProductsIndex() {
             header: () => <span className="sr-only">Actions</span>,
             meta: { className: 'text-right' },
             cell: ({ row }) => (
-                <RowActions
-                    label={row.original.name}
-                    onEdit={() => dialog.openEdit(row.original)}
-                    onDelete={() => del.request(row.original)}
-                />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-muted-foreground"
+                            aria-label={`Actions for ${row.original.name}`}
+                        >
+                            <MoreHorizontal className="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onSelect={() => dialog.openEdit(row.original)}
+                        >
+                            <Pencil className="size-4" />
+                            Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onSelect={() => openBom(row.original)}
+                        >
+                            <ListTree className="size-4" />
+                            Bill of materials
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => del.request(row.original)}
+                        >
+                            <Trash2 className="size-4" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             ),
         },
     ];
@@ -525,6 +658,173 @@ export default function ProductsIndex() {
                     </>
                 }
             />
+
+            <Dialog
+                open={bomProduct !== null}
+                onOpenChange={(next) => {
+                    if (!next) {
+                        closeBom();
+                    }
+                }}
+            >
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Bill of materials</DialogTitle>
+                        <DialogDescription>
+                            The raw materials and per-unit quantities needed to
+                            make one “{bomProduct?.name}”. Production orders
+                            snapshot this recipe when created.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {bomErrors.items ? (
+                            <p className="text-destructive text-sm">
+                                {bomErrors.items}
+                            </p>
+                        ) : null}
+
+                        {rawMaterialOptions.length === 0 ? (
+                            <p className="rounded-md border border-dashed p-4 text-center text-muted-foreground text-sm">
+                                Add raw materials first — there are none to
+                                build a recipe from yet.
+                            </p>
+                        ) : (
+                            <>
+                                <div className="space-y-3">
+                                    {(() => {
+                                        // Blank rows are dropped before submit, so
+                                        // map each visible row to its submitted index
+                                        // to line server errors up with the right row.
+                                        let submitted = -1;
+                                        return bomLines.map((line) => {
+                                            const idx =
+                                                line.rawMaterialId !== ''
+                                                    ? ++submitted
+                                                    : -1;
+                                            return (
+                                                <div
+                                                    key={line.key}
+                                                    className="grid grid-cols-[1fr_auto_auto] items-end gap-2"
+                                                >
+                                                    <ComboboxField
+                                                        id={`bom-${line.key}`}
+                                                        label="Raw material"
+                                                        options={
+                                                            rawMaterialOptions
+                                                        }
+                                                        value={
+                                                            line.rawMaterialId
+                                                        }
+                                                        onChange={(value) =>
+                                                            updateBomLine(
+                                                                line.key,
+                                                                {
+                                                                    rawMaterialId:
+                                                                        value,
+                                                                },
+                                                            )
+                                                        }
+                                                        error={
+                                                            idx >= 0
+                                                                ? bomErrors[
+                                                                      `items.${idx}.raw_material_id`
+                                                                  ]
+                                                                : undefined
+                                                        }
+                                                        placeholder="Select"
+                                                        searchPlaceholder="Search…"
+                                                        emptyText="None found."
+                                                    />
+                                                    <div className="w-28 space-y-2">
+                                                        <Label
+                                                            htmlFor={`bom-qty-${line.key}`}
+                                                            className="text-muted-foreground text-xs"
+                                                        >
+                                                            Qty / unit
+                                                        </Label>
+                                                        <Input
+                                                            id={`bom-qty-${line.key}`}
+                                                            type="number"
+                                                            min={0}
+                                                            step="any"
+                                                            value={
+                                                                line.quantity
+                                                            }
+                                                            onChange={(event) =>
+                                                                updateBomLine(
+                                                                    line.key,
+                                                                    {
+                                                                        quantity:
+                                                                            event
+                                                                                .target
+                                                                                .value,
+                                                                    },
+                                                                )
+                                                            }
+                                                            aria-invalid={
+                                                                idx >= 0 &&
+                                                                !!bomErrors[
+                                                                    `items.${idx}.quantity`
+                                                                ]
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-9 text-muted-foreground"
+                                                        onClick={() =>
+                                                            removeBomLine(
+                                                                line.key,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            bomLines.length ===
+                                                            1
+                                                        }
+                                                        aria-label="Remove material"
+                                                    >
+                                                        <X className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addBomLine}
+                                >
+                                    <Plus className="size-4" />
+                                    Add material
+                                </Button>
+                            </>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            type="button"
+                            onClick={saveBom}
+                            disabled={
+                                bomSaving || rawMaterialOptions.length === 0
+                            }
+                        >
+                            {bomSaving ? 'Saving…' : 'Save recipe'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </TenantLayout>
     );
 }

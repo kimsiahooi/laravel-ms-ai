@@ -7,8 +7,10 @@ namespace App\Models;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -26,6 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $unit
  * @property string|null $image
  * @property-read string|null $image_url
+ * @property-read Collection<int, BomItem> $bomItems
  */
 #[Fillable([
     'name', 'sku', 'barcode', 'description',
@@ -60,6 +63,16 @@ class Product extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * The product's bill of materials (raw materials + per-unit quantity).
+     *
+     * @return HasMany<BomItem, $this>
+     */
+    public function bomItems(): HasMany
+    {
+        return $this->hasMany(BomItem::class);
     }
 
     /**

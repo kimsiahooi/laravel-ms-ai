@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\BomItem;
 use App\Models\Product;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -16,6 +18,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 class ProductData extends Data
 {
+    /**
+     * @param  array<int, BomItemData>  $bom
+     */
     public function __construct(
         public int $id,
         public string $name,
@@ -30,6 +35,8 @@ class ProductData extends Data
         public int $min_stock,
         public string $unit,
         public string $created_at,
+        #[DataCollectionOf(BomItemData::class)]
+        public array $bom,
     ) {}
 
     public static function fromProduct(Product $product): self
@@ -48,6 +55,9 @@ class ProductData extends Data
             min_stock: $product->min_stock,
             unit: $product->unit,
             created_at: $product->created_at->toISOString(),
+            bom: $product->relationLoaded('bomItems')
+                ? $product->bomItems->map(fn (BomItem $item): BomItemData => BomItemData::from($item))->all()
+                : [],
         );
     }
 }
