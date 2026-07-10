@@ -13,7 +13,8 @@
         "lint:check": "biome lint .",
         "check": "biome check --write .",
         "check:ci": "biome check .",
-        "types:check": "tsc --noEmit"
+        "types:check": "tsc --noEmit",
+        "types:generate": "php artisan typescript:transform"
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.2",
