@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
+use App\Http\Requests\Concerns\NormalizesNumericInput;
 use App\Models\Product;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class ProductRequest extends FormRequest
+class ProductRequest extends TenantFormRequest
 {
-    public function authorize(): bool
-    {
-        // The route is already gated by auth:web; belt-and-suspenders.
-        return $this->user() !== null;
-    }
+    use NormalizesNumericInput;
 
     protected function prepareForValidation(): void
     {
-        if (in_array($this->input('min_stock'), [null, ''], true)) {
-            $this->merge(['min_stock' => 0]);
-        }
+        $this->defaultBlankToZero('min_stock');
     }
 
     /**

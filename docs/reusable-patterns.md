@@ -50,18 +50,17 @@ $directory)` / `deleteAsset(?$path)` / `scopeAsset($path)` / `assetDisk()`. Para
 directory, so every entity reuses it (products now → `products`; future avatars/logos → their own
 dir). Both controllers `use` it, so the `assets` disk + slug-scoping live in one place.
 
-### 4. 🔜 `FormRequest::authorize()` boilerplate → base/trait  · **Proposed (low)**
-**What:** every tenant `FormRequest` repeats `authorize(): bool { return $this->user() !== null; }`.
-**Proposal:** a `TenantFormRequest` base class (or an `AuthorizesTenantUser` trait) providing the
-default `authorize()`. **Impact:** small but removes copy-paste from every request.
-**Risk:** low.
+### 4. ✅ `FormRequest::authorize()` boilerplate → `TenantFormRequest` base  · **DONE**
+`app/Http/Requests/Tenant/TenantFormRequest.php` — abstract base extending `FormRequest` with the
+shared `authorize(): bool { return $this->user() !== null; }`. The 5 tenant requests
+(Category / Customer / Supplier / RawMaterial / Product) now `extends TenantFormRequest` and declare
+only `rules()`. (Central `StoreTenantRequest` stays independent — it's the only central request.)
 
-### 5. 🔜 `min_stock` blank→0 coercion → shared `prepareForValidation`  · **Proposed (low)**
-**What:** `RawMaterialRequest` and `ProductRequest` share the same
-`prepareForValidation()` coercing blank `min_stock` to `0`.
-**Proposal:** a small `NormalizesNumericInput` trait (or a `mergeDefault()` helper). Only 2
-callers today — extract when a 3rd appears, or now if a base request (item 3) exists.
-**Risk:** low.
+### 5. ✅ `min_stock` blank→0 coercion → `NormalizesNumericInput` trait  · **DONE**
+`app/Http/Requests/Concerns/NormalizesNumericInput.php` — `defaultBlankToZero(string $field)`
+merges a blank (`null`/`''`) field to `0` before validation. `RawMaterialRequest` and
+`ProductRequest` `use` it and call `$this->defaultBlankToZero('min_stock')` in
+`prepareForValidation()`. Behaviour unchanged (existing coercion tests stay green).
 
 ---
 
@@ -175,6 +174,7 @@ call sites into one home; ready for future inventory/quantity columns).
 ## Status
 
 **Done:** `ResolvesPerPage` (B1) · `Searchable` scope (B2) · `InteractsWithTenantAssets` (B3) ·
+`TenantFormRequest` (B4) · `NormalizesNumericInput` (B5) ·
 `useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
 `ComboboxField` (F3) · `RowActions` (F4) · shared prop types `@/types/page` (F5) ·
 `usePageProps` (F6) · `EmptyState` (F7) · `formatQuantity` (F8) · `flashToast` helper `@/lib/flash`.
@@ -185,8 +185,7 @@ RawMaterial / Category / Supplier / Customer. Each controller's `->through()` re
 types:generate`; the committed `resources/js/types/generated.d.ts` is reproducible.
 
 **Remaining:**
-- Backend `TenantFormRequest` base for `authorize()` (B4) + `min_stock` coercion (B5) — small.
-- Full flash-convention merge (F1) — **optional**; the helper is now shared, so only the
+- Full flash-convention merge (F1) — the helper is now shared, so only the
   Convention A→B migration (controllers + reactive hook + ~20 test assertions) is left.
 - (Admin tenants pages keep their own archive/restore/force-delete flow — not part of the
   catalog dialog/delete abstractions.)
