@@ -12,7 +12,7 @@ import {
     subWeeks,
 } from 'date-fns';
 import { CalendarDays, ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -236,6 +236,13 @@ export function formatRangeDates(value: DateRangeValue): string {
     return `${format(from, 'MMM d')} – ${format(to, 'MMM d, yyyy')}`;
 }
 
+/** A label with date + time, e.g. "Jul 1, 12:00 AM – Jul 10, 11:59 PM". */
+export function formatRangeDateTime(value: DateRangeValue): string {
+    const from = parseISO(value.from);
+    const to = parseISO(value.to);
+    return `${format(from, 'MMM d, h:mm a')} – ${format(to, 'MMM d, h:mm a')}`;
+}
+
 /** The preset a value corresponds to (matched to the minute in local time), if any. */
 function matchPreset(value: DateRangeValue, now: Date): Preset | null {
     const key = (d: Date) => format(d, 'yyyy-MM-dd HH:mm');
@@ -280,10 +287,6 @@ export function DateRangePicker({
     // false = a complete range is shown; the next click starts a fresh one.
     // true = a start is picked and the next click sets the end.
     const [pickingEnd, setPickingEnd] = useState(false);
-    // "now" is device-local and only known on the client, so preset matching for
-    // the trigger label is deferred to after mount (SSR shows the plain span).
-    const [now, setNow] = useState<Date | null>(null);
-    useEffect(() => setNow(new Date()), []);
 
     const syncToValue = () => {
         setRange({ from: parseISO(value.from), to: parseISO(value.to) });
@@ -329,11 +332,8 @@ export function DateRangePicker({
         setOpen(false);
     };
 
-    // The trigger label reflects the APPLIED value: its preset name if it is one,
-    // else the date span.
-    const label =
-        (now ? matchPreset(value, now)?.label : null) ??
-        formatRangeDates(value);
+    // The trigger always shows the applied range as date + time.
+    const label = formatRangeDateTime(value);
 
     // A live summary of what's being drafted, shown next to Apply.
     const draftSummary =
