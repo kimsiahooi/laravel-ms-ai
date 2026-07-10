@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -328,7 +329,12 @@ export default function ProductionOrdersIndex() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="quantity">Quantity</Label>
+                                <FieldLabel
+                                    htmlFor="quantity"
+                                    hint="How many finished units to build. Raw materials are reserved from the product's bill of materials based on this number."
+                                >
+                                    Quantity
+                                </FieldLabel>
                                 <Input
                                     id="quantity"
                                     name="quantity"
@@ -418,6 +424,7 @@ export default function ProductionOrdersIndex() {
                     <ComboboxField
                         id="complete-location"
                         label="At location"
+                        hint="Where the finished units are added and the raw materials are consumed when you complete the build."
                         options={locationOptions}
                         value={completeLocationId}
                         onChange={setCompleteLocationId}

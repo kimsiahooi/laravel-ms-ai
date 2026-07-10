@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -497,9 +498,12 @@ export default function AdminTenantsIndex() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="slug">
+                                            <FieldLabel
+                                                htmlFor="slug"
+                                                hint="The web address for this workspace — for example “acme” makes the address /acme. Use lowercase letters, numbers, and hyphens only."
+                                            >
                                                 Workspace URL
-                                            </Label>
+                                            </FieldLabel>
                                             <div className="flex items-stretch overflow-hidden rounded-md border border-input focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
                                                 <span className="flex items-center whitespace-nowrap border-input border-r bg-muted px-2 text-muted-foreground text-xs">
                                                     {origin}/
@@ -618,9 +622,12 @@ export default function AdminTenantsIndex() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="admin_password">
+                                            <FieldLabel
+                                                htmlFor="admin_password"
+                                                hint="The initial password for this workspace's first admin. They can change it after signing in."
+                                            >
                                                 Temporary password
-                                            </Label>
+                                            </FieldLabel>
                                             <div className="relative">
                                                 <Input
                                                     id="admin_password"

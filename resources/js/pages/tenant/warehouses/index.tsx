@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
@@ -183,12 +184,15 @@ export default function WarehousesIndex() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="code">
+                            <FieldLabel
+                                htmlFor="code"
+                                hint="A short code for this warehouse, such as “KL” or “WH-1”. It appears on transfers and stock lists."
+                            >
                                 Code{' '}
                                 <span className="font-normal text-muted-foreground">
                                     (optional)
                                 </span>
-                            </Label>
+                            </FieldLabel>
                             <Input
                                 id="code"
                                 name="code"

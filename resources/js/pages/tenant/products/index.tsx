@@ -14,6 +14,7 @@ import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
@@ -454,7 +455,12 @@ export default function ProductsIndex() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="sku">SKU</Label>
+                                <FieldLabel
+                                    htmlFor="sku"
+                                    hint="A unique code you assign to identify this product — it appears on labels, orders, and stock lists."
+                                >
+                                    SKU
+                                </FieldLabel>
                                 <Input
                                     id="sku"
                                     name="sku"
@@ -474,7 +480,12 @@ export default function ProductsIndex() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="barcode">Barcode</Label>
+                                <FieldLabel
+                                    htmlFor="barcode"
+                                    hint="The scannable barcode number (EAN, UPC, and so on). Leave it blank if you don't track barcodes."
+                                >
+                                    Barcode
+                                </FieldLabel>
                                 <Input
                                     id="barcode"
                                     name="barcode"
@@ -495,7 +506,12 @@ export default function ProductsIndex() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="unit">Unit</Label>
+                                <FieldLabel
+                                    htmlFor="unit"
+                                    hint="The unit you count this item in, such as “ea” (each), “kg”, or “box”. It's shown wherever quantities appear."
+                                >
+                                    Unit
+                                </FieldLabel>
                                 <Input
                                     id="unit"
                                     name="unit"
@@ -537,7 +553,12 @@ export default function ProductsIndex() {
                                 emptyText="No suppliers."
                             />
                             <div className="space-y-2">
-                                <Label htmlFor="min_stock">Min stock</Label>
+                                <FieldLabel
+                                    htmlFor="min_stock"
+                                    hint="We flag this item as low stock once its on-hand quantity drops to or below this number. Set it to 0 to never flag it."
+                                >
+                                    Min stock
+                                </FieldLabel>
                                 <Input
                                     id="min_stock"
                                     name="min_stock"

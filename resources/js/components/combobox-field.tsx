@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { Combobox, type ComboboxOption } from '@/components/combobox';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
-import { Label } from '@/components/ui/label';
 
 type ComboboxFieldProps = {
     id: string;
@@ -12,6 +13,8 @@ type ComboboxFieldProps = {
     placeholder?: string;
     searchPlaceholder?: string;
     emptyText?: string;
+    /** Optional plain-language explanation shown in an info tooltip beside the label. */
+    hint?: ReactNode;
 };
 
 /**
@@ -29,12 +32,15 @@ export function ComboboxField({
     placeholder,
     searchPlaceholder,
     emptyText,
+    hint,
 }: ComboboxFieldProps) {
     const errorId = `${id}-error`;
 
     return (
         <div className="space-y-2">
-            <Label htmlFor={id}>{label}</Label>
+            <FieldLabel htmlFor={id} hint={hint}>
+                {label}
+            </FieldLabel>
             <Combobox
                 id={id}
                 options={options}

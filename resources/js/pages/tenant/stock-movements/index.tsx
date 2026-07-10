@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
@@ -228,7 +229,9 @@ export default function StockMovementsIndex() {
                         />
 
                         <div className="space-y-2">
-                            <Label>Type</Label>
+                            <FieldLabel hint="In adds stock, Out removes it, and Adjustment sets the on-hand quantity to an exact figure — useful after a physical count.">
+                                Type
+                            </FieldLabel>
                             <div className="grid grid-cols-3 gap-2">
                                 {TYPES.map((option) => (
                                     <Button

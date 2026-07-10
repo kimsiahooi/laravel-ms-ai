@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
@@ -219,7 +220,12 @@ export default function StockTransfersIndex() {
                         />
 
                         <div className="space-y-2">
-                            <Label htmlFor="quantity">Quantity</Label>
+                            <FieldLabel
+                                htmlFor="quantity"
+                                hint="How much stock to move. It can't exceed what's on hand at the “From” location."
+                            >
+                                Quantity
+                            </FieldLabel>
                             <Input
                                 id="quantity"
                                 name="quantity"

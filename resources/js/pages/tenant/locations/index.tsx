@@ -6,6 +6,7 @@ import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
@@ -179,7 +180,12 @@ export default function LocationsIndex() {
                             emptyText="No warehouses."
                         />
                         <div className="space-y-2">
-                            <Label htmlFor="code">Code</Label>
+                            <FieldLabel
+                                htmlFor="code"
+                                hint="The bin or shelf code within the warehouse, such as “A-01”. This is the exact spot the stock physically sits."
+                            >
+                                Code
+                            </FieldLabel>
                             <Input
                                 id="code"
                                 name="code"

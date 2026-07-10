@@ -12,6 +12,7 @@ import { useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { FieldLabel } from '@/components/field-label';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -374,7 +375,12 @@ export default function SalesOrdersIndex() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="currency">Currency</Label>
+                                <FieldLabel
+                                    htmlFor="currency"
+                                    hint="The 3-letter ISO code for this order's prices, such as USD, MYR, or EUR."
+                                >
+                                    Currency
+                                </FieldLabel>
                                 <Input
                                     id="currency"
                                     name="currency"
@@ -547,6 +553,7 @@ export default function SalesOrdersIndex() {
                     <ComboboxField
                         id="fulfill-location"
                         label="Fulfill from"
+                        hint="The location stock is deducted from when you fulfill this order."
                         options={locationOptions}
                         value={fulfillLocationId}
                         onChange={setFulfillLocationId}
