@@ -19,6 +19,7 @@ it('renders the dashboard with stats and no tenants list', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/dashboard')
             ->where('stats.total', 3)
+            ->has('signups', 30)
             ->missing('tenants')
         );
 });

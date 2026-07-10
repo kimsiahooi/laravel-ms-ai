@@ -14,7 +14,34 @@ class DashboardController
     {
         return Inertia::render('admin/dashboard', [
             'stats' => $this->stats(),
+            'signups' => $this->signups(),
         ]);
+    }
+
+    /**
+     * New-tenant count per day for the trailing 30 days (zero-filled, oldest
+     * first). Bucketed in PHP so it behaves the same on MySQL and SQLite.
+     *
+     * @return array<int, array{date: string, label: string, count: int}>
+     */
+    private function signups(): array
+    {
+        $byDay = Tenant::query()
+            ->where('created_at', '>=', now()->subDays(29)->startOfDay())
+            ->get(['created_at'])
+            ->groupBy(fn (Tenant $tenant): string => $tenant->created_at->format('Y-m-d'));
+
+        $out = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $day = now()->subDays($i)->startOfDay();
+            $out[] = [
+                'date' => $day->format('Y-m-d'),
+                'label' => $day->format('M j'),
+                'count' => $byDay->get($day->format('Y-m-d'), collect())->count(),
+            ];
+        }
+
+        return $out;
     }
 
     /**

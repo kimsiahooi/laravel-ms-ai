@@ -7,8 +7,16 @@ import {
     Clock,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { ChartCard } from '@/components/chart-card';
 import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
+import {
+    type ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+} from '@/components/ui/chart';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { timeAgo } from '@/lib/format';
@@ -21,14 +29,22 @@ type Stats = {
     newest: { name: string; created_at: string } | null;
 };
 
+type SignupPoint = { date: string; label: string; count: number };
+
 type PageProps = {
     auth: { user: { name: string; email: string } | null };
     stats: Stats;
+    signups: SignupPoint[];
 };
 
+const signupsConfig = {
+    count: { label: 'Signups', color: 'var(--chart-1)' },
+} satisfies ChartConfig;
+
 export default function AdminDashboard() {
-    const { auth, stats } = usePageProps<PageProps>();
+    const { auth, stats, signups } = usePageProps<PageProps>();
     const [greeting, setGreeting] = useState('Welcome back');
+    const hasSignups = signups.some((d) => d.count > 0);
 
     const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'Admin';
 
@@ -104,6 +120,47 @@ export default function AdminDashboard() {
                     }
                 />
             </div>
+
+            <ChartCard
+                title="Tenant signups"
+                description="New workspaces per day · last 30 days"
+                isEmpty={!hasSignups}
+                emptyText="No signups in the last 30 days."
+            >
+                <ChartContainer config={signupsConfig} className="h-58 w-full">
+                    <BarChart
+                        data={signups}
+                        margin={{ left: -12, right: 8, top: 4 }}
+                    >
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                        <XAxis
+                            dataKey="label"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            minTickGap={28}
+                            fontSize={11}
+                        />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            width={40}
+                            fontSize={11}
+                            allowDecimals={false}
+                        />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent />}
+                        />
+                        <Bar
+                            dataKey="count"
+                            fill="var(--color-count)"
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={44}
+                        />
+                    </BarChart>
+                </ChartContainer>
+            </ChartCard>
         </CentralAdminLayout>
     );
 }
