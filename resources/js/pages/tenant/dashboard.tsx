@@ -474,36 +474,6 @@ export default function TenantDashboard() {
                 </ChartCard>
 
                 <ChartCard
-                    title="Orders by status"
-                    description="How many orders are still open vs finished"
-                    isEmpty={!hasOrders}
-                    emptyText="No orders yet."
-                >
-                    <div className="grid grid-cols-3 gap-2">
-                        <PipelineDonut
-                            title={pipelineConfigs.purchase.title}
-                            counts={orderPipeline.purchase}
-                            config={pipelineConfigs.purchase.config}
-                        />
-                        <PipelineDonut
-                            title={pipelineConfigs.sales.title}
-                            counts={orderPipeline.sales}
-                            config={pipelineConfigs.sales.config}
-                        />
-                        <PipelineDonut
-                            title={pipelineConfigs.production.title}
-                            counts={orderPipeline.production}
-                            config={pipelineConfigs.production.config}
-                        />
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-4">
-                        <LegendSwatch color={PENDING} label="Pending" />
-                        <LegendSwatch color={DONE} label="Completed" />
-                        <LegendSwatch color={CANCELLED} label="Cancelled" />
-                    </div>
-                </ChartCard>
-
-                <ChartCard
                     title="Production output"
                     description={`Finished units per day · ${rangeSpan}`}
                     isEmpty={!hasThroughput}
@@ -550,6 +520,36 @@ export default function TenantDashboard() {
                             />
                         </BarChart>
                     </ChartContainer>
+                </ChartCard>
+
+                <ChartCard
+                    title="Orders by status"
+                    description="How many orders are still open vs finished"
+                    isEmpty={!hasOrders}
+                    emptyText="No orders yet."
+                >
+                    <div className="grid grid-cols-3 gap-2">
+                        <PipelineDonut
+                            title={pipelineConfigs.purchase.title}
+                            counts={orderPipeline.purchase}
+                            config={pipelineConfigs.purchase.config}
+                        />
+                        <PipelineDonut
+                            title={pipelineConfigs.sales.title}
+                            counts={orderPipeline.sales}
+                            config={pipelineConfigs.sales.config}
+                        />
+                        <PipelineDonut
+                            title={pipelineConfigs.production.title}
+                            counts={orderPipeline.production}
+                            config={pipelineConfigs.production.config}
+                        />
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-4">
+                        <LegendSwatch color={PENDING} label="Pending" />
+                        <LegendSwatch color={DONE} label="Completed" />
+                        <LegendSwatch color={CANCELLED} label="Cancelled" />
+                    </div>
                 </ChartCard>
 
                 <ChartCard
