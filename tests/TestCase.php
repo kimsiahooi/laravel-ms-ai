@@ -6,6 +6,8 @@ use App\Models\Tenant;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Testing\TestResponse;
+use Inertia\Support\SessionKey;
 use Laravel\Fortify\Features;
 
 abstract class TestCase extends BaseTestCase
@@ -14,8 +16,28 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->registerToastAssertion();
+
         // Heal from any crashed prior run that leaked test tenant databases.
         $this->dropLeftoverTenantDatabases();
+    }
+
+    /**
+     * `$response->assertToast('Saved.')` — assert a success (or given type) toast
+     * was flashed for the next Inertia response via `RespondsWithToast`/`Inertia::flash`.
+     */
+    protected function registerToastAssertion(): void
+    {
+        // assertToast('Saved.') checks the exact message; assertToast() just
+        // asserts a success (or given type) toast was flashed.
+        TestResponse::macro('assertToast', function (?string $message = null, string $type = 'success') {
+            /** @var TestResponse $this */
+            return $this->assertSessionHas(
+                SessionKey::FLASH_DATA,
+                fn ($flash) => ($flash['toast']['type'] ?? null) === $type
+                    && ($message === null || ($flash['toast']['message'] ?? null) === $message),
+            );
+        });
     }
 
     protected function tearDown(): void

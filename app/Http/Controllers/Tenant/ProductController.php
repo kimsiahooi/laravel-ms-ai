@@ -8,6 +8,7 @@ use App\Data\OptionData;
 use App\Data\ProductData;
 use App\Http\Controllers\Concerns\InteractsWithTenantAssets;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
+use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\ProductRequest;
 use App\Models\Category;
 use App\Models\Product;
@@ -21,6 +22,7 @@ class ProductController
 {
     use InteractsWithTenantAssets;
     use ResolvesPerPage;
+    use RespondsWithToast;
 
     // Product images live at assets/{tenant-slug}/products/{hash}; the DB stores
     // the slug-free `products/{hash}`. See InteractsWithTenantAssets.
@@ -64,7 +66,9 @@ class ProductController
 
         Product::create($data);
 
-        return back()->with('success', 'Product created.');
+        $this->toast('Product created.');
+
+        return back();
     }
 
     public function update(ProductRequest $request, Product $product): RedirectResponse
@@ -86,7 +90,9 @@ class ProductController
 
         $product->update($data);
 
-        return back()->with('success', 'Product updated.');
+        $this->toast('Product updated.');
+
+        return back();
     }
 
     public function destroy(Product $product): RedirectResponse
@@ -94,6 +100,8 @@ class ProductController
         // Soft delete; the image file is kept so a restore stays intact.
         $product->delete();
 
-        return back()->with('success', 'Product deleted.');
+        $this->toast('Product deleted.');
+
+        return back();
     }
 }

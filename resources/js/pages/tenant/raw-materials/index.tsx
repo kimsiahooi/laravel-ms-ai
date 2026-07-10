@@ -15,7 +15,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { flashToast } from '@/lib/flash';
 import { formatQuantity } from '@/lib/format';
 import type { TenantPageProps } from '@/types';
 
@@ -51,7 +50,6 @@ export default function RawMaterialsIndex() {
 
     const del = useDelete<RawMaterial>({
         baseUrl: base,
-        onDeleted: flashToast,
     });
 
     const columns: ColumnDef<RawMaterial>[] = [
@@ -155,7 +153,6 @@ export default function RawMaterialsIndex() {
                 editing={dialog.editing}
                 entityLabel="raw material"
                 baseUrl={base}
-                onSuccess={flashToast}
             >
                 {({ errors }) => (
                     <>

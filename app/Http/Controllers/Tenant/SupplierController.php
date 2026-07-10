@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Data\SupplierData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
+use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\SupplierRequest;
 use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ use Inertia\Response;
 class SupplierController
 {
     use ResolvesPerPage;
+    use RespondsWithToast;
 
     public function index(Request $request): Response
     {
@@ -43,20 +45,26 @@ class SupplierController
     {
         Supplier::create($request->validated());
 
-        return back()->with('success', 'Supplier created.');
+        $this->toast('Supplier created.');
+
+        return back();
     }
 
     public function update(SupplierRequest $request, Supplier $supplier): RedirectResponse
     {
         $supplier->update($request->validated());
 
-        return back()->with('success', 'Supplier updated.');
+        $this->toast('Supplier updated.');
+
+        return back();
     }
 
     public function destroy(Supplier $supplier): RedirectResponse
     {
         $supplier->delete();
 
-        return back()->with('success', 'Supplier deleted.');
+        $this->toast('Supplier deleted.');
+
+        return back();
     }
 }

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Central;
 
 use App\Actions\ProvisionTenant;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
+use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Central\StoreTenantRequest;
 use App\Models\Tenant;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -17,6 +18,7 @@ use Inertia\Response;
 class TenantController
 {
     use ResolvesPerPage;
+    use RespondsWithToast;
 
     public function index(Request $request): Response
     {
@@ -61,8 +63,9 @@ class TenantController
             adminPassword: $data['admin_password'],
         );
 
-        return redirect()->route('admin.tenants.index')
-            ->with('success', "Tenant \"{$tenant->name}\" created — login at /{$tenant->getKey()}/login.");
+        $this->toast("Tenant \"{$tenant->name}\" created — login at /{$tenant->getKey()}/login.");
+
+        return redirect()->route('admin.tenants.index');
     }
 
     public function trashed(Request $request): Response
@@ -100,7 +103,9 @@ class TenantController
     {
         $tenant->delete();
 
-        return back()->with('success', "Tenant \"{$tenant->name}\" moved to the archive.");
+        $this->toast("Tenant \"{$tenant->name}\" moved to the archive.");
+
+        return back();
     }
 
     public function restore(Tenant $tenant): RedirectResponse
@@ -109,7 +114,9 @@ class TenantController
 
         $tenant->restore();
 
-        return back()->with('success', "Tenant \"{$tenant->name}\" restored.");
+        $this->toast("Tenant \"{$tenant->name}\" restored.");
+
+        return back();
     }
 
     public function forceDestroy(Tenant $tenant): RedirectResponse
@@ -119,6 +126,8 @@ class TenantController
         $name = $tenant->name;
         $tenant->forceDelete();
 
-        return back()->with('success', "Tenant \"{$name}\" permanently deleted.");
+        $this->toast("Tenant \"{$name}\" permanently deleted.");
+
+        return back();
     }
 }

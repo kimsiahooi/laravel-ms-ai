@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Data\CustomerData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
+use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ use Inertia\Response;
 class CustomerController
 {
     use ResolvesPerPage;
+    use RespondsWithToast;
 
     public function index(Request $request): Response
     {
@@ -43,20 +45,26 @@ class CustomerController
     {
         Customer::create($request->validated());
 
-        return back()->with('success', 'Customer created.');
+        $this->toast('Customer created.');
+
+        return back();
     }
 
     public function update(CustomerRequest $request, Customer $customer): RedirectResponse
     {
         $customer->update($request->validated());
 
-        return back()->with('success', 'Customer updated.');
+        $this->toast('Customer updated.');
+
+        return back();
     }
 
     public function destroy(Customer $customer): RedirectResponse
     {
         $customer->delete();
 
-        return back()->with('success', 'Customer deleted.');
+        $this->toast('Customer deleted.');
+
+        return back();
     }
 }

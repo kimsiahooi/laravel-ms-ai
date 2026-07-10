@@ -15,7 +15,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { flashToast } from '@/lib/flash';
 import type { TenantPageProps } from '@/types';
 
 type Category = App.Data.CategoryData;
@@ -44,7 +43,6 @@ export default function CategoriesIndex() {
 
     const del = useDelete<Category>({
         baseUrl: base,
-        onDeleted: flashToast,
     });
 
     const columns: ColumnDef<Category>[] = [
@@ -134,7 +132,6 @@ export default function CategoriesIndex() {
                 editing={dialog.editing}
                 entityLabel="category"
                 baseUrl={base}
-                onSuccess={flashToast}
                 description={{
                     create: 'Add a category to organize your products.',
                     edit: 'Update this category.',

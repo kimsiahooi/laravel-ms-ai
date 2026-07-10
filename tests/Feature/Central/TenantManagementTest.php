@@ -23,7 +23,7 @@ it('lets a super-admin create a tenant with its first user from the admin panel'
             'admin_password' => 'secret-password',
         ])
         ->assertRedirect(route('admin.tenants.index'))
-        ->assertSessionHas('success');
+        ->assertToast();
 
     $tenant = Tenant::where('id', 'acme')->first();
     expect($tenant)->not->toBeNull();

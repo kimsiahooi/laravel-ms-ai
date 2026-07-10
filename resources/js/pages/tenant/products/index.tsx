@@ -17,7 +17,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { flashToast } from '@/lib/flash';
 import { formatQuantity } from '@/lib/format';
 import type { TenantPageProps } from '@/types';
 
@@ -122,7 +121,7 @@ export default function ProductsIndex() {
         onCreate: resetForm,
         onEdit: fillForm,
     });
-    const del = useDelete<Product>({ baseUrl: base, onDeleted: flashToast });
+    const del = useDelete<Product>({ baseUrl: base });
 
     const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -270,7 +269,6 @@ export default function ProductsIndex() {
                 editing={dialog.editing}
                 entityLabel="product"
                 baseUrl={base}
-                onSuccess={flashToast}
                 contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
             >
                 {({ errors }) => (

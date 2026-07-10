@@ -26,7 +26,7 @@ type ResourceFormDialogProps<T extends { id: number }> = {
     entityLabel: string;
     /** Resource base URL; the action posts to `baseUrl` (create) or `baseUrl/{id}` (edit). */
     baseUrl: string;
-    /** Called with the fresh page after a successful save (e.g. flashToast); the dialog auto-closes. */
+    /** Optional callback with the fresh page after a successful save; the dialog auto-closes regardless. (Success toasts come from the global useFlashToast hook.) */
     onSuccess?: (page: { props: unknown }) => void;
     /** Override the default header descriptions. */
     description?: { create: ReactNode; edit: ReactNode };

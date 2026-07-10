@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Data\CategoryData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
+use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\CategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ use Inertia\Response;
 class CategoryController
 {
     use ResolvesPerPage;
+    use RespondsWithToast;
 
     public function index(Request $request): Response
     {
@@ -43,7 +45,9 @@ class CategoryController
     {
         Category::create($request->validated());
 
-        return back()->with('success', 'Category created.');
+        $this->toast('Category created.');
+
+        return back();
     }
 
     public function update(
@@ -52,13 +56,17 @@ class CategoryController
     ): RedirectResponse {
         $category->update($request->validated());
 
-        return back()->with('success', 'Category updated.');
+        $this->toast('Category updated.');
+
+        return back();
     }
 
     public function destroy(Category $category): RedirectResponse
     {
         $category->delete();
 
-        return back()->with('success', 'Category deleted.');
+        $this->toast('Category deleted.');
+
+        return back();
     }
 }

@@ -76,7 +76,7 @@ it('creates a product with category, supplier and defaults min_stock to 0', func
             'category_id' => $categoryId, 'supplier_id' => $supplierId,
         ])
         ->assertRedirect('/acme/products')
-        ->assertSessionHas('success');
+        ->assertToast('Product created.');
 
     $this->tenant->run(function () use ($categoryId, $supplierId) {
         $product = Product::firstWhere('sku', 'P-001');
@@ -151,7 +151,7 @@ it('stores an uploaded image under the tenant assets folder', function () {
             'image' => UploadedFile::fake()->image('widget.jpg', 200, 200),
         ])
         ->assertRedirect('/acme/products')
-        ->assertSessionHas('success');
+        ->assertToast('Product created.');
 
     $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
 
@@ -176,7 +176,7 @@ it('updates a product and replaces its image', function () {
             'image' => UploadedFile::fake()->image('new.png', 150, 150),
         ])
         ->assertRedirect('/acme/products')
-        ->assertSessionHas('success');
+        ->assertToast('Product updated.');
 
     $path = $this->tenant->run(function () use ($id) {
         $product = Product::find($id);
@@ -207,7 +207,7 @@ it('removes a product image when remove_image is set', function () {
             'remove_image' => '1',
         ])
         ->assertRedirect('/acme/products')
-        ->assertSessionHas('success');
+        ->assertToast('Product updated.');
 
     $this->tenant->run(function () use ($id) {
         expect(Product::find($id)->image)->toBeNull();
@@ -230,7 +230,7 @@ it('deletes the previous image file when replacing it', function () {
             'image' => UploadedFile::fake()->image('new.jpg'),
         ])
         ->assertRedirect('/acme/products')
-        ->assertSessionHas('success');
+        ->assertToast('Product updated.');
 
     $newPath = $this->tenant->run(fn () => Product::find($id)->image);
 
@@ -249,7 +249,7 @@ it('soft-deletes a product', function () {
     $this->from('/acme/products')
         ->delete("/acme/products/{$id}")
         ->assertRedirect('/acme/products')
-        ->assertSessionHas('success');
+        ->assertToast('Product deleted.');
 
     $this->tenant->run(function () use ($id) {
         expect(Product::find($id))->toBeNull()

@@ -45,7 +45,7 @@ it('creates a supplier', function () {
             'notes' => 'Primary steel supplier',
         ])
         ->assertRedirect('/acme/suppliers')
-        ->assertSessionHas('success');
+        ->assertToast('Supplier created.');
 
     $this->tenant->run(function () {
         expect(Supplier::where('name', 'Acme Metals')->exists())->toBeTrue();
@@ -82,7 +82,7 @@ it('updates a supplier', function () {
     $this->from('/acme/suppliers')
         ->put("/acme/suppliers/{$id}", ['name' => 'Acme Metals Ltd'])
         ->assertRedirect('/acme/suppliers')
-        ->assertSessionHas('success');
+        ->assertToast('Supplier updated.');
 
     $this->tenant->run(function () use ($id) {
         expect(Supplier::find($id)->name)->toBe('Acme Metals Ltd');
@@ -97,7 +97,7 @@ it('soft-deletes a supplier', function () {
     $this->from('/acme/suppliers')
         ->delete("/acme/suppliers/{$id}")
         ->assertRedirect('/acme/suppliers')
-        ->assertSessionHas('success');
+        ->assertToast('Supplier deleted.');
 
     $this->tenant->run(function () use ($id) {
         expect(Supplier::find($id))->toBeNull()

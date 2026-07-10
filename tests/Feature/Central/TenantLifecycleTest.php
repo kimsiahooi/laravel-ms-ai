@@ -35,7 +35,7 @@ it('soft deletes a tenant and keeps its database', function () {
         ->from('/admin/tenants')
         ->delete('/admin/tenants/acme')
         ->assertRedirect('/admin/tenants')
-        ->assertSessionHas('success');
+        ->assertToast();
 
     expect(Tenant::withTrashed()->find('acme')->trashed())->toBeTrue()
         ->and(tenantDbExists('acme'))->toBeTrue();
@@ -66,7 +66,7 @@ it('restores a soft-deleted tenant and makes it reachable again', function () {
         ->from('/admin/tenants/trashed')
         ->patch('/admin/tenants/acme/restore')
         ->assertRedirect('/admin/tenants/trashed')
-        ->assertSessionHas('success');
+        ->assertToast();
 
     expect(Tenant::find('acme'))->not->toBeNull();
 
@@ -80,7 +80,7 @@ it('force deletes a trashed tenant and drops its database', function () {
         ->from('/admin/tenants/trashed')
         ->delete('/admin/tenants/acme/force')
         ->assertRedirect('/admin/tenants/trashed')
-        ->assertSessionHas('success');
+        ->assertToast();
 
     expect(Tenant::withTrashed()->find('acme'))->toBeNull()
         ->and(tenantDbExists('acme'))->toBeFalse();

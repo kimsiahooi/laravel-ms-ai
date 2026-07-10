@@ -46,7 +46,7 @@ it('creates a category', function () {
             'description' => 'Bolts, nuts, screws',
         ])
         ->assertRedirect('/acme/categories')
-        ->assertSessionHas('success');
+        ->assertToast('Category created.');
 
     $this->tenant->run(function () {
         expect(Category::where('name', 'Fasteners')->exists())->toBeTrue();
@@ -74,7 +74,7 @@ it('updates a category', function () {
     $this->from('/acme/categories')
         ->put("/acme/categories/{$id}", ['name' => 'Hardware'])
         ->assertRedirect('/acme/categories')
-        ->assertSessionHas('success');
+        ->assertToast('Category updated.');
 
     $this->tenant->run(function () use ($id) {
         expect(Category::find($id)->name)->toBe('Hardware');
@@ -91,7 +91,7 @@ it('soft-deletes a category', function () {
     $this->from('/acme/categories')
         ->delete("/acme/categories/{$id}")
         ->assertRedirect('/acme/categories')
-        ->assertSessionHas('success');
+        ->assertToast('Category deleted.');
 
     $this->tenant->run(function () use ($id) {
         expect(Category::find($id))->toBeNull()

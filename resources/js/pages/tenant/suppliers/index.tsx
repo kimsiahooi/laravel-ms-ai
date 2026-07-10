@@ -16,7 +16,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { flashToast } from '@/lib/flash';
 import type { TenantPageProps } from '@/types';
 
 type Supplier = App.Data.SupplierData;
@@ -56,7 +55,6 @@ export default function SuppliersIndex() {
 
     const del = useDelete<Supplier>({
         baseUrl: base,
-        onDeleted: flashToast,
     });
 
     const columns: ColumnDef<Supplier>[] = [
@@ -152,7 +150,6 @@ export default function SuppliersIndex() {
                 editing={dialog.editing}
                 entityLabel="supplier"
                 baseUrl={base}
-                onSuccess={flashToast}
             >
                 {({ errors }) => (
                     <>

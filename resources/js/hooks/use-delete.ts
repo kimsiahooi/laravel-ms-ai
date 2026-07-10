@@ -4,7 +4,7 @@ import { useState } from 'react';
 type UseDeleteOptions<T> = {
     /** Resource base URL, e.g. `/${tenant.slug}/products`. */
     baseUrl: string;
-    /** Called after a successful delete (e.g. flashToast) with the fresh page. */
+    /** Optional callback with the fresh page after a successful delete. (Success toasts come from the global useFlashToast hook.) */
     onDeleted?: (page: { props: unknown }) => void;
 };
 

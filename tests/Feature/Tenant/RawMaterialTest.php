@@ -43,7 +43,7 @@ it('creates a raw material and defaults min_stock to 0', function () {
             'unit' => 'kg',
         ])
         ->assertRedirect('/acme/raw-materials')
-        ->assertSessionHas('success');
+        ->assertToast('Raw material created.');
 
     $this->tenant->run(function () {
         $rm = RawMaterial::firstWhere('sku', 'RM-001');
@@ -75,7 +75,7 @@ it('updates a raw material', function () {
             'name' => 'Steel Rod', 'sku' => 'RM-001', 'unit' => 'kg', 'min_stock' => 25.5,
         ])
         ->assertRedirect('/acme/raw-materials')
-        ->assertSessionHas('success');
+        ->assertToast('Raw material updated.');
 
     $this->tenant->run(function () use ($id) {
         expect((float) RawMaterial::find($id)->min_stock)->toBe(25.5);
@@ -92,7 +92,7 @@ it('soft-deletes a raw material', function () {
     $this->from('/acme/raw-materials')
         ->delete("/acme/raw-materials/{$id}")
         ->assertRedirect('/acme/raw-materials')
-        ->assertSessionHas('success');
+        ->assertToast('Raw material deleted.');
 
     $this->tenant->run(function () use ($id) {
         expect(RawMaterial::find($id))->toBeNull()

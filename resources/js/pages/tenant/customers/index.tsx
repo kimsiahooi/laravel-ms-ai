@@ -16,7 +16,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { flashToast } from '@/lib/flash';
 import type { TenantPageProps } from '@/types';
 
 type Customer = App.Data.CustomerData;
@@ -56,7 +55,6 @@ export default function CustomersIndex() {
 
     const del = useDelete<Customer>({
         baseUrl: base,
-        onDeleted: flashToast,
     });
 
     const columns: ColumnDef<Customer>[] = [
@@ -152,7 +150,6 @@ export default function CustomersIndex() {
                 editing={dialog.editing}
                 entityLabel="customer"
                 baseUrl={base}
-                onSuccess={flashToast}
             >
                 {({ errors }) => (
                     <>

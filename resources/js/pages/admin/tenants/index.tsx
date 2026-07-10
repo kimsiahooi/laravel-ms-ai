@@ -48,10 +48,9 @@ import { useClipboard } from '@/hooks/use-clipboard';
 import { useInitials } from '@/hooks/use-initials';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
-import { flashToast } from '@/lib/flash';
 import { absoluteDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { FlashSuccess, ResourceFilters } from '@/types';
+import type { ResourceFilters } from '@/types';
 
 type Tenant = {
     name: string;
@@ -62,7 +61,6 @@ type Tenant = {
 type PageProps = {
     tenants: Paginator<Tenant>;
     filters: ResourceFilters;
-    flash: FlashSuccess;
 };
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -138,9 +136,8 @@ export default function AdminTenantsIndex() {
             preserveScroll: true,
             onStart: () => setDeleteProcessing(true),
             onFinish: () => setDeleteProcessing(false),
-            onSuccess: (page) => {
+            onSuccess: (_page) => {
                 setDeleting(null);
-                flashToast(page);
             },
             onError: () =>
                 toast.error('Could not delete the tenant. Please try again.'),
@@ -445,19 +442,11 @@ export default function AdminTenantsIndex() {
                         disableWhileProcessing
                         onStart={() => setSubmitting(true)}
                         onFinish={() => setSubmitting(false)}
-                        onSuccess={(page) => {
+                        onSuccess={() => {
                             setOpen(false);
                             resetForm();
-
-                            // Toast here (fires once per submit) rather than off a
-                            // flash.success effect, which drops repeat identical
-                            // messages and re-fires stale on back/forward nav.
-                            const message = (page.props as unknown as PageProps)
-                                .flash?.success;
-
-                            if (message) {
-                                toast.success(message);
-                            }
+                            // The "tenant created" toast is flashed by the backend
+                            // and rendered by the global useFlashToast hook.
                         }}
                         className="flex min-h-0 flex-col"
                     >

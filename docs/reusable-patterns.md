@@ -66,44 +66,24 @@ merges a blank (`null`/`''`) field to `0` before validation. `RawMaterialRequest
 
 ## Frontend (React)
 
-### 1. ◐ Flash toasts — helper extracted (`@/lib/flash`); full convention merge still optional
-**Done now:** the identical per-page `flashToast(page)` helper (7 copies) was extracted to
-`resources/js/lib/flash.ts` and is imported (`import { flashToast } from '@/lib/flash'`). This
-keeps **Convention A** but removes the copy-paste. The larger migration below (delete Convention A,
-standardize on the reactive hook) is still available but **optional** — and now smaller, since all
-call sites already point at one function.
+### 1. ✅ Flash toasts: one global convention → `RespondsWithToast` + `useFlashToast`  · **DONE**
+The codebase had two flash conventions; it now has **one**. Convention A (per-page `flashToast` +
+`->with('success')` + a shared `flash.success` prop) is **deleted**; everything uses the reactive
+global path:
 
-**The remaining opportunity — the codebase still has two flash conventions:**
+- **Backend:** `app/Http/Controllers/Concerns/RespondsWithToast.php` — `$this->toast('Saved.')`
+  (`$type` defaults to `success`) calls `Inertia::flash('toast', ['type' => …, 'message' => …])`.
+  All 6 mutating controllers (5 catalog + `Central/TenantController`) use it; no controller uses
+  `->with('success')`.
+- **Frontend:** the `useFlashToast()` hook (mounted once in `<Toaster>`) renders every flash — the
+  7 pages have **zero** toast wiring. `@/lib/flash.ts` is deleted; `HandleInertiaRequests` no longer
+  shares `flash.success`; `FlashSuccess` / the `flash` page prop are gone from `@/types/page`.
+- **Tests:** a `TestResponse::assertToast('Saved.')` macro (registered in `tests/TestCase.php`)
+  replaced the 22 `assertSessionHas('success')` assertions — exact message for the catalog,
+  message-agnostic `assertToast()` for the central (interpolated) messages.
 
-- **Convention A (imperative, per-page):** controllers `return back()->with('success', 'X')`;
-  `HandleInertiaRequests` shares `flash.success`; **each of the 7 list pages hand-rolls its own
-  identical `flashToast(page)`** and calls it in Inertia `onSuccess`. Used by the 5 tenant catalog
-  pages + `admin/tenants/{index,trashed}`.
-- **Convention B (reactive, global):** controllers `Inertia::flash('toast', ['type'=>'success',
-  'message'=>'X'])`; the **`useFlashToast()` hook** (`resources/js/hooks/use-flash-toast.ts`)
-  listens on `router.on('flash')` and toasts. **It is already mounted globally** inside the
-  `<Toaster>` (`resources/js/components/ui/sonner.tsx`), so it fires app-wide with **zero
-  per-page code**. Used today by `Settings/ProfileController`.
-
-**Recommendation:** standardize on **Convention B** and delete Convention A. It's reactive,
-global, typed (`FlashToast` in `resources/js/types/ui.ts`), and supports all toast types
-(success/info/warning/error), not just success.
-
-**Migration:**
-1. Backend — replace `->with('success', 'X')` with `Inertia::flash('toast', ['type' => 'success',
-   'message' => 'X'])`. Wrap it in a controller trait `RespondsWithToast` (`protected function
-   toast(string $message, string $type = 'success')`) so call sites stay one line.
-2. Frontend — delete the 7 local `flashToast` functions and their `onSuccess={… flashToast(x) …}`
-   calls (keep the other `onSuccess` work like `setFormOpen(false)`). The global hook handles the
-   toast.
-3. Tests — the catalog/admin feature tests assert `->assertSessionHas('success')`; update these to
-   assert the new flash payload (or drop them and keep the `assertRedirect`). ~20 assertions across
-   the 5 catalog + 2 tenant-admin test files.
-
-**Impact:** removes 7 copy-pasted helpers + all the per-page toast plumbing; one consistent flash
-path. **Risk:** medium — touches ~6 controllers, ~7 pages, ~20 test assertions, and changes toast
-UX, so it wants a **browser smoke** (create/update/delete → toast still appears). Best done as a
-focused pass.
+Verified: 122 Pest tests, biome/types/build clean, and a **browser smoke** (create + delete on
+`/demo/raw-materials` → both toasts fire through the global hook).
 
 ### 2. ✅ Resource create/edit dialog → `useResourceDialog` + `<ResourceFormDialog>`  · **DONE**
 `resources/js/hooks/use-resource-dialog.ts` — `useResourceDialog<T>({ onCreate, onEdit })` owns
@@ -177,15 +157,13 @@ call sites into one home; ready for future inventory/quantity columns).
 `TenantFormRequest` (B4) · `NormalizesNumericInput` (B5) ·
 `useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
 `ComboboxField` (F3) · `RowActions` (F4) · shared prop types `@/types/page` (F5) ·
-`usePageProps` (F6) · `EmptyState` (F7) · `formatQuantity` (F8) · `flashToast` helper `@/lib/flash`.
+`usePageProps` (F6) · `EmptyState` (F7) · `formatQuantity` (F8) · `RespondsWithToast` + global
+`useFlashToast` (F1).
 Also: `spatie/laravel-data` DTOs on **all 5 catalog resources** — Product (pilot) +
 RawMaterial / Category / Supplier / Customer. Each controller's `->through()` returns an
 `App\Data\XxxData` (snake_case, `#[TypeScript]`), and the page consumes the generated
 `App.Data.XxxData` type instead of a hand-written interface. Regenerate with `bun run
 types:generate`; the committed `resources/js/types/generated.d.ts` is reproducible.
 
-**Remaining:**
-- Full flash-convention merge (F1) — the helper is now shared, so only the
-  Convention A→B migration (controllers + reactive hook + ~20 test assertions) is left.
-- (Admin tenants pages keep their own archive/restore/force-delete flow — not part of the
-  catalog dialog/delete abstractions.)
+**Remaining:** _the reuse backlog (B1–B5, F1–F8) is cleared._ New duplication should be logged
+here as it appears.

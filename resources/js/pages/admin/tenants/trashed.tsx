@@ -34,9 +34,8 @@ import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
-import { flashToast } from '@/lib/flash';
 import { timeAgo } from '@/lib/format';
-import type { FlashSuccess, ResourceFilters } from '@/types';
+import type { ResourceFilters } from '@/types';
 
 type TrashedTenant = {
     name: string;
@@ -47,7 +46,6 @@ type TrashedTenant = {
 type PageProps = {
     tenants: Paginator<TrashedTenant>;
     filters: ResourceFilters;
-    flash: FlashSuccess;
 };
 
 export default function AdminTenantsTrashed() {
@@ -71,9 +69,8 @@ export default function AdminTenantsTrashed() {
                 preserveScroll: true,
                 onStart: () => setProcessing(true),
                 onFinish: () => setProcessing(false),
-                onSuccess: (page) => {
+                onSuccess: (_page) => {
                     setRestoring(null);
-                    flashToast(page);
                 },
                 onError: () =>
                     toast.error(
@@ -97,9 +94,8 @@ export default function AdminTenantsTrashed() {
             preserveScroll: true,
             onStart: () => setProcessing(true),
             onFinish: () => setProcessing(false),
-            onSuccess: (page) => {
+            onSuccess: (_page) => {
                 closePurge();
-                flashToast(page);
             },
             onError: () =>
                 toast.error('Could not delete the tenant. Please try again.'),

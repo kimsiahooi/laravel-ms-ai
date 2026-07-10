@@ -45,7 +45,7 @@ it('creates a customer', function () {
             'notes' => 'Wholesale account',
         ])
         ->assertRedirect('/acme/customers')
-        ->assertSessionHas('success');
+        ->assertToast('Customer created.');
 
     $this->tenant->run(function () {
         expect(Customer::where('name', 'Globex')->exists())->toBeTrue();
@@ -82,7 +82,7 @@ it('updates a customer', function () {
     $this->from('/acme/customers')
         ->put("/acme/customers/{$id}", ['name' => 'Globex Corp'])
         ->assertRedirect('/acme/customers')
-        ->assertSessionHas('success');
+        ->assertToast('Customer updated.');
 
     $this->tenant->run(function () use ($id) {
         expect(Customer::find($id)->name)->toBe('Globex Corp');
@@ -97,7 +97,7 @@ it('soft-deletes a customer', function () {
     $this->from('/acme/customers')
         ->delete("/acme/customers/{$id}")
         ->assertRedirect('/acme/customers')
-        ->assertSessionHas('success');
+        ->assertToast('Customer deleted.');
 
     $this->tenant->run(function () use ($id) {
         expect(Customer::find($id))->toBeNull()

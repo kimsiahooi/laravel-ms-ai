@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Data\RawMaterialData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
+use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\RawMaterialRequest;
 use App\Models\RawMaterial;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ use Inertia\Response;
 class RawMaterialController
 {
     use ResolvesPerPage;
+    use RespondsWithToast;
 
     public function index(Request $request): Response
     {
@@ -43,20 +45,26 @@ class RawMaterialController
     {
         RawMaterial::create($request->validated());
 
-        return back()->with('success', 'Raw material created.');
+        $this->toast('Raw material created.');
+
+        return back();
     }
 
     public function update(RawMaterialRequest $request, RawMaterial $rawMaterial): RedirectResponse
     {
         $rawMaterial->update($request->validated());
 
-        return back()->with('success', 'Raw material updated.');
+        $this->toast('Raw material updated.');
+
+        return back();
     }
 
     public function destroy(RawMaterial $rawMaterial): RedirectResponse
     {
         $rawMaterial->delete();
 
-        return back()->with('success', 'Raw material deleted.');
+        $this->toast('Raw material deleted.');
+
+        return back();
     }
 }
