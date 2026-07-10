@@ -100,14 +100,21 @@ path. **Risk:** medium — touches ~6 controllers, ~7 pages, ~20 test assertions
 UX, so it wants a **browser smoke** (create/update/delete → toast still appears). Best done as a
 focused pass.
 
-### 2. 🔜 Resource dialog state → `useResourceDialog` hook  · **Proposed (medium)**
-**What:** 6 index pages repeat the same create/edit dialog state machine —
-`formOpen`, `editing`, per-field `useState`, and `openCreate` / `openEdit(row)` / `resetForm`.
-**Proposal:** a `useResourceDialog<T>()` hook owning `open`, `editing`, `openCreate`,
-`openEdit`, `close`, so pages keep only their field state. (Products' image-preview logic —
-`previewRef` + `setPreview` + revoke — is a good candidate to fold in as `useImageUpload()`.)
-**Impact:** trims boilerplate on every catalog page. **Risk:** medium (per-page field differences;
-verify each dialog still opens/edits/resets). **Files:** the 6 `*/index.tsx` with dialogs.
+### 2. ✅ Resource create/edit dialog → `useResourceDialog` + `<ResourceFormDialog>`  · **DONE**
+`resources/js/hooks/use-resource-dialog.ts` — `useResourceDialog<T>({ onCreate, onEdit })` owns
+`open`/`editing`/`openCreate`/`openEdit`/`close`/`onOpenChange`; the page passes field
+reset/fill callbacks. `resources/js/components/resource-form-dialog.tsx` — `<ResourceFormDialog
+open onOpenChange editing entityLabel baseUrl onSuccess>{({ errors }) => …fields…}</…>` renders
+the Dialog + header + Inertia `<Form>` + Cancel/submit footer; callers supply only the fields.
+Applied to all 5 catalog pages. Verified in a real browser (create / edit-prefill / delete, and
+the combobox-in-dialog still selects).
+
+### 2b. ✅ Delete flow → `useDelete` + `<ConfirmDeleteDialog>`  · **DONE**
+`resources/js/hooks/use-delete.ts` — `useDelete<T>({ baseUrl, onDeleted })` owns `deleting` +
+`request`/`cancel`/`confirm` (the `router.delete`); `onDeleted` is the page's existing
+`flashToast` (**toast untouched**). `resources/js/components/confirm-delete-dialog.tsx` —
+`<ConfirmDeleteDialog item onOpenChange onConfirm title description />`. Applied to all 5 catalog
+pages (raw-materials 403→304, categories 329→242, suppliers/customers 437→336, products 660→544).
 
 ### 3. ✅ `ComboboxField` (Label + Combobox + InputError) → component  · **DONE**
 `resources/js/components/combobox-field.tsx` — `<ComboboxField id label options value onChange
@@ -133,10 +140,13 @@ identical dropdown block in all 5 catalog pages' `actions` column (net −96 lin
 
 ## Status
 
-**Done:** `ResolvesPerPage` (B1) · `Searchable` scope (B2) · `InteractsWithTenantAssets` (B3) · `ComboboxField` (F3) · `RowActions` (F4).
+**Done:** `ResolvesPerPage` (B1) · `Searchable` scope (B2) · `InteractsWithTenantAssets` (B3) ·
+`useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
+`ComboboxField` (F3) · `RowActions` (F4). Also: `spatie/laravel-data` DTO pilot on Products.
 
 **Remaining:**
-- `useResourceDialog` hook (F2) — biggest remaining; touches 5 pages → verify dialogs after.
-- Delete flow (`<ConfirmDeleteDialog>` + `useDelete`) — 7 pages.
 - Backend `TenantFormRequest` base for `authorize()` (B4) + `min_stock` coercion (B5) — small.
-- Flash-toast consolidation (F1) — intentionally **skipped** (see item 1).
+- Flash-toast consolidation (F1) — intentionally **skipped**.
+- Roll `laravel-data` out to the other resources (pilot proven on Products).
+- (Admin tenants pages keep their own archive/restore/force-delete flow — not part of the
+  catalog dialog/delete abstractions.)
