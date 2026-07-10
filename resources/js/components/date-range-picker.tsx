@@ -251,11 +251,15 @@ export function DateRangePicker({
     const [fromTime, setFromTime] = useState(timeOf(parseISO(value.from)));
     const [toTime, setToTime] = useState(timeOf(parseISO(value.to)));
     const [presetKey, setPresetKey] = useState<string | null>(null);
+    // false = a complete range is shown; the next click starts a fresh one.
+    // true = a start is picked and the next click sets the end.
+    const [pickingEnd, setPickingEnd] = useState(false);
 
     const syncToValue = () => {
         setRange({ from: parseISO(value.from), to: parseISO(value.to) });
         setFromTime(timeOf(parseISO(value.from)));
         setToTime(timeOf(parseISO(value.to)));
+        setPickingEnd(false);
     };
 
     const pickPreset = (preset: Preset) => {
@@ -264,6 +268,25 @@ export function DateRangePicker({
         setFromTime(timeOf(from));
         setToTime(timeOf(to));
         setPresetKey(preset.key);
+        setPickingEnd(false);
+    };
+
+    // Reproduce shadcn's default range flow even though a range is pre-selected:
+    // 1st click starts a fresh range, 2nd sets the end, a 3rd starts over.
+    const pickDay = (day: Date) => {
+        setPresetKey(null);
+        if (pickingEnd) {
+            setRange((prev) => {
+                const start = prev?.from ?? day;
+                return day < start
+                    ? { from: day, to: start }
+                    : { from: start, to: day };
+            });
+            setPickingEnd(false);
+        } else {
+            setRange({ from: day, to: undefined });
+            setPickingEnd(true);
+        }
     };
 
     const apply = () => {
@@ -324,28 +347,7 @@ export function DateRangePicker({
                             mode="range"
                             numberOfMonths={2}
                             selected={range}
-                            onSelect={(_selected, day) => {
-                                setPresetKey(null);
-                                // Keep the range complete and just move the
-                                // nearest endpoint, so an extra ("3rd") click
-                                // never clears the whole selection.
-                                setRange((prev) => {
-                                    if (!prev?.from || !prev?.to) {
-                                        return { from: day, to: day };
-                                    }
-                                    const t = day.getTime();
-                                    if (t < prev.from.getTime()) {
-                                        return { from: day, to: prev.to };
-                                    }
-                                    if (t > prev.to.getTime()) {
-                                        return { from: prev.from, to: day };
-                                    }
-                                    return t - prev.from.getTime() <=
-                                        prev.to.getTime() - t
-                                        ? { from: day, to: prev.to }
-                                        : { from: prev.from, to: day };
-                                });
-                            }}
+                            onSelect={(_selected, day) => pickDay(day)}
                             defaultMonth={range?.from}
                         />
                         <div className="flex flex-col gap-3">
