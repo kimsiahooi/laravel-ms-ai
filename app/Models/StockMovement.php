@@ -49,7 +49,9 @@ class StockMovement extends Model
      */
     public function location(): BelongsTo
     {
-        return $this->belongsTo(Location::class);
+        // The ledger is append-only history: a movement's location is a fact that
+        // must still resolve even if that location was later soft-deleted.
+        return $this->belongsTo(Location::class)->withTrashed();
     }
 
     /**

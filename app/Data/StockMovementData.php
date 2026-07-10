@@ -31,9 +31,15 @@ class StockMovementData extends Data
     {
         $kind = $movement->stockable_type === 'product' ? 'Product' : 'Raw material';
 
+        // `location` is loaded withTrashed (append-only ledger), but stay defensive
+        // in case the row can't be resolved at all.
+        $location = $movement->location;
+
         return new self(
             id: $movement->id,
-            location: ($movement->location->warehouse?->name ?? '?').' · '.$movement->location->code,
+            location: $location
+                ? ($location->warehouse?->name ?? '?').' · '.$location->code
+                : '—',
             item: ($movement->stockable?->name ?? '—').' · '.$kind,
             quantity: (float) $movement->quantity,
             reason: $movement->reason->label(),

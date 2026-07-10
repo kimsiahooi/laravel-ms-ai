@@ -34,13 +34,21 @@ export default function SalesOrderShow() {
                 meta={[
                     {
                         label: 'Order date',
-                        value: formatDate(order.created_at),
+                        value: (
+                            <span suppressHydrationWarning>
+                                {formatDate(order.created_at)}
+                            </span>
+                        ),
                     },
                     ...(order.fulfilled_at
                         ? [
                               {
                                   label: 'Fulfilled',
-                                  value: formatDate(order.fulfilled_at),
+                                  value: (
+                                      <span suppressHydrationWarning>
+                                          {formatDate(order.fulfilled_at)}
+                                      </span>
+                                  ),
                               },
                           ]
                         : []),

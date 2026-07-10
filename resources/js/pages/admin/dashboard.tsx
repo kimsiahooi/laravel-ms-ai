@@ -127,8 +127,14 @@ export default function AdminDashboard() {
                 isEmpty={!hasSignups}
                 emptyText="No signups in the last 30 days."
             >
-                <ChartContainer config={signupsConfig} className="h-58 w-full">
+                <ChartContainer
+                    config={signupsConfig}
+                    className="h-58 w-full"
+                    role="img"
+                    aria-label="New tenant signups per day over the last 30 days"
+                >
                     <BarChart
+                        accessibilityLayer
                         data={signups}
                         margin={{ left: -12, right: 8, top: 4 }}
                     >

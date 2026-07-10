@@ -102,6 +102,31 @@ it('renders dashboard aggregates for a seeded workspace', function () {
         );
 });
 
+it('drops stock stranded in a soft-deleted location from every on-hand surface', function () {
+    test()->tenant->run(function () {
+        $warehouse = Warehouse::create(['name' => 'Main']);
+        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 5]);
+
+        // 10 on-hand — comfortably above the min of 5 — then the location holding
+        // it is soft-deleted, stranding the stock.
+        app(StockService::class)->record($location, $widget, 10, StockMovementReason::Adjustment);
+        $location->delete();
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('kpis.skus_in_stock.count', 0)       // stranded stock is not "in stock"
+            ->where('kpis.low_stock.count', 1)           // effective on-hand 0 < min 5
+            ->where('kpis.low_stock.out_of_stock', 1)
+            ->has('onHandByWarehouse', 0)                // warehouse chart drops it too
+            ->has('reorderList', 1)
+        );
+});
+
 it('renders a zeroed dashboard for a fresh workspace', function () {
     loginAsAcmeUser();
 

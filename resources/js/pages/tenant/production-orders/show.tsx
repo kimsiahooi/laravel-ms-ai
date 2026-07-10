@@ -39,13 +39,21 @@ export default function ProductionOrderShow() {
                 meta={[
                     {
                         label: 'Order date',
-                        value: formatDate(order.created_at),
+                        value: (
+                            <span suppressHydrationWarning>
+                                {formatDate(order.created_at)}
+                            </span>
+                        ),
                     },
                     ...(order.completed_at
                         ? [
                               {
                                   label: 'Completed',
-                                  value: formatDate(order.completed_at),
+                                  value: (
+                                      <span suppressHydrationWarning>
+                                          {formatDate(order.completed_at)}
+                                      </span>
+                                  ),
                               },
                           ]
                         : []),

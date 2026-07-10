@@ -36,6 +36,11 @@ class DashboardController
 
         $lowStock = $this->lowStock($onHandByProduct, $onHandByMaterial);
 
+        // In-stock SKU split, derived from the same on-hand maps so the headline
+        // count always reconciles with its products/materials sub-parts.
+        $inStockProducts = $onHandByProduct->filter(fn (float $qty): bool => $qty > 0)->count();
+        $inStockMaterials = $onHandByMaterial->filter(fn (float $qty): bool => $qty > 0)->count();
+
         return Inertia::render('tenant/dashboard', [
             'kpis' => [
                 'open_documents' => [
@@ -55,9 +60,9 @@ class DashboardController
                     'completed_units_30d' => $this->completedUnits(),
                 ],
                 'skus_in_stock' => [
-                    'count' => $this->skuCount(),
-                    'products' => Product::count(),
-                    'materials' => RawMaterial::count(),
+                    'count' => $inStockProducts + $inStockMaterials,
+                    'products' => $inStockProducts,
+                    'materials' => $inStockMaterials,
                 ],
             ],
             'stockActivity' => $this->stockActivity(),
@@ -111,16 +116,22 @@ class DashboardController
     }
 
     /**
-     * On-hand quantity summed per stockable id for one morph alias.
+     * On-hand quantity summed per stockable id for one morph alias. Stock sitting
+     * in a soft-deleted location or warehouse is excluded — the same rule the
+     * "On-hand by warehouse" chart uses — so every on-hand surface agrees.
      *
      * @return Collection<int, float> keyed by stockable_id
      */
     private function onHandMap(string $type): Collection
     {
         return LocationStock::query()
-            ->where('stockable_type', $type)
-            ->selectRaw('stockable_id, SUM(quantity) as qty')
-            ->groupBy('stockable_id')
+            ->join('locations', 'locations.id', '=', 'location_stocks.location_id')
+            ->join('warehouses', 'warehouses.id', '=', 'locations.warehouse_id')
+            ->whereNull('locations.deleted_at')
+            ->whereNull('warehouses.deleted_at')
+            ->where('location_stocks.stockable_type', $type)
+            ->groupBy('location_stocks.stockable_id')
+            ->selectRaw('location_stocks.stockable_id as stockable_id, SUM(location_stocks.quantity) as qty')
             ->pluck('qty', 'stockable_id')
             ->map(fn ($qty): float => (float) $qty);
     }
@@ -165,17 +176,6 @@ class DashboardController
             RawMaterial::where('min_stock', '>', 0)->get(['id', 'name', 'sku', 'min_stock']),
             $onHandByMaterial,
         ))->values();
-    }
-
-    /** Distinct (type, id) pairs currently holding a positive quantity somewhere. */
-    private function skuCount(): int
-    {
-        return LocationStock::query()
-            ->where('quantity', '>', 0)
-            ->get(['stockable_type', 'stockable_id'])
-            ->map(fn (LocationStock $s): string => $s->stockable_type.':'.$s->stockable_id)
-            ->unique()
-            ->count();
     }
 
     /** Total finished units produced in the trailing window. */

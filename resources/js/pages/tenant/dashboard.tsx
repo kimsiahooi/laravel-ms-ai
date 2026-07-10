@@ -158,7 +158,12 @@ function PipelineDonut({
 
     return (
         <div className="flex flex-col items-center gap-2">
-            <ChartContainer config={config} className="aspect-square h-[132px]">
+            <ChartContainer
+                config={config}
+                className="aspect-square h-[132px]"
+                role="img"
+                aria-label={`${title} orders: ${pending} pending of ${total} total`}
+            >
                 <PieChart>
                     {total > 0 ? (
                         <ChartTooltip
@@ -259,6 +264,11 @@ export default function TenantDashboard() {
 
     const hasActivity = stockActivity.some((d) => d.in > 0 || d.out > 0);
     const hasThroughput = throughput.some((d) => d.units > 0);
+    const hasOrders = [
+        orderPipeline.purchase,
+        orderPipeline.sales,
+        orderPipeline.production,
+    ].some((counts) => Object.values(counts).some((n) => n > 0));
 
     const productsUrl = products.index.url({ tenant: tenant?.slug ?? '' });
     const materialsUrl = rawMaterials.index.url({ tenant: tenant?.slug ?? '' });
@@ -328,8 +338,11 @@ export default function TenantDashboard() {
                     <ChartContainer
                         config={activityConfig}
                         className="h-[232px] w-full"
+                        role="img"
+                        aria-label="Units moved in and out per day over the last 30 days"
                     >
                         <AreaChart
+                            accessibilityLayer
                             data={stockActivity}
                             margin={{ left: -12, right: 8, top: 4 }}
                         >
@@ -420,6 +433,8 @@ export default function TenantDashboard() {
                 <ChartCard
                     title="Order pipeline"
                     description="Open vs closed across every order type"
+                    isEmpty={!hasOrders}
+                    emptyText="No orders yet."
                 >
                     <div className="grid grid-cols-3 gap-2">
                         <PipelineDonut
@@ -454,8 +469,11 @@ export default function TenantDashboard() {
                     <ChartContainer
                         config={throughputConfig}
                         className="h-[232px] w-full"
+                        role="img"
+                        aria-label="Finished units produced per day over the last 30 days"
                     >
                         <BarChart
+                            accessibilityLayer
                             data={throughput}
                             margin={{ left: -12, right: 8, top: 4 }}
                         >
@@ -500,8 +518,11 @@ export default function TenantDashboard() {
                     <ChartContainer
                         config={onHandConfig}
                         className="h-[232px] w-full"
+                        role="img"
+                        aria-label="Units on hand by warehouse"
                     >
                         <BarChart
+                            accessibilityLayer
                             data={onHandByWarehouse}
                             layout="vertical"
                             margin={{ left: 4, right: 16 }}

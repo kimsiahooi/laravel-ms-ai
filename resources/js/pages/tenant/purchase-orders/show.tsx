@@ -34,13 +34,21 @@ export default function PurchaseOrderShow() {
                 meta={[
                     {
                         label: 'Order date',
-                        value: formatDate(order.created_at),
+                        value: (
+                            <span suppressHydrationWarning>
+                                {formatDate(order.created_at)}
+                            </span>
+                        ),
                     },
                     ...(order.received_at
                         ? [
                               {
                                   label: 'Received',
-                                  value: formatDate(order.received_at),
+                                  value: (
+                                      <span suppressHydrationWarning>
+                                          {formatDate(order.received_at)}
+                                      </span>
+                                  ),
                               },
                           ]
                         : []),
