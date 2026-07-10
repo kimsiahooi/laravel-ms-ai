@@ -145,15 +145,15 @@ it('renders a zeroed dashboard for a fresh workspace', function () {
         );
 });
 
-it('windows the time-series to a requested date range and echoes it back', function () {
+it('windows the time-series to a requested datetime range and echoes it back', function () {
     loginAsAcmeUser();
 
-    // A fixed 7-day span (independent of "today").
-    $this->get('/acme/dashboard?from=2026-07-04&to=2026-07-10&tz=UTC')
+    // A fixed 7-day span given as offset-carrying ISO datetimes (no tz param).
+    $this->get('/acme/dashboard?from=2026-07-04T00:00:00Z&to=2026-07-10T23:59:59Z')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('range.from', '2026-07-04')
-            ->where('range.to', '2026-07-10')
+            ->where('range.from', fn ($v) => str_starts_with((string) $v, '2026-07-04'))
+            ->where('range.to', fn ($v) => str_starts_with((string) $v, '2026-07-10'))
             ->has('stockActivity', 7)   // one point per day in the span
             ->has('throughput', 7)
             ->where('stockActivity.0.label', 'Jul 4')
@@ -161,7 +161,7 @@ it('windows the time-series to a requested date range and echoes it back', funct
         );
 });
 
-it('buckets a movement by the caller timezone day, not the UTC day', function () {
+it('buckets a movement by the offset in the range value, not the UTC day', function () {
     test()->tenant->run(function () {
         $warehouse = Warehouse::create(['name' => 'Main']);
         $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
@@ -183,16 +183,16 @@ it('buckets a movement by the caller timezone day, not the UTC day', function ()
 
     loginAsAcmeUser();
 
-    // In KL the movement lands on Jul 10, so a KL Jul-10 window sees it.
-    $this->get('/acme/dashboard?from=2026-07-10&to=2026-07-10&tz=Asia/Kuala_Lumpur')
+    // A +08:00 Jul-10 window: the movement is 06:30 on Jul 10 there, so it counts.
+    $this->get('/acme/dashboard?from=2026-07-10T00:00:00%2B08:00&to=2026-07-10T23:59:59%2B08:00')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('stockActivity', 1)
             ->where('stockActivity.0.in', fn ($v) => (float) $v === 5.0)
         );
 
-    // In UTC the same instant is still Jul 9, so a UTC Jul-10 window misses it.
-    $this->get('/acme/dashboard?from=2026-07-10&to=2026-07-10&tz=UTC')
+    // A UTC Jul-10 window: the same instant is still Jul 9, so it misses it.
+    $this->get('/acme/dashboard?from=2026-07-10T00:00:00Z&to=2026-07-10T23:59:59Z')
         ->assertInertia(fn (Assert $page) => $page
             ->where('stockActivity.0.in', fn ($v) => (float) $v === 0.0)
         );

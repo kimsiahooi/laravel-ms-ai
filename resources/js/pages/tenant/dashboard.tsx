@@ -18,7 +18,7 @@ import { ChartCard } from '@/components/chart-card';
 import {
     DateRangePicker,
     type DateRangeValue,
-    formatRangeSpan,
+    formatRangeDates,
 } from '@/components/date-range-picker';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
@@ -256,18 +256,15 @@ export default function TenantDashboard() {
     const [greeting, setGreeting] = useState('Welcome back');
     const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'there';
 
-    const rangeSpan = formatRangeSpan(range);
+    const rangeSpan = formatRangeDates(range);
 
-    // Apply a new range: reload only the range-driven widgets, passing the device
-    // timezone so "Today"/"This week" resolve against the user's own calendar.
+    // Apply a new range: reload only the range-driven widgets. `from`/`to` are
+    // offset-carrying ISO datetimes (the user's own device clock + zone), so no
+    // separate timezone needs to be sent.
     const applyRange = (next: DateRangeValue) => {
         router.get(
             dashboard.url({ tenant: tenant?.slug ?? '' }),
-            {
-                from: next.from,
-                to: next.to,
-                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
+            { from: next.from, to: next.to },
             {
                 only: ['range', 'stockActivity', 'throughput'],
                 preserveState: true,

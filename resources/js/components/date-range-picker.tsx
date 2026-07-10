@@ -2,6 +2,8 @@ import {
     endOfMonth,
     endOfWeek,
     format,
+    parseISO,
+    startOfDay,
     startOfMonth,
     startOfWeek,
     subDays,
@@ -9,52 +11,62 @@ import {
     subWeeks,
 } from 'date-fns';
 import { CalendarDays, ChevronDown } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
 
-/** A range of local calendar days, inclusive, as YYYY-MM-DD strings. */
+/**
+ * An inclusive datetime range. `from`/`to` are ISO-8601 strings that carry their
+ * own UTC offset (e.g. "2026-07-10T09:30:00+08:00"), so the value alone is enough
+ * to place it on a timeline — no separate timezone field is needed.
+ */
 export type DateRangeValue = { from: string; to: string };
 
 // Business weeks start on Monday.
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
+// A local Date -> "2026-07-10T09:30:00+08:00" (offset is the browser's own).
+const toIso = (date: Date): string => format(date, "yyyy-MM-dd'T'HH:mm:ssxxx");
+const timeOf = (date: Date): string => format(date, 'HH:mm');
+
+// Combine a calendar day with an "HH:mm" time into a local Date.
+function combine(day: Date, time: string, endOfMinute = false): Date {
+    const [h, m] = time.split(':').map(Number);
+    return new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        h || 0,
+        m || 0,
+        endOfMinute ? 59 : 0,
+    );
+}
+
 type Preset = {
     key: string;
     label: string;
-    compute: (now: Date) => DateRangeValue;
+    // Computed from the browser's "now" — the user's own device clock + zone.
+    compute: (now: Date) => { from: Date; to: Date };
 };
 
-// A local Date -> "YYYY-MM-DD" (device timezone; no UTC conversion).
-const toStr = (date: Date): string => format(date, 'yyyy-MM-dd');
-
-// "YYYY-MM-DD" -> a local Date at midnight (avoids Date's UTC string parsing).
-const toDate = (value: string): Date => {
-    const [y, m, d] = value.split('-').map(Number);
-    return new Date(y, m - 1, d);
-};
-
-// Every preset is computed from the browser's "now", i.e. the user's own device
-// clock and timezone. That is what "Today" / "This week" resolve against.
 const PRESETS: Preset[] = [
     {
         key: 'today',
         label: 'Today',
-        compute: (n) => ({ from: toStr(n), to: toStr(n) }),
+        compute: (n) => ({ from: startOfDay(n), to: n }),
     },
     {
         key: 'this_week',
         label: 'This week',
-        compute: (n) => ({
-            from: toStr(startOfWeek(n, WEEK_OPTS)),
-            to: toStr(n),
-        }),
+        compute: (n) => ({ from: startOfWeek(n, WEEK_OPTS), to: n }),
     },
     {
         key: 'last_week',
@@ -62,61 +74,55 @@ const PRESETS: Preset[] = [
         compute: (n) => {
             const w = subWeeks(n, 1);
             return {
-                from: toStr(startOfWeek(w, WEEK_OPTS)),
-                to: toStr(endOfWeek(w, WEEK_OPTS)),
+                from: startOfWeek(w, WEEK_OPTS),
+                to: endOfWeek(w, WEEK_OPTS),
             };
         },
     },
     {
         key: 'this_month',
         label: 'This month',
-        compute: (n) => ({ from: toStr(startOfMonth(n)), to: toStr(n) }),
+        compute: (n) => ({ from: startOfMonth(n), to: n }),
     },
     {
         key: 'last_month',
         label: 'Last month',
         compute: (n) => {
             const m = subMonths(n, 1);
-            return { from: toStr(startOfMonth(m)), to: toStr(endOfMonth(m)) };
+            return { from: startOfMonth(m), to: endOfMonth(m) };
         },
     },
     {
         key: 'last_7',
         label: 'Last 7 days',
-        compute: (n) => ({ from: toStr(subDays(n, 6)), to: toStr(n) }),
+        compute: (n) => ({ from: startOfDay(subDays(n, 6)), to: n }),
     },
     {
         key: 'last_30',
         label: 'Last 30 days',
-        compute: (n) => ({ from: toStr(subDays(n, 29)), to: toStr(n) }),
+        compute: (n) => ({ from: startOfDay(subDays(n, 29)), to: n }),
     },
     {
         key: 'last_90',
         label: 'Last 90 days',
-        compute: (n) => ({ from: toStr(subDays(n, 89)), to: toStr(n) }),
+        compute: (n) => ({ from: startOfDay(subDays(n, 89)), to: n }),
     },
 ];
 
-/** A deterministic, SSR-safe label for a range (no "now" dependency). */
-export function formatRangeSpan(value: DateRangeValue): string {
-    const from = toDate(value.from);
-    const to = toDate(value.to);
-    if (value.from === value.to) return format(from, 'MMM d, yyyy');
+/** A short, date-only label for a range (no time), e.g. "Jul 1 – Jul 10, 2026". */
+export function formatRangeDates(value: DateRangeValue): string {
+    const from = parseISO(value.from);
+    const to = parseISO(value.to);
+    if (format(from, 'yyyy-MM-dd') === format(to, 'yyyy-MM-dd')) {
+        return format(from, 'MMM d, yyyy');
+    }
     return `${format(from, 'MMM d')} – ${format(to, 'MMM d, yyyy')}`;
 }
 
-function matchPreset(value: DateRangeValue, now: Date): Preset | undefined {
-    return PRESETS.find((p) => {
-        const r = p.compute(now);
-        return r.from === value.from && r.to === value.to;
-    });
-}
-
 /**
- * A date-range control: a list of device-timezone presets plus a shadcn Calendar
- * for a custom range. Emits the chosen range as local YYYY-MM-DD dates; the caller
- * decides what to do with it (the dashboard sends it + the device timezone to the
- * server).
+ * A datetime-range control: device-timezone presets, a shadcn Calendar for the
+ * dates, and From/To time inputs. Emits `{ from, to }` as offset-carrying ISO
+ * datetimes so the caller can send them as-is with no separate timezone.
  */
 export function DateRangePicker({
     value,
@@ -128,46 +134,47 @@ export function DateRangePicker({
     disabled?: boolean;
 }) {
     const [open, setOpen] = useState(false);
-    const [draft, setDraft] = useState<DateRange | undefined>({
-        from: toDate(value.from),
-        to: toDate(value.to),
+    const [range, setRange] = useState<DateRange | undefined>({
+        from: parseISO(value.from),
+        to: parseISO(value.to),
     });
+    const [fromTime, setFromTime] = useState(timeOf(parseISO(value.from)));
+    const [toTime, setToTime] = useState(timeOf(parseISO(value.to)));
+    const [presetKey, setPresetKey] = useState<string | null>(null);
 
-    // "now" is device-local and only known on the client, so preset matching is
-    // deferred to after mount; the first paint shows the SSR-safe span label.
-    const [now, setNow] = useState<Date | null>(null);
-    useEffect(() => setNow(new Date()), []);
+    const syncToValue = () => {
+        setRange({ from: parseISO(value.from), to: parseISO(value.to) });
+        setFromTime(timeOf(parseISO(value.from)));
+        setToTime(timeOf(parseISO(value.to)));
+    };
 
-    const activePreset = useMemo(
-        () => (now ? matchPreset(value, now) : undefined),
-        [now, value],
-    );
-    const label = activePreset ? activePreset.label : formatRangeSpan(value);
+    const pickPreset = (preset: Preset) => {
+        const { from, to } = preset.compute(new Date());
+        setRange({ from, to });
+        setFromTime(timeOf(from));
+        setToTime(timeOf(to));
+        setPresetKey(preset.key);
+    };
 
-    const applyPreset = (preset: Preset) => {
-        const range = preset.compute(new Date());
-        onChange(range);
-        setDraft({ from: toDate(range.from), to: toDate(range.to) });
+    const apply = () => {
+        if (!range?.from || !range?.to) return;
+        onChange({
+            from: toIso(combine(range.from, fromTime)),
+            to: toIso(combine(range.to, toTime, true)),
+        });
         setOpen(false);
     };
 
-    const applyCustom = () => {
-        if (!draft?.from || !draft?.to) return;
-        onChange({ from: toStr(draft.from), to: toStr(draft.to) });
-        setOpen(false);
-    };
+    const label = presetKey
+        ? (PRESETS.find((p) => p.key === presetKey)?.label ??
+          formatRangeDates(value))
+        : formatRangeDates(value);
 
     return (
         <Popover
             open={open}
             onOpenChange={(next) => {
-                // Re-sync the calendar to the current value each time it opens.
-                if (next) {
-                    setDraft({
-                        from: toDate(value.from),
-                        to: toDate(value.to),
-                    });
-                }
+                if (next) syncToValue();
                 setOpen(next);
             }}
         >
@@ -190,30 +197,69 @@ export function DateRangePicker({
                             <Button
                                 key={preset.key}
                                 variant={
-                                    activePreset?.key === preset.key
+                                    presetKey === preset.key
                                         ? 'secondary'
                                         : 'ghost'
                                 }
                                 size="sm"
                                 className="justify-start"
-                                onClick={() => applyPreset(preset)}
+                                onClick={() => pickPreset(preset)}
                             >
                                 {preset.label}
                             </Button>
                         ))}
                     </div>
-                    <div className="flex flex-col gap-2 p-2">
+                    <div className="flex flex-col gap-3 p-2">
                         <Calendar
                             mode="range"
                             numberOfMonths={1}
-                            selected={draft}
-                            onSelect={setDraft}
-                            defaultMonth={draft?.from}
+                            selected={range}
+                            onSelect={(next) => {
+                                setRange(next);
+                                setPresetKey(null);
+                            }}
+                            defaultMonth={range?.from}
                         />
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                                <Label
+                                    htmlFor="range-from-time"
+                                    className="text-muted-foreground text-xs"
+                                >
+                                    From time
+                                </Label>
+                                <Input
+                                    id="range-from-time"
+                                    type="time"
+                                    value={fromTime}
+                                    onChange={(e) => {
+                                        setFromTime(e.target.value);
+                                        setPresetKey(null);
+                                    }}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label
+                                    htmlFor="range-to-time"
+                                    className="text-muted-foreground text-xs"
+                                >
+                                    To time
+                                </Label>
+                                <Input
+                                    id="range-to-time"
+                                    type="time"
+                                    value={toTime}
+                                    onChange={(e) => {
+                                        setToTime(e.target.value);
+                                        setPresetKey(null);
+                                    }}
+                                />
+                            </div>
+                        </div>
                         <Button
                             size="sm"
-                            onClick={applyCustom}
-                            disabled={!draft?.from || !draft?.to}
+                            onClick={apply}
+                            disabled={!range?.from || !range?.to}
                         >
                             Apply range
                         </Button>

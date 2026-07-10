@@ -75,8 +75,8 @@ class DashboardController
                 ],
             ],
             'range' => [
-                'from' => $days[0]['date'],
-                'to' => $days[array_key_last($days)]['date'],
+                'from' => $from->toIso8601String(),
+                'to' => $to->toIso8601String(),
                 'units_made' => $this->completedUnits($from, $to),
             ],
             'stockActivity' => $this->stockActivity($from, $to, $tz, $days),
@@ -211,7 +211,7 @@ class DashboardController
      * @param  array<int, array{date: string, label: string}>  $days
      * @return array<int, array{date: string, label: string, in: float, out: float}>
      */
-    private function stockActivity(CarbonInterface $from, CarbonInterface $to, string $tz, array $days): array
+    private function stockActivity(CarbonInterface $from, CarbonInterface $to, \DateTimeZone $tz, array $days): array
     {
         $byDay = StockMovement::query()
             ->whereBetween('created_at', [$from->utc(), $to->utc()])
@@ -237,7 +237,7 @@ class DashboardController
      * @param  array<int, array{date: string, label: string}>  $days
      * @return array<int, array{date: string, label: string, units: float}>
      */
-    private function throughput(CarbonInterface $from, CarbonInterface $to, string $tz, array $days): array
+    private function throughput(CarbonInterface $from, CarbonInterface $to, \DateTimeZone $tz, array $days): array
     {
         $byDay = ProductionOrder::query()
             ->where('status', ProductionOrderStatus::Completed)
@@ -275,62 +275,58 @@ class DashboardController
     }
 
     /**
-     * Resolve the requested date range in the caller's timezone. `from`/`to` are
-     * local YYYY-MM-DD dates and `tz` is the device's IANA zone; all default to a
-     * trailing 30-day window in the app timezone. Returns the local start/end
-     * instants, the resolved timezone, and a zero-filled per-day scaffold.
+     * Resolve the requested range from the `from`/`to` query params. Each is an
+     * offset-carrying ISO-8601 datetime (the caller's own device clock + zone), so
+     * the value alone places it on the timeline — no separate timezone param. The
+     * daily chart buckets use the zone baked into `from`. Missing/invalid params
+     * default to a trailing 30-day window in the app timezone.
      *
-     * @return array{0: CarbonInterface, 1: CarbonInterface, 2: string, 3: array<int, array{date: string, label: string}>}
+     * @return array{0: CarbonInterface, 1: CarbonInterface, 2: \DateTimeZone, 3: array<int, array{date: string, label: string}>}
      */
     private function resolveRange(Request $request): array
     {
-        $tz = $this->safeTimezone($request->string('tz')->toString());
-        $today = Date::now($tz)->startOfDay();
+        $from = $this->parseDateTime($request->string('from')->toString());
+        $to = $this->parseDateTime($request->string('to')->toString());
 
-        $from = $this->parseDate($request->string('from')->toString(), $tz)
-            ?? $today->subDays(self::TREND_DAYS - 1);
-        $to = $this->parseDate($request->string('to')->toString(), $tz) ?? $today;
+        if ($from === null || $to === null) {
+            $to = Date::now();
+            $from = $to->subDays(self::TREND_DAYS - 1)->startOfDay();
+        }
 
         if ($to->lt($from)) {
             [$from, $to] = [$to, $from];
         }
-
-        $from = $from->startOfDay();
         if ($from->diffInDays($to) > self::MAX_RANGE_DAYS) {
-            $from = $to->subDays(self::MAX_RANGE_DAYS)->startOfDay();
+            $from = $to->subDays(self::MAX_RANGE_DAYS);
         }
-        $to = $to->endOfDay();
+
+        // Bucket the daily charts by the caller's local day; "local" is the offset
+        // that arrived inside the `from` value.
+        $tz = $from->getTimezone();
 
         $days = [];
-        for ($cursor = $from; $cursor->lte($to); $cursor = $cursor->addDay()) {
+        $cursor = $from->setTimezone($tz)->startOfDay();
+        $end = $to->setTimezone($tz)->startOfDay();
+        while ($cursor->lte($end)) {
             $days[] = [
                 'date' => $cursor->format('Y-m-d'),
                 'label' => $cursor->format('M j'),
             ];
+            $cursor = $cursor->addDay();
         }
 
         return [$from, $to, $tz, $days];
     }
 
-    /** A validated IANA timezone, falling back to the app timezone. */
-    private function safeTimezone(string $tz): string
+    /** Parse an ISO-8601 datetime (with offset), or null if it isn't parseable. */
+    private function parseDateTime(string $value): ?CarbonInterface
     {
-        if ($tz !== '' && in_array($tz, timezone_identifiers_list(), true)) {
-            return $tz;
-        }
-
-        return config('app.timezone') ?: 'UTC';
-    }
-
-    /** Parse a YYYY-MM-DD date in the given zone, or null if it isn't one. */
-    private function parseDate(string $value, string $tz): ?CarbonInterface
-    {
-        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        if ($value === '') {
             return null;
         }
 
         try {
-            return Date::createFromFormat('!Y-m-d', $value, $tz);
+            return Date::parse($value);
         } catch (\Throwable) {
             return null;
         }
