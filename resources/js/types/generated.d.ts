@@ -69,6 +69,25 @@ unit: string,
 min_stock: string,
 created_at: string,
 };
+export type SalesOrderData = {
+id: number,
+customer: string | null,
+status: string,
+status_label: string,
+currency: string,
+item_count: number,
+total: number,
+fulfilled_at: string | null,
+created_at: string,
+items: App.Data.SalesOrderItemData[],
+};
+export type SalesOrderItemData = {
+id: number,
+product_id: number | null,
+name: string,
+quantity: number,
+unit_price: number,
+};
 export type StockMovementData = {
 id: number,
 location: string,

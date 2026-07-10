@@ -7,6 +7,7 @@ import {
     FolderTree,
     MapPin,
     Package,
+    Receipt,
     ShoppingCart,
     Truck,
     Warehouse,
@@ -84,4 +85,10 @@ export const purchaseOrderMeta: ResourceMeta = {
     singular: 'purchase order',
     plural: 'Purchase orders',
     icon: ShoppingCart,
+};
+
+export const salesOrderMeta: ResourceMeta = {
+    singular: 'sales order',
+    plural: 'Sales orders',
+    icon: Receipt,
 };

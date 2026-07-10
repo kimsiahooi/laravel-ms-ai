@@ -8,6 +8,7 @@ import {
     LayoutGrid,
     MapPin,
     Package,
+    Receipt,
     ShoppingCart,
     Truck,
     Warehouse,
@@ -31,6 +32,7 @@ import locations from '@/routes/tenant/locations';
 import products from '@/routes/tenant/products';
 import purchaseOrders from '@/routes/tenant/purchase-orders';
 import rawMaterials from '@/routes/tenant/raw-materials';
+import salesOrders from '@/routes/tenant/sales-orders';
 import stockMovements from '@/routes/tenant/stock-movements';
 import stockTransfers from '@/routes/tenant/stock-transfers';
 import suppliers from '@/routes/tenant/suppliers';
@@ -100,6 +102,11 @@ export function TenantSidebar() {
             title: 'Purchase orders',
             href: purchaseOrders.index.url({ tenant: slug }),
             icon: ShoppingCart,
+        },
+        {
+            title: 'Sales orders',
+            href: salesOrders.index.url({ tenant: slug }),
+            icon: Receipt,
         },
     ];
 
