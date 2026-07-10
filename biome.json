@@ -11,7 +11,9 @@
             "**",
             "!resources/css",
             "!resources/js/components/ui",
-            "!composer.json"
+            "!resources/js/types/generated.d.ts",
+            "!composer.json",
+            "!boost.json"
         ]
     },
     "formatter": {
