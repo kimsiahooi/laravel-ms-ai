@@ -35,11 +35,12 @@ export function TenantSidebarHeader({
                         }
                         aria-label="Toggle theme"
                     >
-                        {isDark ? (
-                            <Sun className="size-4" />
-                        ) : (
-                            <Moon className="size-4" />
-                        )}
+                        {/* Both icons render identically on server + client; the
+                            `.dark` class (applied before hydration) decides which
+                            one shows. No JS theme branch here means no hydration
+                            mismatch — the server can't know the stored theme. */}
+                        <Sun className="hidden size-4 dark:block" />
+                        <Moon className="size-4 dark:hidden" />
                         <span className="sr-only">Toggle theme</span>
                     </Button>
                 </TooltipTrigger>
