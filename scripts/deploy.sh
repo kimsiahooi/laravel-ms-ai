@@ -17,8 +17,17 @@ main() {
     echo "▶ [1/9] Pulling latest code…"
     git pull --ff-only
 
-    echo "▶ [2/9] Installing PHP dependencies…"
-    composer install --no-interaction --prefer-dist --optimize-autoloader
+    echo "▶ [1b/9] Guarding against stray ds() debug calls…"
+    # LaraDumps is a dev-only tool, and `--no-dev` below strips it from the prod
+    # vendor tree — so a committed ds()/dsN()/dsq() would fatal at runtime here.
+    # Fail the deploy (before any build/restart) if any remain in app source.
+    if grep -rEn --include='*.php' '(^|[^[:alnum:]_>$])ds([0-9]|q)?\(' app routes database config; then
+        echo "✗ Found LaraDumps debug calls above — remove them before deploying." >&2
+        exit 1
+    fi
+
+    echo "▶ [2/9] Installing PHP dependencies (production only, no dev tools)…"
+    composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
     echo "▶ [3/9] Installing JS dependencies…"
     bun install --frozen-lockfile
