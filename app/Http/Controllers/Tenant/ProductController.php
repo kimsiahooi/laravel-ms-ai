@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\OptionData;
+use App\Data\ProductData;
 use App\Http\Controllers\Concerns\InteractsWithTenantAssets;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Requests\Tenant\ProductRequest;
@@ -36,21 +38,7 @@ class ProductController
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Product $product): array => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'barcode' => $product->barcode,
-                'description' => $product->description,
-                'image_url' => $product->image_url,
-                'category_id' => $product->category_id,
-                'supplier_id' => $product->supplier_id,
-                'category' => $product->category?->name,
-                'supplier' => $product->supplier?->name,
-                'min_stock' => $product->min_stock,
-                'unit' => $product->unit,
-                'created_at' => $product->created_at,
-            ]);
+            ->through(fn (Product $product): ProductData => ProductData::from($product));
 
         return Inertia::render('tenant/products/index', [
             'products' => $products,
@@ -58,8 +46,8 @@ class ProductController
                 'search' => $search,
                 'per_page' => $perPage,
             ],
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
+            'categories' => OptionData::collect(Category::orderBy('name')->get(['id', 'name'])),
+            'suppliers' => OptionData::collect(Supplier::orderBy('name')->get(['id', 'name'])),
         ]);
     }
 
