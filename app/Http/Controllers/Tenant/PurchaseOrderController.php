@@ -8,6 +8,7 @@ use App\Actions\ReceivePurchaseOrder;
 use App\Data\OptionData;
 use App\Data\PurchaseOrderData;
 use App\Enums\PurchaseOrderStatus;
+use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\PurchaseOrderRequest;
@@ -24,6 +25,7 @@ use Inertia\Response;
 
 class PurchaseOrderController
 {
+    use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
 
@@ -42,12 +44,7 @@ class PurchaseOrderController
             'orders' => $orders,
             'suppliers' => OptionData::collect(Supplier::orderBy('name')->get(['id', 'name'])),
             'rawMaterials' => OptionData::collect(RawMaterial::orderBy('name')->get(['id', 'name'])),
-            'locations' => OptionData::collect(
-                Location::with('warehouse')->orderBy('code')->get()->map(fn (Location $location): array => [
-                    'id' => $location->id,
-                    'name' => ($location->warehouse?->name ?? '?').' · '.$location->code,
-                ]),
-            ),
+            'locations' => $this->stockLocationOptions(),
             'filters' => [
                 'search' => '',
                 'per_page' => $perPage,

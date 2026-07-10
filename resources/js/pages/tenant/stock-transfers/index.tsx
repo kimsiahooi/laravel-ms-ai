@@ -15,7 +15,7 @@ import { stockTransferMeta } from '@/config/resources';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { timeAgo } from '@/lib/format';
+import { formatQuantity, timeAgo } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import stockTransfersRoutes from '@/routes/tenant/stock-transfers';
 import type { TenantPageProps } from '@/types';
@@ -92,10 +92,7 @@ export default function StockTransfersIndex() {
         {
             accessorKey: 'quantity',
             header: 'Qty',
-            cell: ({ row }) =>
-                row.original.quantity.toLocaleString(undefined, {
-                    maximumFractionDigits: 4,
-                }),
+            cell: ({ row }) => formatQuantity(row.original.quantity),
             meta: { className: 'text-right tabular-nums' },
         },
         {

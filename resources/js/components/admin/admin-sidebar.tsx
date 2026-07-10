@@ -12,23 +12,28 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { dashboard } from '@/routes/admin';
+import {
+    index as tenantsIndex,
+    trashed as tenantsTrashed,
+} from '@/routes/admin/tenants';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: '/admin/dashboard',
+        href: dashboard(),
         icon: LayoutGrid,
         prefetch: true,
     },
     {
         title: 'Tenants',
-        href: '/admin/tenants',
+        href: tenantsIndex(),
         icon: Building2,
     },
     {
         title: 'Archived',
-        href: '/admin/tenants/trashed',
+        href: tenantsTrashed(),
         icon: Archive,
     },
 ];
@@ -40,7 +45,7 @@ export function AdminSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/admin/dashboard" prefetch>
+                            <Link href={dashboard()} prefetch>
                                 <AdminLogo />
                             </Link>
                         </SidebarMenuButton>

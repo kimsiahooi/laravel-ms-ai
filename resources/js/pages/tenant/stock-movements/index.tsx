@@ -15,7 +15,7 @@ import { stockMovementMeta } from '@/config/resources';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { timeAgo } from '@/lib/format';
+import { formatQuantity, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/tenant';
 import stockMovementsRoutes from '@/routes/tenant/stock-movements';
@@ -107,9 +107,7 @@ export default function StockMovementsIndex() {
                         )}
                     >
                         {q > 0 ? '+' : ''}
-                        {q.toLocaleString(undefined, {
-                            maximumFractionDigits: 4,
-                        })}
+                        {formatQuantity(q)}
                     </span>
                 );
             },

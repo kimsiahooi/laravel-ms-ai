@@ -37,6 +37,7 @@ import { purchaseOrderMeta } from '@/config/resources';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { formatMoney } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import poRoutes from '@/routes/tenant/purchase-orders';
 import type { TenantPageProps } from '@/types';
@@ -57,17 +58,6 @@ type Line = {
     quantity: string;
     unitCost: string;
 };
-
-function money(amount: number, currency: string): string {
-    try {
-        return new Intl.NumberFormat(undefined, {
-            style: 'currency',
-            currency,
-        }).format(amount);
-    } catch {
-        return `${currency} ${amount.toFixed(2)}`;
-    }
-}
 
 export default function PurchaseOrdersIndex() {
     const { orders, filters, suppliers, rawMaterials, locations, tenant } =
@@ -222,7 +212,8 @@ export default function PurchaseOrdersIndex() {
         {
             accessorKey: 'total',
             header: 'Total',
-            cell: ({ row }) => money(row.original.total, row.original.currency),
+            cell: ({ row }) =>
+                formatMoney(row.original.total, row.original.currency),
             meta: { className: 'text-right tabular-nums' },
         },
         {
@@ -399,7 +390,7 @@ export default function PurchaseOrdersIndex() {
                                 <Label>Line items</Label>
                                 <span className="text-muted-foreground text-sm tabular-nums">
                                     Total:{' '}
-                                    {money(draftTotal, currency || 'USD')}
+                                    {formatMoney(draftTotal, currency || 'USD')}
                                 </span>
                             </div>
 

@@ -9,6 +9,7 @@ use App\Data\OptionData;
 use App\Data\SalesOrderData;
 use App\Enums\SalesOrderStatus;
 use App\Exceptions\InsufficientStockException;
+use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\SalesOrderRequest;
@@ -26,6 +27,7 @@ use Inertia\Response;
 
 class SalesOrderController
 {
+    use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
 
@@ -44,12 +46,7 @@ class SalesOrderController
             'orders' => $orders,
             'customers' => OptionData::collect(Customer::orderBy('name')->get(['id', 'name'])),
             'products' => OptionData::collect(Product::orderBy('name')->get(['id', 'name'])),
-            'locations' => OptionData::collect(
-                Location::with('warehouse')->orderBy('code')->get()->map(fn (Location $location): array => [
-                    'id' => $location->id,
-                    'name' => ($location->warehouse?->name ?? '?').' · '.$location->code,
-                ]),
-            ),
+            'locations' => $this->stockLocationOptions(),
             'filters' => [
                 'search' => '',
                 'per_page' => $perPage,
