@@ -9,6 +9,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Models\Location;
 use App\Models\LocationStock;
 use App\Models\StockMovement;
+use App\Models\StockTransfer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -35,9 +36,40 @@ class StockService
         ?string $notes = null,
     ): StockMovement {
         return DB::transaction(function () use ($location, $stockable, $delta, $reason, $user, $notes): StockMovement {
-            $current = $this->applyLockedDelta($location, $stockable, $delta);
+            $this->applyLockedDelta($location, $stockable, $delta);
 
             return $this->writeMovement($location, $stockable, $delta, $reason, $user, $notes);
+        });
+    }
+
+    /**
+     * Move a quantity of one stockable from a source to a destination location.
+     * Atomic: the source OUT + destination IN + the transfer record all commit
+     * together, or none do (so an insufficient source rolls the whole thing back).
+     *
+     * @throws InsufficientStockException when the source lacks the quantity
+     */
+    public function transfer(
+        Location $from,
+        Location $to,
+        Model $stockable,
+        float $quantity,
+        ?User $user = null,
+        ?string $notes = null,
+    ): StockTransfer {
+        return DB::transaction(function () use ($from, $to, $stockable, $quantity, $user, $notes): StockTransfer {
+            $this->record($from, $stockable, -$quantity, StockMovementReason::TransferOut, $user, $notes);
+            $this->record($to, $stockable, $quantity, StockMovementReason::TransferIn, $user, $notes);
+
+            return StockTransfer::create([
+                'from_location_id' => $from->id,
+                'to_location_id' => $to->id,
+                'stockable_type' => $stockable->getMorphClass(),
+                'stockable_id' => $stockable->getKey(),
+                'quantity' => $quantity,
+                'user_id' => $user?->id,
+                'notes' => $notes,
+            ]);
         });
     }
 

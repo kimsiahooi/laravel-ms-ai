@@ -59,6 +59,15 @@ reason: string,
 user: string | null,
 created_at: string,
 };
+export type StockTransferData = {
+id: number,
+item: string,
+from: string,
+to: string,
+quantity: number,
+user: string | null,
+created_at: string,
+};
 export type SupplierData = {
 id: number,
 name: string,

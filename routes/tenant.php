@@ -11,6 +11,7 @@ use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\StockMovementController;
+use App\Http\Controllers\Tenant\StockTransferController;
 use App\Http\Controllers\Tenant\SupplierController;
 use App\Http\Controllers\Tenant\WarehouseController;
 use Illuminate\Support\Facades\Auth;
@@ -86,6 +87,11 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('stock-movements.index');
             Route::post('stock-movements', [StockMovementController::class, 'store'])
                 ->name('stock-movements.store');
+
+            Route::get('stock-transfers', [StockTransferController::class, 'index'])
+                ->name('stock-transfers.index');
+            Route::post('stock-transfers', [StockTransferController::class, 'store'])
+                ->name('stock-transfers.store');
 
             // Serve a product's image at an extension-less URL (ends in `/image`,
             // not `.png`/`.jpg`/…). Some nginx setups (e.g. CloudPanel) serve
