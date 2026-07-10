@@ -146,7 +146,8 @@ export default function StockMovementsIndex() {
                     {stockMovementMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    The append-only ledger of every on-hand change.
+                    A running history of every time stock went up or down, and
+                    why.
                 </p>
             </div>
 

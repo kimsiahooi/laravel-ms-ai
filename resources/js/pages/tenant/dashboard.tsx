@@ -294,9 +294,9 @@ export default function TenantDashboard() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     icon={ClipboardList}
-                    label="Open documents"
+                    label="Open orders"
                     value={kpis.open_documents.total}
-                    sub={`${kpis.open_documents.purchase} PO · ${kpis.open_documents.sales} SO · ${kpis.open_documents.production} MO`}
+                    sub={`${kpis.open_documents.purchase} buy · ${kpis.open_documents.sales} sell · ${kpis.open_documents.production} make`}
                 />
                 <StatCard
                     icon={PackageX}
@@ -321,7 +321,7 @@ export default function TenantDashboard() {
                 />
                 <StatCard
                     icon={Boxes}
-                    label="SKUs in stock"
+                    label="Items in stock"
                     value={kpis.skus_in_stock.count}
                     sub={`${kpis.skus_in_stock.products} products · ${kpis.skus_in_stock.materials} materials`}
                 />
@@ -431,8 +431,8 @@ export default function TenantDashboard() {
                 </ChartCard>
 
                 <ChartCard
-                    title="Order pipeline"
-                    description="Open vs closed across every order type"
+                    title="Orders by status"
+                    description="How many orders are still open vs finished"
                     isEmpty={!hasOrders}
                     emptyText="No orders yet."
                 >
@@ -461,7 +461,7 @@ export default function TenantDashboard() {
                 </ChartCard>
 
                 <ChartCard
-                    title="Production throughput"
+                    title="Production output"
                     description="Finished units per day · last 30 days"
                     isEmpty={!hasThroughput}
                     emptyText="No production completed in the last 30 days."
@@ -510,7 +510,7 @@ export default function TenantDashboard() {
                 </ChartCard>
 
                 <ChartCard
-                    title="On-hand by warehouse"
+                    title="Stock by warehouse"
                     description="Total units currently in stock"
                     isEmpty={onHandByWarehouse.length === 0}
                     emptyText="No stock on hand yet."

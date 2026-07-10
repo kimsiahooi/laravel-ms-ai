@@ -249,9 +249,9 @@ export default function ProductionOrdersIndex() {
                     {productionOrderMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Manufacture products from their bill of materials, then
-                    complete a build to consume materials and stock the finished
-                    goods.
+                    Make products from their recipe. Marking an order done uses
+                    up the raw materials and adds the finished products to
+                    stock.
                 </p>
             </div>
 
