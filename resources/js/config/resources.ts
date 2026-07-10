@@ -7,6 +7,7 @@ import {
     FolderTree,
     MapPin,
     Package,
+    ShoppingCart,
     Truck,
     Warehouse,
 } from 'lucide-react';
@@ -77,4 +78,10 @@ export const stockTransferMeta: ResourceMeta = {
     singular: 'transfer',
     plural: 'Stock transfers',
     icon: ArrowRightLeft,
+};
+
+export const purchaseOrderMeta: ResourceMeta = {
+    singular: 'purchase order',
+    plural: 'Purchase orders',
+    icon: ShoppingCart,
 };

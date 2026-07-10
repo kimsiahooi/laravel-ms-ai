@@ -42,6 +42,25 @@ min_stock: number,
 unit: string,
 created_at: string,
 };
+export type PurchaseOrderData = {
+id: number,
+supplier: string | null,
+status: string,
+status_label: string,
+currency: string,
+item_count: number,
+total: number,
+received_at: string | null,
+created_at: string,
+items: App.Data.PurchaseOrderItemData[],
+};
+export type PurchaseOrderItemData = {
+id: number,
+raw_material_id: number | null,
+name: string,
+quantity: number,
+unit_cost: number,
+};
 export type RawMaterialData = {
 id: number,
 name: string,

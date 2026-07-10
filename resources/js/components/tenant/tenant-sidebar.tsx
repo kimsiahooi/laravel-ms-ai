@@ -8,6 +8,7 @@ import {
     LayoutGrid,
     MapPin,
     Package,
+    ShoppingCart,
     Truck,
     Warehouse,
 } from 'lucide-react';
@@ -28,6 +29,7 @@ import categories from '@/routes/tenant/categories';
 import customers from '@/routes/tenant/customers';
 import locations from '@/routes/tenant/locations';
 import products from '@/routes/tenant/products';
+import purchaseOrders from '@/routes/tenant/purchase-orders';
 import rawMaterials from '@/routes/tenant/raw-materials';
 import stockMovements from '@/routes/tenant/stock-movements';
 import stockTransfers from '@/routes/tenant/stock-transfers';
@@ -93,6 +95,11 @@ export function TenantSidebar() {
             title: 'Stock transfers',
             href: stockTransfers.index.url({ tenant: slug }),
             icon: ArrowRightLeft,
+        },
+        {
+            title: 'Purchase orders',
+            href: purchaseOrders.index.url({ tenant: slug }),
+            icon: ShoppingCart,
         },
     ];
 
