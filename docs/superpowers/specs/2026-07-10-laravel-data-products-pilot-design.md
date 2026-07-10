@@ -33,7 +33,7 @@ out to the other resources.
 | --- | --- |
 | Scope | Pilot on **Products only** |
 | What Data replaces | **Output/props only** — keep `ProductRequest` for validation |
-| Generated TS | **Generated at build, git-ignored** (not committed) |
+| Generated TS | **Generated + committed to git** (regenerate + commit when a Data class changes; deploys/builds never run the transformer) |
 | TS output style | `type` aliases (matches the codebase; no `interface`) |
 | TS delivery | Ambient `.d.ts` namespace (`declare namespace App.Data { … }`) via the transformer's default `TypeDefinitionWriter` → referenced as `App.Data.ProductData` |
 | Property naming | **snake_case** properties on the Data classes so the JSON + generated TS keys are byte-identical to today's payload (`image_url`, `category_id`, `min_stock`, `created_at`) — the 122 tests assert those keys. (Idiomatic camelCase + a global `SnakeCaseMapper` is a later refinement.) |
@@ -148,14 +148,15 @@ type Option = App.Data.OptionData;
 - `App.Data.*` is globally available from the generated `.d.ts` (no import).
 - `PageProps`, the `ColumnDef<Product>[]`, and all `row.original.*` usages stay as-is.
 
-### Scripts / ignore
+### Scripts / commit
 
-- `.gitignore` → add `resources/js/types/generated.d.ts`.
-- `package.json`:
-  - add `"types:generate": "php artisan typescript:transform --force"`
-  - `"types:check": "php artisan typescript:transform --force && tsc --noEmit"` (a fresh clone or CI
-    generates the types before checking, since they're not committed)
-  - `"dev": "php artisan typescript:transform --force && vite"` (so the editor has types in dev)
+- The generated `resources/js/types/generated.d.ts` is **committed** (tracked). Deploys/builds do
+  not run the transformer.
+- `package.json`: add only `"types:generate": "php artisan typescript:transform"`. Leave
+  `types:check` (`tsc --noEmit`), `dev` (`vite`) and `build` unchanged. After changing a Data class,
+  run `bun run types:generate` and commit the regenerated file.
+- The transformer's `resources/js/types/typescript-transformer-manifest.json` build-cache stays
+  git-ignored (a cache, not source).
 
 ## 7. Testing & verification
 

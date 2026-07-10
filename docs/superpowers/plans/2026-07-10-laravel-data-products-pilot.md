@@ -260,20 +260,16 @@ git commit -m "refactor(products): emit ProductData/OptionData from the index co
 
 ---
 
-## Task 4: Generate the TS types + wire the scripts
+## Task 4: Generate + **commit** the TS types; add a regen script
+
+> Decision (updated): the generated types are **committed to git**, not git-ignored — so
+> deploys/builds never run the transformer. Regenerate + commit only when a Data class changes.
 
 **Files:**
-- Modify: `.gitignore`, `package.json`
-- Generated (not committed): `resources/js/types/generated.d.ts`
+- Create (**committed**): `resources/js/types/generated.d.ts`
+- Modify: `package.json`
 
-- [ ] **Step 1: Git-ignore the generated file**
-
-Append to `.gitignore`:
-```
-/resources/js/types/generated.d.ts
-```
-
-- [ ] **Step 2: Generate the types + inspect them**
+- [ ] **Step 1: Generate the types + inspect them**
 
 Run: `php artisan typescript:transform`
 Expected: writes `resources/js/types/generated.d.ts`. Then inspect it:
@@ -308,32 +304,28 @@ name: string,
 ```
 **If a Data type is missing:** the class isn't marked `#[TypeScript]` (Task 2 added it) or the provider's `transformDirectories(app_path('Data'))` is wrong. **If keys are camelCase** (`imageUrl`), the Data properties weren't snake_case — fix `app/Data/ProductData.php`. Do not proceed until the generated types match the shape above (`App.Data.ProductData` is what the page will reference).
 
-- [ ] **Step 3: Add the `types:generate` script + wire it in**
+- [ ] **Step 2: Add a `types:generate` script (for regenerating on Data changes)**
 
-In `package.json` `scripts`, add/modify:
+In `package.json` `scripts`, add ONLY this line — leave `types:check` (`tsc --noEmit`), `dev` (`vite`)
+and `build` unchanged. Because the generated file is committed, nothing needs to regenerate at
+check/dev/build/deploy time:
 ```json
         "types:generate": "php artisan typescript:transform",
-        "types:check": "php artisan typescript:transform && tsc --noEmit",
-        "dev": "php artisan typescript:transform && vite",
 ```
-(Only these three lines change; leave the others.)
 
-- [ ] **Step 4: Verify the wired script regenerates**
+- [ ] **Step 3: Confirm the file is NOT git-ignored, then commit it + the script**
 
 ```bash
-rm -f resources/js/types/generated.d.ts
-bun run types:generate
-test -f resources/js/types/generated.d.ts && echo "generated OK"
+git check-ignore resources/js/types/generated.d.ts && echo "IGNORED — remove it from .gitignore" || echo "tracked OK"
+git add resources/js/types/generated.d.ts package.json
+git commit -m "build(types): generate + commit TS from Data classes; add types:generate script"
 ```
-Expected: `generated OK`.
+Expected: `tracked OK`, and the generated file is committed. (The transformer's build-cache
+`resources/js/types/typescript-transformer-manifest.json` stays git-ignored — it's a cache, not
+source.)
 
-- [ ] **Step 5: Commit (scripts + ignore only — NOT the generated file)**
-
-```bash
-git add .gitignore package.json
-git status --porcelain resources/js/types/generated.d.ts   # should print nothing (ignored)
-git commit -m "build(types): generate TS from Data classes (git-ignored); wire types:generate"
-```
+- [ ] **Step 4 (workflow note, no action):** whenever an `app/Data/*` class changes, run
+`bun run types:generate` and commit the updated `resources/js/types/generated.d.ts`.
 
 ---
 
