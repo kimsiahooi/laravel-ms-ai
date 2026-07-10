@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+    ArrowLeftRight,
     Boxes,
     Contact,
     FolderTree,
@@ -63,4 +64,10 @@ export const locationMeta: ResourceMeta = {
     singular: 'location',
     plural: 'Locations',
     icon: MapPin,
+};
+
+export const stockMovementMeta: ResourceMeta = {
+    singular: 'movement',
+    plural: 'Stock movements',
+    icon: ArrowLeftRight,
 };

@@ -10,6 +10,7 @@ use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SessionController;
+use App\Http\Controllers\Tenant\StockMovementController;
 use App\Http\Controllers\Tenant\SupplierController;
 use App\Http\Controllers\Tenant\WarehouseController;
 use Illuminate\Support\Facades\Auth;
@@ -79,6 +80,12 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('locations', LocationController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+
+            // Inventory ledger — append-only, so only list + create (no edit/delete).
+            Route::get('stock-movements', [StockMovementController::class, 'index'])
+                ->name('stock-movements.index');
+            Route::post('stock-movements', [StockMovementController::class, 'store'])
+                ->name('stock-movements.store');
 
             // Serve a product's image at an extension-less URL (ends in `/image`,
             // not `.png`/`.jpg`/…). Some nginx setups (e.g. CloudPanel) serve

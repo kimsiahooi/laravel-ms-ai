@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Data;
+
+use App\Models\StockMovement;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+/**
+ * One flattened ledger row for the Stock Movements table. `quantity` is signed
+ * (+ in / − out). snake_case keys keep the JSON byte-identical to the generated TS.
+ */
+#[TypeScript]
+class StockMovementData extends Data
+{
+    public function __construct(
+        public int $id,
+        /** "Warehouse · code", e.g. "Main · A-01". */
+        public string $location,
+        /** "Item name · Product|Raw material". */
+        public string $item,
+        public float $quantity,
+        public string $reason,
+        public ?string $user,
+        public string $created_at,
+    ) {}
+
+    public static function fromStockMovement(StockMovement $movement): self
+    {
+        $kind = $movement->stockable_type === 'product' ? 'Product' : 'Raw material';
+
+        return new self(
+            id: $movement->id,
+            location: ($movement->location->warehouse?->name ?? '?').' · '.$movement->location->code,
+            item: ($movement->stockable?->name ?? '—').' · '.$kind,
+            quantity: (float) $movement->quantity,
+            reason: $movement->reason->label(),
+            user: $movement->user?->name,
+            created_at: $movement->created_at->toISOString(),
+        );
+    }
+}

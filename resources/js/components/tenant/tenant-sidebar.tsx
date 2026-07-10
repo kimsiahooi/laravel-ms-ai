@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    ArrowLeftRight,
     Boxes,
     Contact,
     FolderTree,
@@ -27,6 +28,7 @@ import customers from '@/routes/tenant/customers';
 import locations from '@/routes/tenant/locations';
 import products from '@/routes/tenant/products';
 import rawMaterials from '@/routes/tenant/raw-materials';
+import stockMovements from '@/routes/tenant/stock-movements';
 import suppliers from '@/routes/tenant/suppliers';
 import warehouses from '@/routes/tenant/warehouses';
 import type { NavItem } from '@/types';
@@ -79,6 +81,11 @@ export function TenantSidebar() {
             title: 'Locations',
             href: locations.index.url({ tenant: slug }),
             icon: MapPin,
+        },
+        {
+            title: 'Stock movements',
+            href: stockMovements.index.url({ tenant: slug }),
+            icon: ArrowLeftRight,
         },
     ];
 

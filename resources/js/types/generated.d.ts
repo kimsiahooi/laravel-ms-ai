@@ -50,6 +50,15 @@ unit: string,
 min_stock: string,
 created_at: string,
 };
+export type StockMovementData = {
+id: number,
+location: string,
+item: string,
+quantity: number,
+reason: string,
+user: string | null,
+created_at: string,
+};
 export type SupplierData = {
 id: number,
 name: string,
