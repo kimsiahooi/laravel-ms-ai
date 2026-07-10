@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
 use App\Services\StockService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -30,10 +31,12 @@ class StockMovementController
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
         $movements = StockMovement::query()
             ->with(['location.warehouse', 'stockable', 'user'])
+            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
@@ -44,10 +47,35 @@ class StockMovementController
             'locations' => $this->stockLocationOptions(),
             'items' => $this->stockItemOptions(),
             'filters' => [
-                'search' => '',
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);
+    }
+
+    /**
+     * Filter the ledger by item name/sku (product or raw material), reason,
+     * notes, or the movement's location code / warehouse name.
+     *
+     * @param  Builder<StockMovement>  $query
+     */
+    private function applySearch(Builder $query, string $search): void
+    {
+        $like = '%'.$search.'%';
+
+        $query->where(function (Builder $group) use ($like): void {
+            $group
+                ->where('notes', 'like', $like)
+                ->orWhere('reason', 'like', $like)
+                ->orWhereHasMorph(
+                    'stockable',
+                    [Product::class, RawMaterial::class],
+                    fn (Builder $item) => $item->where('name', 'like', $like)->orWhere('sku', 'like', $like),
+                )
+                ->orWhereHas('location', fn (Builder $location) => $location
+                    ->where('code', 'like', $like)
+                    ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse->where('name', 'like', $like)));
+        });
     }
 
     public function store(StockMovementRequest $request, StockService $service): RedirectResponse

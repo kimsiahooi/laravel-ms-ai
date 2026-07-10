@@ -220,3 +220,41 @@ it('lists the transfers with picker options', function () {
             ->has('items', 1)
         );
 });
+
+it('filters the transfer ledger by item name and by endpoint location', function () {
+    test()->tenant->run(function () {
+        $warehouse = Warehouse::create(['name' => 'Main']);
+        $from = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $to = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'B-01']);
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
+        $gadget = Product::create(['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'ea']);
+
+        foreach ([$widget->id, $gadget->id] as $id) {
+            StockTransfer::create([
+                'from_location_id' => $from->id,
+                'to_location_id' => $to->id,
+                'stockable_type' => 'product',
+                'stockable_id' => $id,
+                'quantity' => 3,
+            ]);
+        }
+    });
+
+    loginAsAcmeUser();
+
+    // Item-name match runs across the polymorphic stockable.
+    $this->get('/acme/stock-transfers?search=Gadget')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/stock-transfers/index')
+            ->has('transfers.data', 1)
+            ->where('filters.search', 'Gadget')
+        );
+
+    // The destination location code matches both transfers.
+    $this->get('/acme/stock-transfers?search=B-01')
+        ->assertInertia(fn (Assert $page) => $page->has('transfers.data', 2));
+
+    $this->get('/acme/stock-transfers?search=Nope')
+        ->assertInertia(fn (Assert $page) => $page->has('transfers.data', 0));
+});

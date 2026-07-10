@@ -265,3 +265,42 @@ it('lists the ledger with picker options', function () {
             ->where('items.0.value', "product:{$productId}")
         );
 });
+
+it('filters the movement ledger by item name and by location', function () {
+    test()->tenant->run(function () {
+        $warehouse = Warehouse::create(['name' => 'Main']);
+        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
+        $gadget = Product::create(['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'ea']);
+
+        foreach ([[$widget->id, 5], [$gadget->id, 7]] as [$id, $qty]) {
+            StockMovement::create([
+                'location_id' => $location->id,
+                'stockable_type' => 'product',
+                'stockable_id' => $id,
+                'quantity' => $qty,
+                'reason' => 'adjustment',
+            ]);
+        }
+    });
+
+    loginAsAcmeUser();
+
+    // Item-name match runs across the polymorphic stockable.
+    $this->get('/acme/stock-movements?search=Widget')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/stock-movements/index')
+            ->has('movements.data', 1)
+            ->where('movements.data.0.item', 'Widget · Product')
+            ->where('filters.search', 'Widget')
+        );
+
+    // Warehouse name matches every row at that warehouse.
+    $this->get('/acme/stock-movements?search=Main')
+        ->assertInertia(fn (Assert $page) => $page->has('movements.data', 2));
+
+    // A term that matches nothing returns an empty ledger.
+    $this->get('/acme/stock-movements?search=Nope')
+        ->assertInertia(fn (Assert $page) => $page->has('movements.data', 0));
+});

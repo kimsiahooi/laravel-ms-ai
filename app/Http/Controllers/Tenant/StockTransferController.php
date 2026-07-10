@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\StockTransfer;
 use App\Services\StockService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -29,10 +30,12 @@ class StockTransferController
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
         $transfers = StockTransfer::query()
             ->with(['fromLocation.warehouse', 'toLocation.warehouse', 'stockable', 'user'])
+            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
@@ -43,10 +46,37 @@ class StockTransferController
             'locations' => $this->stockLocationOptions(),
             'items' => $this->stockItemOptions(),
             'filters' => [
-                'search' => '',
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);
+    }
+
+    /**
+     * Filter the transfer ledger by item name/sku, notes, or either endpoint's
+     * location code / warehouse name.
+     *
+     * @param  Builder<StockTransfer>  $query
+     */
+    private function applySearch(Builder $query, string $search): void
+    {
+        $like = '%'.$search.'%';
+
+        $endpoint = fn (Builder $location) => $location
+            ->where('code', 'like', $like)
+            ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse->where('name', 'like', $like));
+
+        $query->where(function (Builder $group) use ($like, $endpoint): void {
+            $group
+                ->where('notes', 'like', $like)
+                ->orWhereHasMorph(
+                    'stockable',
+                    [Product::class, RawMaterial::class],
+                    fn (Builder $item) => $item->where('name', 'like', $like)->orWhere('sku', 'like', $like),
+                )
+                ->orWhereHas('fromLocation', $endpoint)
+                ->orWhereHas('toLocation', $endpoint);
+        });
     }
 
     public function store(StockTransferRequest $request, StockService $service): RedirectResponse
