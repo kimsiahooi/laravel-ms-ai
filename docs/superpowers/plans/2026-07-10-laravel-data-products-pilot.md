@@ -45,33 +45,41 @@ composer require --dev spatie/laravel-typescript-transformer
 ```
 Expected: `laravel-data ^4.23` in `require`, `laravel-typescript-transformer ^3.3` in `require-dev`; no version conflicts (verified via dry-run already).
 
-- [ ] **Step 2: Publish the configs**
+> ⚠️ **Version reality (v3 rewrite):** `laravel-typescript-transformer` v3 is a full rewrite —
+> there is **no `config/typescript-transformer.php`**; config lives in a published provider class
+> via a fluent factory. And laravel-data 4.23's bundled `DataTypeScriptTransformer` extends
+> `DtoTransformer`, which v3 **removed** — using it fatals (confirmed upstream bug spatie/laravel-data#1195).
+> v2.5 (which laravel-data supports) requires `illuminate/console ^8–^12` and **does not install on
+> Laravel 13**. Resolution (probe-verified): stay on v3, **do not use `DataTypeScriptTransformer`**,
+> and let v3's `AttributedClassTransformer` generate the type from each Data class marked
+> `#[TypeScript]` (added in Task 2). `int→number`, `?string→string|null`, `App.Data.*` all verified.
+
+- [ ] **Step 2: Publish config + provider**
 
 ```bash
-php artisan vendor:publish --tag=data-config
-php artisan vendor:publish --provider="Spatie\LaravelTypeScriptTransformer\TypeScriptTransformerServiceProvider"
+php artisan vendor:publish --tag=data-config    # publishes config/data.php (no edits needed)
+php artisan typescript:install                  # publishes app/Providers/TypeScriptTransformerServiceProvider.php + registers it
 ```
-Expected: `config/data.php` and `config/typescript-transformer.php` exist. (`data.php` needs no edits for this pilot; defaults are fine.)
+Expected: `config/data.php` exists; `app/Providers/TypeScriptTransformerServiceProvider.php` exists and is registered in `bootstrap/providers.php`.
 
-- [ ] **Step 3: Configure the transformer**
+- [ ] **Step 3: Configure the transformer provider**
 
-Edit `config/typescript-transformer.php`:
-- Set `auto_discover_types` to scan only the Data dir:
-  ```php
-  'auto_discover_types' => [app_path('Data')],
-  ```
-- Ensure the `transformers` array includes laravel-data's transformer (add it if absent):
-  ```php
-  'transformers' => [
-      Spatie\LaravelData\Support\TypeScriptTransformer\DataTypeScriptTransformer::class,
-      // ...keep any existing default transformers (enum, etc.)...
-  ],
-  ```
-- Set the output path:
-  ```php
-  'output_file' => resource_path('js/types/generated.d.ts'),
-  ```
-- Leave `writer` at its default (`TypeScriptTransformer\Writers\TypeDefinitionWriter` — emits `declare namespace App.Data { … }`).
+Edit `app/Providers/TypeScriptTransformerServiceProvider.php` so `configure()` reads exactly:
+```php
+protected function configure(TypeScriptTransformerConfigFactory $config): void
+{
+    $config
+        ->transformer(AttributedClassTransformer::class)
+        ->transformer(EnumTransformer::class)
+        ->transformDirectories(app_path('Data'))
+        ->outputDirectory(resource_path('js/types'))
+        ->writer(new GlobalNamespaceWriter('generated.d.ts'));
+}
+```
+Imports: `AttributedClassTransformer` + `EnumTransformer` from `Spatie\TypeScriptTransformer\Transformers\…`, `GlobalNamespaceWriter` from `Spatie\TypeScriptTransformer\Writers\…`, `TypeScriptTransformerConfigFactory` from `Spatie\TypeScriptTransformer\…`.
+- **Do NOT** add `Spatie\LaravelData\Support\TypeScriptTransformer\DataTypeScriptTransformer` (fatal — see the version note above).
+- **Do NOT** add `->formatter(PrettierFormatter::class)` (the stub's default) — Prettier is banned by CLAUDE.md (Biome only). Leave no formatter; the generated `.d.ts` is an unformatted artifact, which is fine.
+- `outputDirectory(resource_path('js/types'))` + `GlobalNamespaceWriter('generated.d.ts')` combine to `resources/js/types/generated.d.ts`.
 
 - [ ] **Step 4: Verify install compiles**
 
@@ -103,11 +111,14 @@ namespace App\Data;
 
 use App\Models\Product;
 use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * The product list-item payload. snake_case property names keep the serialized
  * JSON (and the generated TS) byte-identical to the previous hand-mapped array.
+ * `#[TypeScript]` makes the transformer emit App.Data.ProductData.
  */
+#[TypeScript]
 class ProductData extends Data
 {
     public function __construct(
@@ -157,8 +168,10 @@ declare(strict_types=1);
 namespace App\Data;
 
 use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /** A `{ id, name }` option for a select/combobox (category, supplier, …). */
+#[TypeScript]
 class OptionData extends Data
 {
     public function __construct(
@@ -267,31 +280,33 @@ Expected: writes `resources/js/types/generated.d.ts`. Then inspect it:
 ```bash
 cat resources/js/types/generated.d.ts
 ```
-Expected content (shape, not exact formatting):
+Expected content (v3 `GlobalNamespaceWriter` format — nested namespaces, comma separators):
 ```ts
-declare namespace App.Data {
-    export type ProductData = {
-        id: number;
-        name: string;
-        sku: string;
-        barcode: string | null;
-        description: string | null;
-        image_url: string | null;
-        category_id: number | null;
-        supplier_id: number | null;
-        category: string | null;
-        supplier: string | null;
-        min_stock: number;
-        unit: string;
-        created_at: string;
-    };
-    export type OptionData = {
-        id: number;
-        name: string;
-    };
+declare namespace App {
+namespace Data {
+export type ProductData = {
+id: number,
+name: string,
+sku: string,
+barcode: string | null,
+description: string | null,
+image_url: string | null,
+category_id: number | null,
+supplier_id: number | null,
+category: string | null,
+supplier: string | null,
+min_stock: number,
+unit: string,
+created_at: string,
+};
+export type OptionData = {
+id: number,
+name: string,
+};
+}
 }
 ```
-**If the file is empty or missing the Data types:** the transformer didn't discover them via `auto_discover_types`. Fix by adding the `#[TypeScript]` attribute to both Data classes (`use Spatie\TypeScriptTransformer\Attributes\TypeScript;` then `#[TypeScript]` above each class) and re-run. **If keys are camelCase** (`imageUrl`), the Data properties weren't snake_case — fix them in `app/Data/ProductData.php`. Do not proceed until the generated types match the shape above.
+**If a Data type is missing:** the class isn't marked `#[TypeScript]` (Task 2 added it) or the provider's `transformDirectories(app_path('Data'))` is wrong. **If keys are camelCase** (`imageUrl`), the Data properties weren't snake_case — fix `app/Data/ProductData.php`. Do not proceed until the generated types match the shape above (`App.Data.ProductData` is what the page will reference).
 
 - [ ] **Step 3: Add the `types:generate` script + wire it in**
 
