@@ -1,33 +1,21 @@
-import { Form, Head, router, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import {
-    ImageIcon,
-    LoaderCircle,
-    Package,
-    Plus,
-    Trash2,
-    X,
-} from 'lucide-react';
+import { ImageIcon, Package, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ComboboxField } from '@/components/combobox-field';
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import InputError from '@/components/input-error';
+import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useDelete } from '@/hooks/use-delete';
+import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 
 type Product = App.Data.ProductData;
@@ -65,8 +53,6 @@ export default function ProductsIndex() {
         label: s.name,
     }));
 
-    const [formOpen, setFormOpen] = useState(false);
-    const [editing, setEditing] = useState<Product | null>(null);
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
     const [barcode, setBarcode] = useState('');
@@ -77,7 +63,6 @@ export default function ProductsIndex() {
     const [description, setDescription] = useState('');
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [removeImage, setRemoveImage] = useState(false);
-    const [deleting, setDeleting] = useState<Product | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
     // Route every preview change through here so a replaced blob: URL is revoked
@@ -120,14 +105,7 @@ export default function ProductsIndex() {
         }
     };
 
-    const openCreate = () => {
-        setEditing(null);
-        resetForm();
-        setFormOpen(true);
-    };
-
-    const openEdit = (product: Product) => {
-        setEditing(product);
+    const fillForm = (product: Product) => {
         setName(product.name);
         setSku(product.sku);
         setBarcode(product.barcode ?? '');
@@ -147,8 +125,13 @@ export default function ProductsIndex() {
         if (fileRef.current) {
             fileRef.current.value = '';
         }
-        setFormOpen(true);
     };
+
+    const dialog = useResourceDialog<Product>({
+        onCreate: resetForm,
+        onEdit: fillForm,
+    });
+    const del = useDelete<Product>({ baseUrl: base, onDeleted: flashToast });
 
     const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -164,19 +147,6 @@ export default function ProductsIndex() {
         if (fileRef.current) {
             fileRef.current.value = '';
         }
-    };
-
-    const confirmDelete = () => {
-        if (!deleting) {
-            return;
-        }
-        router.delete(`${base}/${deleting.id}`, {
-            preserveScroll: true,
-            onSuccess: (deleted) => {
-                setDeleting(null);
-                flashToast(deleted);
-            },
-        });
     };
 
     const columns: ColumnDef<Product>[] = [
@@ -248,8 +218,8 @@ export default function ProductsIndex() {
             cell: ({ row }) => (
                 <RowActions
                     label={row.original.name}
-                    onEdit={() => openEdit(row.original)}
-                    onDelete={() => setDeleting(row.original)}
+                    onEdit={() => dialog.openEdit(row.original)}
+                    onDelete={() => del.request(row.original)}
                 />
             ),
         },
@@ -283,7 +253,7 @@ export default function ProductsIndex() {
                 title="Products"
                 searchPlaceholder="Search name, SKU or barcode…"
                 toolbar={
-                    <Button onClick={openCreate} className="shrink-0">
+                    <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
                         New product
                     </Button>
@@ -303,7 +273,7 @@ export default function ProductsIndex() {
                                     your catalog.
                                 </p>
                             </div>
-                            <Button onClick={openCreate}>
+                            <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
                                 New product
                             </Button>
@@ -312,352 +282,263 @@ export default function ProductsIndex() {
                 }
             />
 
-            {/* Create / edit dialog */}
-            <Dialog
-                open={formOpen}
-                onOpenChange={(next) => {
-                    if (!next) {
-                        setFormOpen(false);
-                    }
-                }}
+            <ResourceFormDialog
+                open={dialog.open}
+                onOpenChange={dialog.onOpenChange}
+                editing={dialog.editing}
+                entityLabel="product"
+                baseUrl={base}
+                onSuccess={flashToast}
+                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
             >
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {editing ? 'Edit product' : 'New product'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {editing
-                                ? 'Update this product.'
-                                : 'Add a product to your catalog.'}
-                        </DialogDescription>
-                    </DialogHeader>
+                {({ errors }) => (
+                    <>
+                        {/* Hidden inputs mirror combobox / remove state */}
+                        <input
+                            type="hidden"
+                            name="category_id"
+                            value={categoryId}
+                        />
+                        <input
+                            type="hidden"
+                            name="supplier_id"
+                            value={supplierId}
+                        />
+                        {removeImage && (
+                            <input
+                                type="hidden"
+                                name="remove_image"
+                                value="1"
+                            />
+                        )}
 
-                    <Form
-                        key={editing?.id ?? 'new'}
-                        action={editing ? `${base}/${editing.id}` : base}
-                        method={editing ? 'put' : 'post'}
-                        disableWhileProcessing
-                        onSuccess={(saved) => {
-                            setFormOpen(false);
-                            flashToast(saved);
-                        }}
-                        className="space-y-4"
-                    >
-                        {({ processing, errors }) => (
-                            <>
-                                {/* Hidden inputs mirror combobox / remove state */}
-                                <input
-                                    type="hidden"
-                                    name="category_id"
-                                    value={categoryId}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
+                                    autoFocus
+                                    placeholder="e.g. Widget A"
+                                    aria-invalid={!!errors.name}
+                                    aria-describedby={
+                                        errors.name ? 'name-error' : undefined
+                                    }
                                 />
-                                <input
-                                    type="hidden"
-                                    name="supplier_id"
-                                    value={supplierId}
+                                <InputError
+                                    id="name-error"
+                                    role="alert"
+                                    message={errors.name}
                                 />
-                                {removeImage && (
-                                    <input
-                                        type="hidden"
-                                        name="remove_image"
-                                        value="1"
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="sku">SKU</Label>
+                                <Input
+                                    id="sku"
+                                    name="sku"
+                                    value={sku}
+                                    onChange={(e) => setSku(e.target.value)}
+                                    required
+                                    placeholder="e.g. P-001"
+                                    aria-invalid={!!errors.sku}
+                                    aria-describedby={
+                                        errors.sku ? 'sku-error' : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="sku-error"
+                                    role="alert"
+                                    message={errors.sku}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="barcode">Barcode</Label>
+                                <Input
+                                    id="barcode"
+                                    name="barcode"
+                                    value={barcode}
+                                    onChange={(e) => setBarcode(e.target.value)}
+                                    placeholder="Optional"
+                                    aria-invalid={!!errors.barcode}
+                                    aria-describedby={
+                                        errors.barcode
+                                            ? 'barcode-error'
+                                            : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="barcode-error"
+                                    role="alert"
+                                    message={errors.barcode}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="unit">Unit</Label>
+                                <Input
+                                    id="unit"
+                                    name="unit"
+                                    value={unit}
+                                    onChange={(e) => setUnit(e.target.value)}
+                                    required
+                                    placeholder="e.g. pcs"
+                                    aria-invalid={!!errors.unit}
+                                    aria-describedby={
+                                        errors.unit ? 'unit-error' : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="unit-error"
+                                    role="alert"
+                                    message={errors.unit}
+                                />
+                            </div>
+                            <ComboboxField
+                                id="category"
+                                label="Category"
+                                options={categoryOptions}
+                                value={categoryId}
+                                onChange={setCategoryId}
+                                error={errors.category_id}
+                                placeholder="Select category"
+                                searchPlaceholder="Search categories…"
+                                emptyText="No categories."
+                            />
+                            <ComboboxField
+                                id="supplier"
+                                label="Supplier"
+                                options={supplierOptions}
+                                value={supplierId}
+                                onChange={setSupplierId}
+                                error={errors.supplier_id}
+                                placeholder="Select supplier"
+                                searchPlaceholder="Search suppliers…"
+                                emptyText="No suppliers."
+                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="min_stock">Min stock</Label>
+                                <Input
+                                    id="min_stock"
+                                    name="min_stock"
+                                    type="number"
+                                    min={0}
+                                    step="1"
+                                    value={minStock}
+                                    onChange={(e) =>
+                                        setMinStock(e.target.value)
+                                    }
+                                    placeholder="0"
+                                    aria-invalid={!!errors.min_stock}
+                                    aria-describedby={
+                                        errors.min_stock
+                                            ? 'min_stock-error'
+                                            : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="min_stock-error"
+                                    role="alert"
+                                    message={errors.min_stock}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Image */}
+                        <div className="space-y-2">
+                            <Label htmlFor="image">Image</Label>
+                            <div className="flex items-center gap-3">
+                                {imagePreview ? (
+                                    <img
+                                        src={imagePreview}
+                                        alt=""
+                                        className="size-16 rounded-md border object-cover"
                                     />
+                                ) : (
+                                    <span className="grid size-16 place-items-center rounded-md border border-dashed text-muted-foreground">
+                                        <ImageIcon className="size-5" />
+                                    </span>
                                 )}
-
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Name</Label>
-                                        <Input
-                                            id="name"
-                                            name="name"
-                                            value={name}
-                                            onChange={(e) =>
-                                                setName(e.target.value)
-                                            }
-                                            required
-                                            autoFocus
-                                            placeholder="e.g. Widget A"
-                                            aria-invalid={!!errors.name}
-                                            aria-describedby={
-                                                errors.name
-                                                    ? 'name-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="name-error"
-                                            role="alert"
-                                            message={errors.name}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="sku">SKU</Label>
-                                        <Input
-                                            id="sku"
-                                            name="sku"
-                                            value={sku}
-                                            onChange={(e) =>
-                                                setSku(e.target.value)
-                                            }
-                                            required
-                                            placeholder="e.g. P-001"
-                                            aria-invalid={!!errors.sku}
-                                            aria-describedby={
-                                                errors.sku
-                                                    ? 'sku-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="sku-error"
-                                            role="alert"
-                                            message={errors.sku}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="barcode">Barcode</Label>
-                                        <Input
-                                            id="barcode"
-                                            name="barcode"
-                                            value={barcode}
-                                            onChange={(e) =>
-                                                setBarcode(e.target.value)
-                                            }
-                                            placeholder="Optional"
-                                            aria-invalid={!!errors.barcode}
-                                            aria-describedby={
-                                                errors.barcode
-                                                    ? 'barcode-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="barcode-error"
-                                            role="alert"
-                                            message={errors.barcode}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="unit">Unit</Label>
-                                        <Input
-                                            id="unit"
-                                            name="unit"
-                                            value={unit}
-                                            onChange={(e) =>
-                                                setUnit(e.target.value)
-                                            }
-                                            required
-                                            placeholder="e.g. pcs"
-                                            aria-invalid={!!errors.unit}
-                                            aria-describedby={
-                                                errors.unit
-                                                    ? 'unit-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="unit-error"
-                                            role="alert"
-                                            message={errors.unit}
-                                        />
-                                    </div>
-                                    <ComboboxField
-                                        id="category"
-                                        label="Category"
-                                        options={categoryOptions}
-                                        value={categoryId}
-                                        onChange={setCategoryId}
-                                        error={errors.category_id}
-                                        placeholder="Select category"
-                                        searchPlaceholder="Search categories…"
-                                        emptyText="No categories."
-                                    />
-                                    <ComboboxField
-                                        id="supplier"
-                                        label="Supplier"
-                                        options={supplierOptions}
-                                        value={supplierId}
-                                        onChange={setSupplierId}
-                                        error={errors.supplier_id}
-                                        placeholder="Select supplier"
-                                        searchPlaceholder="Search suppliers…"
-                                        emptyText="No suppliers."
-                                    />
-                                    <div className="space-y-2">
-                                        <Label htmlFor="min_stock">
-                                            Min stock
-                                        </Label>
-                                        <Input
-                                            id="min_stock"
-                                            name="min_stock"
-                                            type="number"
-                                            min={0}
-                                            step="1"
-                                            value={minStock}
-                                            onChange={(e) =>
-                                                setMinStock(e.target.value)
-                                            }
-                                            placeholder="0"
-                                            aria-invalid={!!errors.min_stock}
-                                            aria-describedby={
-                                                errors.min_stock
-                                                    ? 'min_stock-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        <InputError
-                                            id="min_stock-error"
-                                            role="alert"
-                                            message={errors.min_stock}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Image */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="image">Image</Label>
-                                    <div className="flex items-center gap-3">
-                                        {imagePreview ? (
-                                            <img
-                                                src={imagePreview}
-                                                alt=""
-                                                className="size-16 rounded-md border object-cover"
-                                            />
-                                        ) : (
-                                            <span className="grid size-16 place-items-center rounded-md border border-dashed text-muted-foreground">
-                                                <ImageIcon className="size-5" />
-                                            </span>
-                                        )}
-                                        <div className="flex flex-col gap-2">
-                                            <Input
-                                                ref={fileRef}
-                                                id="image"
-                                                name="image"
-                                                type="file"
-                                                accept="image/png,image/jpeg,image/webp"
-                                                onChange={onImageChange}
-                                                aria-invalid={!!errors.image}
-                                                aria-describedby={
-                                                    errors.image
-                                                        ? 'image-error'
-                                                        : undefined
-                                                }
-                                            />
-                                            {imagePreview && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="w-fit"
-                                                    onClick={clearImage}
-                                                >
-                                                    <X className="size-4" />
-                                                    Remove image
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <InputError
-                                        id="image-error"
-                                        role="alert"
-                                        message={errors.image}
-                                    />
-                                </div>
-
-                                {/* Description */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">
-                                        Description
-                                    </Label>
-                                    <Textarea
-                                        id="description"
-                                        name="description"
-                                        value={description}
-                                        onChange={(e) =>
-                                            setDescription(e.target.value)
-                                        }
-                                        rows={3}
-                                        placeholder="Optional notes about this product."
-                                        aria-invalid={!!errors.description}
+                                <div className="flex flex-col gap-2">
+                                    <Input
+                                        ref={fileRef}
+                                        id="image"
+                                        name="image"
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        onChange={onImageChange}
+                                        aria-invalid={!!errors.image}
                                         aria-describedby={
-                                            errors.description
-                                                ? 'description-error'
+                                            errors.image
+                                                ? 'image-error'
                                                 : undefined
                                         }
                                     />
-                                    <InputError
-                                        id="description-error"
-                                        role="alert"
-                                        message={errors.description}
-                                    />
-                                </div>
-
-                                <DialogFooter>
-                                    <DialogClose asChild>
+                                    {imagePreview && (
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            disabled={processing}
+                                            size="sm"
+                                            className="w-fit"
+                                            onClick={clearImage}
                                         >
-                                            Cancel
+                                            <X className="size-4" />
+                                            Remove image
                                         </Button>
-                                    </DialogClose>
-                                    <Button type="submit" disabled={processing}>
-                                        {processing ? (
-                                            <>
-                                                <LoaderCircle className="size-4 animate-spin" />
-                                                Saving…
-                                            </>
-                                        ) : editing ? (
-                                            'Save changes'
-                                        ) : (
-                                            'Create product'
-                                        )}
-                                    </Button>
-                                </DialogFooter>
-                            </>
-                        )}
-                    </Form>
-                </DialogContent>
-            </Dialog>
+                                    )}
+                                </div>
+                            </div>
+                            <InputError
+                                id="image-error"
+                                role="alert"
+                                message={errors.image}
+                            />
+                        </div>
 
-            {/* Delete confirmation */}
-            <Dialog
-                open={deleting !== null}
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                rows={3}
+                                placeholder="Optional notes about this product."
+                                aria-invalid={!!errors.description}
+                                aria-describedby={
+                                    errors.description
+                                        ? 'description-error'
+                                        : undefined
+                                }
+                            />
+                            <InputError
+                                id="description-error"
+                                role="alert"
+                                message={errors.description}
+                            />
+                        </div>
+                    </>
+                )}
+            </ResourceFormDialog>
+
+            <ConfirmDeleteDialog
+                item={del.deleting}
                 onOpenChange={(next) => {
                     if (!next) {
-                        setDeleting(null);
+                        del.cancel();
                     }
                 }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete product</DialogTitle>
-                        <DialogDescription>
-                            Remove “{deleting?.name}” from your catalog? This
-                            can be restored later.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setDeleting(null)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={confirmDelete}
-                        >
-                            <Trash2 className="size-4" />
-                            Delete
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                onConfirm={del.confirm}
+                title="Delete product"
+                description={
+                    <>
+                        Remove “{del.deleting?.name}” from your catalog? This
+                        can be restored later.
+                    </>
+                }
+            />
         </TenantLayout>
     );
 }
