@@ -81,7 +81,9 @@
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.511 0.262 276.966);
-    --chart-1: oklch(0.646 0.222 41.116);
+    /* chart-1 = brand indigo (matches --primary) so single-series charts read as
+       the brand; chart-2..5 stay a categorical ramp for multi-series charts. */
+    --chart-1: oklch(0.511 0.262 276.966);
     --chart-2: oklch(0.6 0.118 184.704);
     --chart-3: oklch(0.398 0.07 227.392);
     --chart-4: oklch(0.828 0.189 84.429);
@@ -117,7 +119,8 @@
     --border: oklch(0.269 0 0);
     --input: oklch(0.269 0 0);
     --ring: oklch(0.585 0.233 277.117);
-    --chart-1: oklch(0.488 0.243 264.376);
+    /* chart-1 = brand indigo (matches --primary) in dark too. */
+    --chart-1: oklch(0.585 0.233 277.117);
     --chart-2: oklch(0.696 0.17 162.48);
     --chart-3: oklch(0.769 0.188 70.08);
     --chart-4: oklch(0.627 0.265 303.9);

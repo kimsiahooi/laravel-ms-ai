@@ -1,0 +1,119 @@
+<?php
+
+use App\Actions\CompleteProductionOrder;
+use App\Actions\ProvisionTenant;
+use App\Enums\StockMovementReason;
+use App\Models\Location;
+use App\Models\Product;
+use App\Models\ProductionOrder;
+use App\Models\PurchaseOrder;
+use App\Models\RawMaterial;
+use App\Models\SalesOrder;
+use App\Models\Warehouse;
+use App\Services\StockService;
+use Inertia\Testing\AssertableInertia as Assert;
+
+beforeEach(function () {
+    $this->tenant = app(ProvisionTenant::class)->handle(
+        'Acme', 'acme', 'Ada', 'ada@acme.test', 'password123',
+    );
+});
+
+/**
+ * A workspace with known inventory + order state:
+ *  - Widget (min 5) on-hand 2  -> low
+ *  - Steel  (min 10) on-hand 30 (22 after a build) -> not low
+ *  - Bolt   (min 100) on-hand 0 -> low + out of stock
+ *  - Gizmo (BOM: 2 steel/unit): one PENDING MO (qty 1) + one COMPLETED MO (qty 4)
+ *  - one pending PO + one pending SO
+ */
+function seedDashboardScenario(): void
+{
+    test()->tenant->run(function () {
+        $stock = app(StockService::class);
+        $wh = Warehouse::create(['name' => 'Main']);
+        $loc = Location::create(['warehouse_id' => $wh->id, 'code' => 'A-01']);
+
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 5]);
+        $gizmo = Product::create(['name' => 'Gizmo', 'sku' => 'G-1', 'unit' => 'ea', 'min_stock' => 0]);
+        $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 10]);
+        RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea', 'min_stock' => 100]);
+
+        $gizmo->bomItems()->create(['raw_material_id' => $steel->id, 'quantity' => 2]);
+
+        $stock->record($loc, $widget, 2, StockMovementReason::Adjustment);
+        $stock->record($loc, $steel, 30, StockMovementReason::Adjustment);
+
+        PurchaseOrder::create(['status' => 'pending', 'currency' => 'USD']);
+        SalesOrder::create(['status' => 'pending', 'currency' => 'USD']);
+
+        $mk = function (float $qty, float $required) use ($gizmo, $steel): ProductionOrder {
+            $order = ProductionOrder::create([
+                'product_id' => $gizmo->id,
+                'product_snapshot' => ['name' => 'Gizmo', 'sku' => 'G-1', 'unit' => 'ea'],
+                'quantity' => $qty,
+                'status' => 'pending',
+            ]);
+            $order->items()->create([
+                'raw_material_id' => $steel->id,
+                'raw_material_snapshot' => ['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg'],
+                'quantity_per_unit' => 2,
+                'quantity_required' => $required,
+            ]);
+
+            return $order;
+        };
+
+        $mk(1, 2); // stays pending
+        app(CompleteProductionOrder::class)->handle($mk(4, 8), $loc); // consumes 8 steel, outputs 4 gizmo
+    });
+}
+
+it('redirects a guest from the dashboard to the tenant login', function () {
+    $this->get('/acme/dashboard')
+        ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
+});
+
+it('renders dashboard aggregates for a seeded workspace', function () {
+    seedDashboardScenario();
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/dashboard')
+            ->where('kpis.open_documents.total', 3)
+            ->where('kpis.open_documents.production', 1)
+            ->where('kpis.low_stock.count', 2)
+            ->where('kpis.low_stock.out_of_stock', 1)
+            ->where('kpis.production_in_progress.pending', 1)
+            ->where('kpis.production_in_progress.completed_units_30d', fn ($v) => (float) $v === 4.0)
+            ->where('kpis.skus_in_stock.count', 3)
+            ->where('orderPipeline.production.pending', 1)
+            ->where('orderPipeline.production.completed', 1)
+            ->has('reorderList', 2)
+            ->where('reorderList.0.name', 'Bolt') // biggest deficit first
+            ->has('stockActivity', 30)
+            ->has('throughput', 30)
+            ->has('onHandByWarehouse', 1)
+            ->where('onHandByWarehouse.0.name', 'Main')
+            ->has('recentMovements')
+        );
+});
+
+it('renders a zeroed dashboard for a fresh workspace', function () {
+    loginAsAcmeUser();
+
+    $this->get('/acme/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/dashboard')
+            ->where('kpis.open_documents.total', 0)
+            ->where('kpis.low_stock.count', 0)
+            ->where('kpis.skus_in_stock.count', 0)
+            ->has('reorderList', 0)
+            ->has('onHandByWarehouse', 0)
+            ->has('stockActivity', 30)
+        );
+});
