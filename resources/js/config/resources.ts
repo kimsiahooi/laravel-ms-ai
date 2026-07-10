@@ -1,5 +1,13 @@
 import type { LucideIcon } from 'lucide-react';
-import { Boxes, Contact, FolderTree, Package, Truck } from 'lucide-react';
+import {
+    Boxes,
+    Contact,
+    FolderTree,
+    MapPin,
+    Package,
+    Truck,
+    Warehouse,
+} from 'lucide-react';
 
 /**
  * Display metadata for a catalog resource — one home for its label + icon so the
@@ -43,4 +51,16 @@ export const productMeta: ResourceMeta = {
     singular: 'product',
     plural: 'Products',
     icon: Package,
+};
+
+export const warehouseMeta: ResourceMeta = {
+    singular: 'warehouse',
+    plural: 'Warehouses',
+    icon: Warehouse,
+};
+
+export const locationMeta: ResourceMeta = {
+    singular: 'location',
+    plural: 'Locations',
+    icon: MapPin,
 };

@@ -4,8 +4,10 @@ import {
     Contact,
     FolderTree,
     LayoutGrid,
+    MapPin,
     Package,
     Truck,
+    Warehouse,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import TenantLogo from '@/components/tenant/tenant-logo';
@@ -19,6 +21,14 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { dashboard } from '@/routes/tenant';
+import categories from '@/routes/tenant/categories';
+import customers from '@/routes/tenant/customers';
+import locations from '@/routes/tenant/locations';
+import products from '@/routes/tenant/products';
+import rawMaterials from '@/routes/tenant/raw-materials';
+import suppliers from '@/routes/tenant/suppliers';
+import warehouses from '@/routes/tenant/warehouses';
 import type { NavItem } from '@/types';
 
 type TenantBrand = { slug: string; name: string } | null;
@@ -26,7 +36,7 @@ type TenantBrand = { slug: string; name: string } | null;
 export function TenantSidebar() {
     const { tenant } = usePage().props as unknown as { tenant: TenantBrand };
     const slug = tenant?.slug ?? '';
-    const dashboardUrl = `/${slug}/dashboard`;
+    const dashboardUrl = dashboard.url({ tenant: slug });
 
     const mainNavItems: NavItem[] = [
         {
@@ -37,28 +47,38 @@ export function TenantSidebar() {
         },
         {
             title: 'Categories',
-            href: `/${slug}/categories`,
+            href: categories.index.url({ tenant: slug }),
             icon: FolderTree,
         },
         {
             title: 'Suppliers',
-            href: `/${slug}/suppliers`,
+            href: suppliers.index.url({ tenant: slug }),
             icon: Truck,
         },
         {
             title: 'Customers',
-            href: `/${slug}/customers`,
+            href: customers.index.url({ tenant: slug }),
             icon: Contact,
         },
         {
             title: 'Raw materials',
-            href: `/${slug}/raw-materials`,
+            href: rawMaterials.index.url({ tenant: slug }),
             icon: Boxes,
         },
         {
             title: 'Products',
-            href: `/${slug}/products`,
+            href: products.index.url({ tenant: slug }),
             icon: Package,
+        },
+        {
+            title: 'Warehouses',
+            href: warehouses.index.url({ tenant: slug }),
+            icon: Warehouse,
+        },
+        {
+            title: 'Locations',
+            href: locations.index.url({ tenant: slug }),
+            icon: MapPin,
         },
     ];
 

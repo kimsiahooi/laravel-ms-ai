@@ -5,11 +5,13 @@ declare(strict_types=1);
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\LocationController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\SupplierController;
+use App\Http\Controllers\Tenant\WarehouseController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -72,6 +74,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->parameters(['raw-materials' => 'rawMaterial'])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('products', ProductController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('warehouses', WarehouseController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('locations', LocationController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
             // Serve a product's image at an extension-less URL (ends in `/image`,

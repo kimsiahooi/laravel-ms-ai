@@ -4,6 +4,7 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { TenantSidebar } from '@/components/tenant/tenant-sidebar';
 import { TenantSidebarHeader } from '@/components/tenant/tenant-sidebar-header';
+import { dashboard } from '@/routes/tenant';
 import type { BreadcrumbItem } from '@/types';
 
 type TenantBrand = { slug: string; name: string } | null;
@@ -25,7 +26,12 @@ export default function TenantLayout({
     const crumbs =
         breadcrumbs ??
         (tenant
-            ? [{ title: 'Dashboard', href: `/${tenant.slug}/dashboard` }]
+            ? [
+                  {
+                      title: 'Dashboard',
+                      href: dashboard.url({ tenant: tenant.slug }),
+                  },
+              ]
             : []);
 
     return (

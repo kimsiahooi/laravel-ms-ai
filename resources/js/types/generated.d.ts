@@ -15,6 +15,14 @@ address: string | null,
 notes: string | null,
 created_at: string,
 };
+export type LocationData = {
+id: number,
+warehouse_id: number,
+warehouse: string | null,
+code: string,
+name: string | null,
+created_at: string,
+};
 export type OptionData = {
 id: number,
 name: string,
@@ -49,6 +57,13 @@ email: string | null,
 phone: string | null,
 address: string | null,
 notes: string | null,
+created_at: string,
+};
+export type WarehouseData = {
+id: number,
+name: string,
+code: string | null,
+address: string | null,
 created_at: string,
 };
 }
