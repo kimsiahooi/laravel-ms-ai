@@ -67,8 +67,14 @@ callers today — extract when a 3rd appears, or now if a base request (item 3) 
 
 ## Frontend (React)
 
-### 1. 🔜 Flash toasts: two conventions → the existing `useFlashToast` hook  · **Proposed (HIGH value)**
-**The problem — the codebase has drifted into two flash conventions:**
+### 1. ◐ Flash toasts — helper extracted (`@/lib/flash`); full convention merge still optional
+**Done now:** the identical per-page `flashToast(page)` helper (7 copies) was extracted to
+`resources/js/lib/flash.ts` and is imported (`import { flashToast } from '@/lib/flash'`). This
+keeps **Convention A** but removes the copy-paste. The larger migration below (delete Convention A,
+standardize on the reactive hook) is still available but **optional** — and now smaller, since all
+call sites already point at one function.
+
+**The remaining opportunity — the codebase still has two flash conventions:**
 
 - **Convention A (imperative, per-page):** controllers `return back()->with('success', 'X')`;
   `HandleInertiaRequests` shares `flash.success`; **each of the 7 list pages hand-rolls its own
@@ -140,7 +146,20 @@ tenants/login reuse the granular types. Removed 15+ duplicated field declaration
 (and a stray `const page = usePage()`) in 10 pages. (`welcome.tsx` keeps its natively-typed
 `usePage().props` — no cast there, nothing to abstract.)
 
-### 7. ℹ️ Already extracted (good) — keep reusing
+### 7. ✅ Empty-state card → `<EmptyState>` component  · **DONE**
+All 7 list pages hand-built the same `<Card><CardContent className="… py-16 text-center">` empty
+state (icon badge + title + description + optional action). `resources/js/components/empty-state.tsx`
+— `<EmptyState icon={Icon} title description action? />` (icon is a component ref, rendered
+internally as `<Icon className="size-6" />`). Applied to all 5 catalog pages + `admin/tenants`
+index & trashed (trashed omits `action`). Removed ~14 lines of boilerplate per page.
+
+### 8. ✅ Stock quantity formatting → `formatQuantity()`  · **DONE**
+`resources/js/lib/format.ts` — `formatQuantity(value: number | string)` →
+`Number(value).toLocaleString(undefined, { maximumFractionDigits: 4 })`. Replaced the inline
+`min_stock` formatting in the raw-materials and products tables (unifies the two slightly different
+call sites into one home; ready for future inventory/quantity columns).
+
+### 9. ℹ️ Already extracted (good) — keep reusing
 - `DataTable` (`resources/js/components/data-table.tsx`) — server-side list, used by 7 pages.
 - `Combobox` (`resources/js/components/combobox.tsx`) — searchable FK picker.
 - `ComboboxField` / `RowActions` — see items 3–4.
@@ -158,11 +177,13 @@ tenants/login reuse the granular types. Removed 15+ duplicated field declaration
 **Done:** `ResolvesPerPage` (B1) · `Searchable` scope (B2) · `InteractsWithTenantAssets` (B3) ·
 `useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
 `ComboboxField` (F3) · `RowActions` (F4) · shared prop types `@/types/page` (F5) ·
-`usePageProps` (F6). Also: `spatie/laravel-data` DTO pilot on Products.
+`usePageProps` (F6) · `EmptyState` (F7) · `formatQuantity` (F8) · `flashToast` helper `@/lib/flash`.
+Also: `spatie/laravel-data` DTO pilot on Products.
 
 **Remaining:**
 - Backend `TenantFormRequest` base for `authorize()` (B4) + `min_stock` coercion (B5) — small.
-- Flash-toast consolidation (F1) — intentionally **skipped**.
+- Full flash-convention merge (F1) — **optional**; the helper is now shared, so only the
+  Convention A→B migration (controllers + reactive hook + ~20 test assertions) is left.
 - Roll `laravel-data` out to the other resources (pilot proven on Products).
 - (Admin tenants pages keep their own archive/restore/force-delete flow — not part of the
   catalog dialog/delete abstractions.)

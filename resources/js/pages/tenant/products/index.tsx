@@ -2,15 +2,14 @@ import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ImageIcon, Package, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +17,8 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { flashToast } from '@/lib/flash';
+import { formatQuantity } from '@/lib/format';
 import type { TenantPageProps } from '@/types';
 
 type Product = App.Data.ProductData;
@@ -28,14 +29,6 @@ type PageProps = TenantPageProps & {
     categories: Option[];
     suppliers: Option[];
 };
-
-function flashToast(page: { props: unknown }): void {
-    const message = (page.props as { flash?: { success?: string | null } })
-        .flash?.success;
-    if (message) {
-        toast.success(message);
-    }
-}
 
 export default function ProductsIndex() {
     const { products, filters, categories, suppliers, tenant } =
@@ -198,7 +191,7 @@ export default function ProductsIndex() {
         {
             accessorKey: 'min_stock',
             header: 'Min stock',
-            cell: ({ row }) => row.original.min_stock.toLocaleString(),
+            cell: ({ row }) => formatQuantity(row.original.min_stock),
             meta: {
                 className: 'text-right text-muted-foreground tabular-nums',
             },
@@ -257,26 +250,17 @@ export default function ProductsIndex() {
                     </Button>
                 }
                 emptyState={
-                    <Card>
-                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                                <Package className="size-6" />
-                            </span>
-                            <div className="space-y-1">
-                                <h3 className="font-semibold text-lg">
-                                    No products yet
-                                </h3>
-                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                    Add your first product to start building
-                                    your catalog.
-                                </p>
-                            </div>
+                    <EmptyState
+                        icon={Package}
+                        title="No products yet"
+                        description="Add your first product to start building your catalog."
+                        action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
                                 New product
                             </Button>
-                        </CardContent>
-                    </Card>
+                        }
+                    />
                 }
             />
 

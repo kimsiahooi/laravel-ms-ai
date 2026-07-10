@@ -36,6 +36,13 @@ export function timeAgo(iso: string): string {
     return RELATIVE_TIME.format(Math.round(seconds / chosen[1]), chosen[0]);
 }
 
+/** Format a stock quantity for display: digit grouping + up to 4 decimals. */
+export function formatQuantity(value: number | string): string {
+    return Number(value).toLocaleString(undefined, {
+        maximumFractionDigits: 4,
+    });
+}
+
 export function absoluteDate(iso: string): string {
     const date = new Date(iso);
 

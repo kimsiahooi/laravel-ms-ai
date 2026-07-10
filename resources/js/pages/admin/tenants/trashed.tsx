@@ -11,9 +11,9 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -34,6 +34,7 @@ import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
+import { flashToast } from '@/lib/flash';
 import { timeAgo } from '@/lib/format';
 import type { FlashSuccess, ResourceFilters } from '@/types';
 
@@ -48,13 +49,6 @@ type PageProps = {
     filters: ResourceFilters;
     flash: FlashSuccess;
 };
-
-function flashToast(page: { props: unknown }): void {
-    const message = (page.props as PageProps).flash?.success;
-    if (message) {
-        toast.success(message);
-    }
-}
 
 export default function AdminTenantsTrashed() {
     const { tenants, filters } = usePageProps<PageProps>();
@@ -253,22 +247,11 @@ export default function AdminTenantsTrashed() {
                 title="Archived"
                 searchPlaceholder="Search name or slug…"
                 emptyState={
-                    <Card>
-                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                                <ArchiveX className="size-6" />
-                            </span>
-                            <div className="space-y-1">
-                                <h3 className="font-semibold text-lg">
-                                    Archive is empty
-                                </h3>
-                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                    Deleted tenants show up here. You can
-                                    restore them or permanently remove them.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <EmptyState
+                        icon={ArchiveX}
+                        title="Archive is empty"
+                        description="Deleted tenants show up here. You can restore them or permanently remove them."
+                    />
                 }
             />
 
@@ -337,7 +320,7 @@ export default function AdminTenantsTrashed() {
                         <DialogDescription>
                             This permanently deletes “{purging?.name}” and drops
                             its database. This cannot be undone. Type{' '}
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-medium font-mono text-foreground">
                                 {purging?.slug}
                             </span>{' '}
                             to confirm.

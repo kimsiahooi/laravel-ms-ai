@@ -16,10 +16,10 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -48,6 +48,7 @@ import { useClipboard } from '@/hooks/use-clipboard';
 import { useInitials } from '@/hooks/use-initials';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
+import { flashToast } from '@/lib/flash';
 import { absoluteDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FlashSuccess, ResourceFilters } from '@/types';
@@ -73,13 +74,6 @@ function slugify(value: string): string {
         .replace(/\p{M}/gu, '') // strip combining marks left by NFKD
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
-}
-
-function flashToast(page: { props: unknown }): void {
-    const message = (page.props as PageProps).flash?.success;
-    if (message) {
-        toast.success(message);
-    }
 }
 
 export default function AdminTenantsIndex() {
@@ -387,27 +381,17 @@ export default function AdminTenantsIndex() {
                     </Button>
                 }
                 emptyState={
-                    <Card>
-                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                                <Building2 className="size-6" />
-                            </span>
-                            <div className="space-y-1">
-                                <h3 className="font-semibold text-lg">
-                                    No tenants yet
-                                </h3>
-                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                    Provision your first workspace to get
-                                    started. Each tenant gets an isolated
-                                    database and its own login URL.
-                                </p>
-                            </div>
+                    <EmptyState
+                        icon={Building2}
+                        title="No tenants yet"
+                        description="Provision your first workspace to get started. Each tenant gets an isolated database and its own login URL."
+                        action={
                             <Button onClick={() => setOpen(true)}>
                                 <Plus className="size-4" />
                                 Create your first tenant
                             </Button>
-                        </CardContent>
-                    </Card>
+                        }
+                    />
                 }
             />
 

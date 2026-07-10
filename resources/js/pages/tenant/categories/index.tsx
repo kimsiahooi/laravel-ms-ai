@@ -2,20 +2,20 @@ import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { FolderTree, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { flashToast } from '@/lib/flash';
 import type { TenantPageProps } from '@/types';
 
 type Category = {
@@ -28,14 +28,6 @@ type Category = {
 type PageProps = TenantPageProps & {
     categories: Paginator<Category>;
 };
-
-function flashToast(page: { props: unknown }): void {
-    const message = (page.props as { flash?: { success?: string | null } })
-        .flash?.success;
-    if (message) {
-        toast.success(message);
-    }
-}
 
 export default function CategoriesIndex() {
     const { categories, filters, tenant } = usePageProps<PageProps>();
@@ -127,26 +119,17 @@ export default function CategoriesIndex() {
                     </Button>
                 }
                 emptyState={
-                    <Card>
-                        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-                            <span className="grid size-12 place-items-center rounded-xl bg-secondary text-foreground">
-                                <FolderTree className="size-6" />
-                            </span>
-                            <div className="space-y-1">
-                                <h3 className="font-semibold text-lg">
-                                    No categories yet
-                                </h3>
-                                <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                                    Create your first category to start
-                                    organizing your products.
-                                </p>
-                            </div>
+                    <EmptyState
+                        icon={FolderTree}
+                        title="No categories yet"
+                        description="Create your first category to start organizing your products."
+                        action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
                                 New category
                             </Button>
-                        </CardContent>
-                    </Card>
+                        }
+                    />
                 }
             />
 
