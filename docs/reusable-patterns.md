@@ -103,8 +103,9 @@ pages (raw-materials 403→304, categories 329→242, suppliers/customers 437→
 
 ### 3. ✅ `ComboboxField` (Label + Combobox + InputError) → component  · **DONE**
 `resources/js/components/combobox-field.tsx` — `<ComboboxField id label options value onChange
-error placeholder searchPlaceholder emptyText />` wraps the label + combobox + wired error.
-Used by the products form's category/supplier pickers; ready for Orders/BOM pickers.
+error placeholder searchPlaceholder emptyText hint? />` wraps the label + combobox + wired error.
+Used by the products form's category/supplier pickers; ready for Orders/BOM pickers. The optional
+`hint` prop renders a field help tooltip via `FieldLabel` (see item 11).
 
 ### 4. ✅ `RowActions` (Edit/Delete dropdown column) → component  · **DONE**
 `resources/js/components/row-actions.tsx` — `<RowActions label onEdit onDelete />`. Replaced the
@@ -156,10 +157,35 @@ resource. Each page derives its title / breadcrumb / `<Head>` (= `plural`), tool
 repeating the wording ~9× per page. Bespoke single-use copy (page `<p>`, search placeholder,
 empty-state description prose, field placeholders) stays inline.
 
-### 11. ℹ️ Already extracted (good) — keep reusing
+### 11. ✅ Field help tooltips → `FieldLabel` (+ `ComboboxField` `hint`)  · **DONE**
+`resources/js/components/field-label.tsx` — `<FieldLabel htmlFor hint? …Label props>…</FieldLabel>`
+is a **drop-in replacement for shadcn `Label`** that renders a muted **ⓘ** icon after the label
+when you pass `hint`; the tooltip opens on hover **and** keyboard focus (reuses the global
+`TooltipProvider` already mounted in `app.tsx`). `ComboboxField` takes the same optional `hint` and
+forwards it. Applied to the non-obvious fields across the tenant + admin forms (SKU, unit, min
+stock, warehouse/location code, currency, order receive/fulfil location, build qty + location,
+transfer quantity, movement type, tenant slug + initial password).
+
+**Adding a form input later?** Reach for `FieldLabel` (plain input) or `ComboboxField hint` (FK
+picker) **only when the field genuinely needs explaining** — obvious ones (name, email, address,
+notes) get none, or the UI turns noisy. Keep the copy plain-language and one sentence (what it's
+for / what happens):
+
+```tsx
+// plain input — swap <Label> for <FieldLabel> and add hint
+<FieldLabel htmlFor="min_stock" hint="We flag this item as low stock once its on-hand quantity drops to or below this number.">
+    Min stock
+</FieldLabel>
+
+// FK picker — just add the hint prop
+<ComboboxField id="fulfill-location" label="Fulfil from" hint="The location stock is deducted from when you fulfil this order." … />
+```
+
+### 12. ℹ️ Already extracted (good) — keep reusing
 - `DataTable` (`resources/js/components/data-table.tsx`) — server-side list, used by 7 pages.
 - `Combobox` (`resources/js/components/combobox.tsx`) — searchable FK picker.
 - `ComboboxField` / `RowActions` — see items 3–4.
+- `FieldLabel` — `Label` + optional info-tooltip for field hints (see item 11).
 - `useFlashToast` — the global toast hook (see item 1).
 
 > **Tooling note:** this repo's Biome config marks `lint/correctness/noUnusedImports` as an
@@ -176,7 +202,8 @@ empty-state description prose, field placeholders) stays inline.
 `useResourceDialog` + `ResourceFormDialog` (F2) · `useDelete` + `ConfirmDeleteDialog` (F2b) ·
 `ComboboxField` (F3) · `RowActions` (F4) · shared prop types `@/types/page` (F5) ·
 `usePageProps` (F6) · `EmptyState` (F7) · `formatQuantity` (F8) · `RespondsWithToast` + global
-`useFlashToast` (F1) · Wayfinder route helpers (F9) · `@/config/resources` descriptor (F10).
+`useFlashToast` (F1) · Wayfinder route helpers (F9) · `@/config/resources` descriptor (F10) ·
+`FieldLabel` + field-hint tooltips (F11).
 Also: `spatie/laravel-data` DTOs on **all 5 catalog resources** — Product (pilot) +
 RawMaterial / Category / Supplier / Customer. Each controller's `->through()` returns an
 `App\Data\XxxData` (snake_case, `#[TypeScript]`), and the page consumes the generated

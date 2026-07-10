@@ -19,6 +19,9 @@ Build **product-grade UI, not plain black-and-white forms.** Full policy:
   - processing → disable submit + `LoaderCircle` spinner + "…" (`disableWhileProcessing`)
   - validation → field errors under inputs via `<InputError>` + `aria-invalid` +
     `aria-describedby`; success/error → sonner `toast` (top-right, richColors)
+  - **field help** → for inputs that aren't self-explanatory, use `<FieldLabel
+    hint="…">` (drop-in `Label` with a hover/focus ⓘ tooltip) or `<ComboboxField
+    hint>`; one plain sentence, obvious fields get none (see `docs/reusable-patterns.md` item 11)
   - **empty state** = designed panel (icon + heading + explanation + CTA), plus a
     separate "no results" state for filtered lists
 - **UX affordances:** instant client-side search + live count, copy-to-clipboard

@@ -95,6 +95,10 @@ sidebar, breadcrumb, alert, collapsible, navigation-menu`.
   `<InputError>`, and pair `aria-invalid` + `aria-describedby` (+ `role="alert"`)
   on the input so screen readers announce them. Global/non-field errors use an
   `Alert`.
+- **Field help** — when a form input isn't self-explanatory, use `<FieldLabel
+  hint="…">` (a drop-in `Label` that adds a hover/focus **ⓘ** tooltip) or the
+  `hint` prop on `<ComboboxField>`. One plain-language sentence; obvious fields
+  (name, email, address, notes) get none. See `reusable-patterns.md` item 11.
 - **Success / failure feedback** — fire a **sonner `toast`** (top-right,
   richColors), close the modal/sheet, and reflect the change in the list.
 - **Destructive actions** — confirm first (Dialog), style as `destructive`.
@@ -137,6 +141,7 @@ sidebar, breadcrumb, alert, collapsible, navigation-menu`.
 | Stat cards + searchable table + create slide-over + empty states | `resources/js/pages/admin/dashboard.tsx` |
 | Theme tokens (brand + neutrals, light/dark) | `resources/css/app.css` |
 | Toast config (top-right, richColors) | `resources/js/components/ui/sonner.tsx` |
+| Field help tooltip (`FieldLabel` / `ComboboxField hint`) | `resources/js/components/field-label.tsx`, `resources/js/pages/tenant/products/index.tsx` |
 
 ---
 
