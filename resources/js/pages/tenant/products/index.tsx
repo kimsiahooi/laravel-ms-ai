@@ -30,23 +30,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import TenantLayout from '@/layouts/tenant-layout';
 
-type Product = {
-    id: number;
-    name: string;
-    sku: string;
-    barcode: string | null;
-    description: string | null;
-    image_url: string | null;
-    category_id: number | null;
-    supplier_id: number | null;
-    category: string | null;
-    supplier: string | null;
-    min_stock: number;
-    unit: string;
-    created_at: string;
-};
-
-type Option = { id: number; name: string };
+type Product = App.Data.ProductData;
+type Option = App.Data.OptionData;
 
 type PageProps = {
     products: Paginator<Product>;
