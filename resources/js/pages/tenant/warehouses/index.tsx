@@ -80,9 +80,15 @@ export default function WarehousesIndex() {
             accessorKey: 'name',
             header: 'Name',
             cell: ({ row }) => (
-                <span className="font-medium text-foreground">
+                <Link
+                    href={warehousesRoutes.show.url({
+                        tenant: tenant.slug,
+                        warehouse: row.original.id,
+                    })}
+                    className="font-medium text-foreground hover:underline"
+                >
                     {row.original.name}
-                </span>
+                </Link>
             ),
         },
         {
@@ -156,6 +162,12 @@ export default function WarehousesIndex() {
                 getRowId={(warehouse) => String(warehouse.id)}
                 title={warehouseMeta.plural}
                 searchPlaceholder="Search name or code…"
+                rowHref={(warehouse) =>
+                    warehousesRoutes.show.url({
+                        tenant: tenant.slug,
+                        warehouse: warehouse.id,
+                    })
+                }
                 toolbar={
                     canCreate ? (
                         <Button

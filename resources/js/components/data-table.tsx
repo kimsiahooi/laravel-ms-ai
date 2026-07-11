@@ -76,6 +76,7 @@ type DataTableProps<T> = {
     searchPlaceholder?: string;
     toolbar?: ReactNode;
     emptyState: ReactNode;
+    rowHref?: (row: T) => string;
 };
 
 export function DataTable<T>({
@@ -89,6 +90,7 @@ export function DataTable<T>({
     searchPlaceholder = 'Search…',
     toolbar,
     emptyState,
+    rowHref,
 }: DataTableProps<T>) {
     const [search, setSearch] = useState(filters.search);
     const [loading, setLoading] = useState(false);
@@ -273,7 +275,48 @@ export function DataTable<T>({
                                 </TableRow>
                             ) : (
                                 table.getRowModel().rows.map((row) => (
-                                    <TableRow key={row.id}>
+                                    <TableRow
+                                        key={row.id}
+                                        data-clickable={
+                                            rowHref ? '' : undefined
+                                        }
+                                        className={
+                                            rowHref
+                                                ? 'cursor-pointer'
+                                                : undefined
+                                        }
+                                        onClick={
+                                            rowHref
+                                                ? (event) => {
+                                                      if (
+                                                          window
+                                                              .getSelection()
+                                                              ?.toString()
+                                                      )
+                                                          return;
+                                                      if (
+                                                          event.button !== 0 ||
+                                                          event.metaKey ||
+                                                          event.ctrlKey ||
+                                                          event.shiftKey ||
+                                                          event.altKey
+                                                      )
+                                                          return;
+                                                      if (
+                                                          (
+                                                              event.target as HTMLElement
+                                                          ).closest(
+                                                              'a,button,input,[role="menuitem"],[data-slot^="dropdown-menu"]',
+                                                          )
+                                                      )
+                                                          return;
+                                                      router.visit(
+                                                          rowHref(row.original),
+                                                      );
+                                                  }
+                                                : undefined
+                                        }
+                                    >
                                         {row.getVisibleCells().map((cell) => (
                                             <TableCell
                                                 key={cell.id}
