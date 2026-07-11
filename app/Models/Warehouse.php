@@ -48,6 +48,14 @@ class Warehouse extends Model
         return $this->hasMany(WarehouseStock::class);
     }
 
+    /**
+     * @return HasMany<WarehouseReorderLevel, $this>
+     */
+    public function reorderLevels(): HasMany
+    {
+        return $this->hasMany(WarehouseReorderLevel::class);
+    }
+
     protected static function booted(): void
     {
         // Block deletion while the warehouse still holds on-hand stock. Zero it
