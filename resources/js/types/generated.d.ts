@@ -146,5 +146,16 @@ code: string | null,
 address: string | null,
 created_at: string,
 };
+export type WarehouseItemData = {
+stockable_type: string,
+stockable_id: number,
+item: string,
+sku: string | null,
+type: string,
+unit: string,
+on_hand: number,
+min_stock: number,
+needs_reorder: boolean,
+};
 }
 }

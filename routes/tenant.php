@@ -89,7 +89,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::resource('locations', LocationController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('warehouses', WarehouseController::class)
-                ->only(['index', 'store', 'update', 'destroy']);
+                ->only(['index', 'store', 'update', 'destroy', 'show']);
             Route::put('warehouses/{warehouse}/reorder-levels', [WarehouseReorderLevelController::class, 'update'])
                 ->name('warehouses.reorder-levels.update');
 
