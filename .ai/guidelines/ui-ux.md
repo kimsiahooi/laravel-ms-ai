@@ -38,6 +38,12 @@ Build **product-grade UI, not plain black-and-white forms.** Full policy:
   or use `suppressHydrationWarning`.
 - **Honest data only** — no invented metrics, fake charts, or actions without an
   endpoint.
+- **Plain language** — every user-facing string (page/field descriptions, hints,
+  empty states, dialogs, toasts) is written for the person running the business,
+  not the developer. No DB/dev jargon (on-hand, ledger, snapshot, reorder point,
+  ISO code, morph…); keep domain terms users know (SKU, warehouse, Bill of
+  materials). See `docs/COPY-STYLE.md` (jargon→plain glossary + the "would a
+  non-technical person understand this?" test).
 
 Mirror the reference implementations: `pages/admin/dashboard.tsx` (stats +
 searchable table + create Sheet + empty states), `pages/{admin,tenant}/login.tsx`,

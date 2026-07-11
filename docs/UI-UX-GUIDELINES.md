@@ -24,6 +24,11 @@ via **sonner**. Formatting/lint is **Biome** (see `docs/CODING-STANDARDS.md`).
    and a layout that survives from mobile to desktop.
 5. **Consistent.** Mirror the established patterns/components here instead of
    inventing new ones.
+6. **Plain language.** Every word the user reads is written for the person running
+   the business, not the developer — no database/dev jargon (on-hand, ledger,
+   snapshot, reorder point, ISO code, morph…). Keep the domain terms your users
+   actually use (SKU, warehouse, Bill of materials). Full glossary + the "would a
+   non-technical person understand this?" test: [`COPY-STYLE.md`](COPY-STYLE.md).
 
 ---
 
