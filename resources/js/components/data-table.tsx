@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import {
     type ColumnDef,
     flexRender,
@@ -6,8 +6,16 @@ import {
     type RowData,
     useReactTable,
 } from '@tanstack/react-table';
-import { LoaderCircle, Search, SearchX, X } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    LoaderCircle,
+    Search,
+    SearchX,
+    X,
+} from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { PaginationLink } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,9 +25,6 @@ import {
     PaginationContent,
     PaginationEllipsis,
     PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
 } from '@/components/ui/pagination';
 import {
     Select,
@@ -144,13 +149,6 @@ export function DataTable<T>({
         replace: true as const,
         onStart: () => setLoading(true),
         onFinish: () => setLoading(false),
-    };
-
-    const navigate = (url: string | null) => {
-        if (!url) {
-            return;
-        }
-        router.get(url, {}, reload);
     };
 
     const clearSearch = () => {
@@ -354,57 +352,102 @@ export function DataTable<T>({
                             <Pagination className="mx-0 w-auto">
                                 <PaginationContent>
                                     {paginator.links.map((link, index) => {
-                                        const disabled = !link.url || loading;
-                                        const disabledClass = cn(
-                                            disabled &&
+                                        const loadingClass = cn(
+                                            loading &&
                                                 'pointer-events-none opacity-50',
                                         );
 
+                                        // Previous
                                         if (index === 0) {
                                             return (
                                                 <PaginationItem key="prev">
-                                                    <PaginationPrevious
-                                                        href={link.url ?? '#'}
-                                                        aria-disabled={disabled}
-                                                        tabIndex={
-                                                            disabled
-                                                                ? -1
-                                                                : undefined
-                                                        }
-                                                        className={
-                                                            disabledClass
-                                                        }
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            navigate(link.url);
-                                                        }}
-                                                    />
+                                                    {link.url ? (
+                                                        <PaginationLink
+                                                            asChild
+                                                            size="default"
+                                                            className="gap-1 px-2.5 sm:pl-2.5"
+                                                        >
+                                                            <Link
+                                                                href={link.url}
+                                                                {...reload}
+                                                                aria-label="Go to previous page"
+                                                                tabIndex={
+                                                                    loading
+                                                                        ? -1
+                                                                        : undefined
+                                                                }
+                                                                className={
+                                                                    loadingClass
+                                                                }
+                                                            >
+                                                                <ChevronLeft />
+                                                                <span className="hidden sm:block">
+                                                                    Previous
+                                                                </span>
+                                                            </Link>
+                                                        </PaginationLink>
+                                                    ) : (
+                                                        <PaginationLink
+                                                            aria-disabled
+                                                            aria-label="Go to previous page"
+                                                            size="default"
+                                                            className="pointer-events-none gap-1 px-2.5 opacity-50 sm:pl-2.5"
+                                                        >
+                                                            <ChevronLeft />
+                                                            <span className="hidden sm:block">
+                                                                Previous
+                                                            </span>
+                                                        </PaginationLink>
+                                                    )}
                                                 </PaginationItem>
                                             );
                                         }
 
+                                        // Next
                                         if (
                                             index ===
                                             paginator.links.length - 1
                                         ) {
                                             return (
                                                 <PaginationItem key="next">
-                                                    <PaginationNext
-                                                        href={link.url ?? '#'}
-                                                        aria-disabled={disabled}
-                                                        tabIndex={
-                                                            disabled
-                                                                ? -1
-                                                                : undefined
-                                                        }
-                                                        className={
-                                                            disabledClass
-                                                        }
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            navigate(link.url);
-                                                        }}
-                                                    />
+                                                    {link.url ? (
+                                                        <PaginationLink
+                                                            asChild
+                                                            size="default"
+                                                            className="gap-1 px-2.5 sm:pr-2.5"
+                                                        >
+                                                            <Link
+                                                                href={link.url}
+                                                                {...reload}
+                                                                aria-label="Go to next page"
+                                                                tabIndex={
+                                                                    loading
+                                                                        ? -1
+                                                                        : undefined
+                                                                }
+                                                                className={
+                                                                    loadingClass
+                                                                }
+                                                            >
+                                                                <span className="hidden sm:block">
+                                                                    Next
+                                                                </span>
+                                                                <ChevronRight />
+                                                            </Link>
+                                                        </PaginationLink>
+                                                    ) : (
+                                                        <PaginationLink
+                                                            aria-disabled
+                                                            aria-label="Go to next page"
+                                                            size="default"
+                                                            className="pointer-events-none gap-1 px-2.5 opacity-50 sm:pr-2.5"
+                                                        >
+                                                            <span className="hidden sm:block">
+                                                                Next
+                                                            </span>
+                                                            <ChevronRight />
+                                                        </PaginationLink>
+                                                    )}
                                                 </PaginationItem>
                                             );
                                         }
@@ -427,21 +470,21 @@ export function DataTable<T>({
                                                 className="hidden sm:flex"
                                             >
                                                 <PaginationLink
-                                                    href={link.url ?? '#'}
+                                                    asChild
                                                     isActive={link.active}
-                                                    tabIndex={
-                                                        loading ? -1 : undefined
-                                                    }
-                                                    className={cn(
-                                                        loading &&
-                                                            'pointer-events-none opacity-50',
-                                                    )}
-                                                    onClick={(event) => {
-                                                        event.preventDefault();
-                                                        navigate(link.url);
-                                                    }}
+                                                    className={loadingClass}
                                                 >
-                                                    {link.label}
+                                                    <Link
+                                                        href={link.url ?? '#'}
+                                                        {...reload}
+                                                        tabIndex={
+                                                            loading
+                                                                ? -1
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {link.label}
+                                                    </Link>
                                                 </PaginationLink>
                                             </PaginationItem>
                                         );
