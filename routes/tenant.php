@@ -17,6 +17,7 @@ use App\Http\Controllers\Tenant\StockMovementController;
 use App\Http\Controllers\Tenant\StockTransferController;
 use App\Http\Controllers\Tenant\SupplierController;
 use App\Http\Controllers\Tenant\WarehouseController;
+use App\Http\Controllers\Tenant\WarehouseReorderLevelController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -89,6 +90,8 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('warehouses', WarehouseController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+            Route::put('warehouses/{warehouse}/reorder-levels', [WarehouseReorderLevelController::class, 'update'])
+                ->name('warehouses.reorder-levels.update');
 
             // Inventory ledger — append-only, so only list + create (no edit/delete).
             Route::get('stock-movements', [StockMovementController::class, 'index'])
