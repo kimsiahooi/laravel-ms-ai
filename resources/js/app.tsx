@@ -6,6 +6,21 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
+// Chromium/Firefox surface a benign "ResizeObserver loop …" as a window error
+// whenever an observer callback (Radix/floating-ui popovers, recharts) schedules
+// a resize that simply re-runs on the next frame. It breaks nothing but pollutes
+// the console and dev error overlay, so swallow ONLY that specific message.
+window.addEventListener('error', (event) => {
+    if (
+        /ResizeObserver loop (limit exceeded|completed with undelivered notifications)/.test(
+            event.message,
+        )
+    ) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+    }
+});
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
