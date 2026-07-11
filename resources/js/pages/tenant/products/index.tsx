@@ -337,7 +337,7 @@ export default function ProductsIndex() {
                             onSelect={() => openBom(row.original)}
                         >
                             <ListTree className="size-4" />
-                            Bill of materials
+                            Recipe
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             variant="destructive"
@@ -482,7 +482,7 @@ export default function ProductsIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="barcode"
-                                    hint="The scannable barcode number (EAN, UPC, and so on). Leave it blank if you don't track barcodes."
+                                    hint="The barcode number printed on the item's packaging. Leave it blank if you don't track barcodes."
                                 >
                                     Barcode
                                 </FieldLabel>
@@ -555,7 +555,7 @@ export default function ProductsIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="min_stock"
-                                    hint="We flag this item as low stock once its on-hand quantity drops to or below this number. Set it to 0 to never flag it."
+                                    hint="We flag this item as low on stock once the amount you have drops to or below this number. Set it to 0 to never flag it."
                                 >
                                     Min stock
                                 </FieldLabel>
@@ -690,11 +690,11 @@ export default function ProductsIndex() {
             >
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Bill of materials</DialogTitle>
+                        <DialogTitle>Recipe</DialogTitle>
                         <DialogDescription>
-                            The raw materials and per-unit quantities needed to
-                            make one “{bomProduct?.name}”. Production orders
-                            snapshot this recipe when created.
+                            The raw materials and how much of each it takes to
+                            make one “{bomProduct?.name}”. New production orders
+                            save a copy of this recipe.
                         </DialogDescription>
                     </DialogHeader>
 

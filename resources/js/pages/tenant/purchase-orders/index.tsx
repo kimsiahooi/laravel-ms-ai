@@ -370,7 +370,7 @@ export default function PurchaseOrdersIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="currency"
-                                    hint="The 3-letter ISO code for this order's prices, such as USD, MYR, or EUR."
+                                    hint="The 3-letter currency code for this order's prices, such as USD, MYR, or EUR."
                                 >
                                     Currency
                                 </FieldLabel>

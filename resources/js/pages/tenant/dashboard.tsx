@@ -353,7 +353,7 @@ export default function TenantDashboard() {
                     sub={
                         kpis.low_stock.out_of_stock > 0
                             ? `${kpis.low_stock.out_of_stock} out of stock`
-                            : 'below reorder point'
+                            : 'below minimum'
                     }
                 />
                 <StatCard
@@ -609,7 +609,7 @@ export default function TenantDashboard() {
                     <CardContent>
                         {reorderList.length === 0 ? (
                             <p className="py-8 text-center text-muted-foreground text-sm">
-                                All stock is above its reorder point.
+                                Every item is above its minimum stock level.
                             </p>
                         ) : (
                             <Table>

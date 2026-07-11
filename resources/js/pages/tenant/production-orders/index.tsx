@@ -280,7 +280,7 @@ export default function ProductionOrdersIndex() {
                         title={`No ${productionOrderMeta.plural.toLowerCase()} yet`}
                         description={
                             products.length === 0
-                                ? 'Give a product a bill of materials first, then you can manufacture it here.'
+                                ? 'Give a product a recipe first, then you can build it here.'
                                 : 'Create your first production order to start manufacturing.'
                         }
                         action={
@@ -303,7 +303,7 @@ export default function ProductionOrdersIndex() {
                 baseUrl={base}
                 contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
                 description={{
-                    create: 'Pick a product and how many to build. Its recipe is snapshotted now, so later recipe edits leave this order unchanged.',
+                    create: "Pick a product and how many to build. The recipe is saved with the order, so changing it later won't affect this one.",
                     edit: 'Update this production order.',
                 }}
             >
@@ -331,7 +331,7 @@ export default function ProductionOrdersIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="quantity"
-                                    hint="How many finished units to build. Raw materials are reserved from the product's bill of materials based on this number."
+                                    hint="How many finished units to build. The raw materials needed come from the product's recipe, multiplied by this number."
                                 >
                                     Quantity
                                 </FieldLabel>

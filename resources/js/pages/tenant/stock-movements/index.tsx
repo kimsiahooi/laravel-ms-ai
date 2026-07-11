@@ -168,7 +168,7 @@ export default function StockMovementsIndex() {
                     <EmptyState
                         icon={stockMovementMeta.icon}
                         title={`No ${stockMovementMeta.plural.toLowerCase()} yet`}
-                        description="Record your first movement to start tracking on-hand levels."
+                        description="Record your first movement to start tracking your stock levels."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
@@ -186,7 +186,7 @@ export default function StockMovementsIndex() {
                 entityLabel={stockMovementMeta.singular}
                 baseUrl={base}
                 description={{
-                    create: 'Adjust on-hand at a warehouse.',
+                    create: 'Adjust the stock held at a warehouse.',
                     edit: '',
                 }}
             >
@@ -207,7 +207,7 @@ export default function StockMovementsIndex() {
                         <ComboboxField
                             id="warehouse"
                             label="Warehouse"
-                            hint="The warehouse whose on-hand quantity this movement changes."
+                            hint="The warehouse whose stock this movement changes."
                             options={warehouseOptions}
                             value={warehouseId}
                             onChange={setWarehouseId}
@@ -230,7 +230,7 @@ export default function StockMovementsIndex() {
                         />
 
                         <div className="space-y-2">
-                            <FieldLabel hint="In adds stock, Out removes it, and Adjustment sets the on-hand quantity to an exact figure — useful after a physical count.">
+                            <FieldLabel hint="In adds stock, Out removes it, and Adjustment sets the amount in stock to an exact figure — handy after a physical count.">
                                 Type
                             </FieldLabel>
                             <div className="grid grid-cols-3 gap-2">
@@ -254,7 +254,7 @@ export default function StockMovementsIndex() {
                         <div className="space-y-2">
                             <Label htmlFor="quantity">
                                 {type === 'adjustment'
-                                    ? 'Set on-hand to'
+                                    ? 'Set stock to'
                                     : 'Quantity'}
                             </Label>
                             <Input

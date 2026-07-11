@@ -241,7 +241,7 @@ export default function RawMaterialsIndex() {
                         <div className="space-y-2">
                             <FieldLabel
                                 htmlFor="min_stock"
-                                hint="We flag this material as low stock once its on-hand quantity drops to or below this number. Set it to 0 to never flag it."
+                                hint="We flag this material as low on stock once the amount you have drops to or below this number. Set it to 0 to never flag it."
                             >
                                 Min stock
                             </FieldLabel>
