@@ -51,11 +51,14 @@ export function Combobox({
         setOpen(false);
     };
 
-    // `modal` matters when the combobox is used inside a Dialog: the popover is
-    // portaled, and Radix sets pointer-events:none on the body while a modal
-    // Dialog is open, which otherwise blocks clicking an option. modal restores it.
+    // The content renders inside the trigger's tree (portal={false} below), not at
+    // the body — so when this combobox sits inside a Dialog, it stays within the
+    // Dialog's focus scope and its search input can hold focus (a portaled popover
+    // lands outside the trap and the search bar becomes unclickable). Being inside
+    // the Dialog's pointer-events:auto region also keeps options clickable without
+    // `modal` — a modal popover here would re-introduce the focus fight.
     return (
-        <Popover open={open} onOpenChange={setOpen} modal>
+        <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
                     id={id}
@@ -75,7 +78,8 @@ export function Combobox({
             </PopoverTrigger>
             <PopoverContent
                 align="start"
-                className="w-[var(--radix-popover-trigger-width)] p-0"
+                portal={false}
+                className="w-(--radix-popover-trigger-width) p-0"
             >
                 <Command>
                     <CommandInput placeholder={searchPlaceholder} />
