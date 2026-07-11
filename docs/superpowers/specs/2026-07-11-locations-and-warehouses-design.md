@@ -62,11 +62,9 @@ an `UPDATE`, so a DB FK constraint alone can't block it).
   warehouse. A `Location::deleting` guard (mirrored by a check in
   `LocationController::destroy`) aborts with a toast:
   *"This location still has N warehouses — remove them first."*
-- **Warehouse → stock** — *proposed, confirm:* for consistency, a Warehouse can't
-  be deleted while it holds on-hand stock (any `warehouse_stock` with quantity ≠ 0);
-  zero it out (adjust/transfer) first. This supersedes today's "soft-delete strands
-  the stock" behaviour. *(If you'd rather keep allow-and-strand, we drop this guard;
-  the defensive on-hand filter below stays either way.)*
+- **Warehouse → stock** — a Warehouse can't be deleted while it holds on-hand
+  stock (any `warehouse_stock` with quantity ≠ 0); zero it out (adjust/transfer)
+  first. This supersedes today's "soft-delete strands the stock" behaviour.
 - **FKs**: `warehouses.location_id`, `stock_movements.warehouse_id`,
   `stock_transfers.from/to_warehouse_id` → **`restrictOnDelete`** (history and
   parents are never destroyed by a hard delete); `warehouse_stocks.warehouse_id`
@@ -83,7 +81,7 @@ an `UPDATE`, so a DB FK constraint alone can't block it).
 - **`Warehouse`** — `#[Fillable(['location_id','name','code','address'])]`,
   `SoftDeletes`, `location(): BelongsTo`, `warehouseStocks(): HasMany`,
   `stockMovements(): HasMany`. `deleting` guard blocking while it holds on-hand
-  stock (per *Delete semantics*, pending confirmation).
+  stock (per *Delete semantics*).
 - **`LocationStock` → `WarehouseStock`** — rename model + `$table`; `warehouse(): BelongsTo`.
 - **`StockMovement`** — `location()` → `warehouse()` (`->withTrashed()`), `warehouse_id` fillable.
 - **`StockTransfer`** — `fromLocation/toLocation` → `fromWarehouse/toWarehouse`.
@@ -156,22 +154,23 @@ such dependency.
   (now requires a `location_id`, has address).
 - **Delete guards**: `LocationTest` — deleting a location with warehouses is
   blocked (error/toast) and succeeds once empty. `WarehouseTest` — deleting a
-  warehouse holding stock is blocked and succeeds once zeroed (if the
-  warehouse→stock guard is confirmed).
+  warehouse holding stock is blocked and succeeds once zeroed.
 - `StockServiceTest`, `StockMovement`/`StockTransfer` feature tests — `Location`→`Warehouse`.
 - `ReceivePurchaseOrder`/`FulfillSalesOrder`/`CompleteProductionOrder` tests — warehouse.
 - `DashboardTest` — the seed scenario builds `Location → Warehouse`; `onHandByWarehouse`,
-  `reorderList`, low-stock, `skus_in_stock` assertions still hold at warehouse level;
-  keep the "stock stranded in a soft-deleted warehouse" test (rename from location).
+  `reorderList`, low-stock, `skus_in_stock` assertions still hold at warehouse level.
+  Keep the "stranded stock is excluded from on-hand" test, but set it up by
+  **bypassing the delete guard** (force / direct soft-delete) since a normal delete
+  of a warehouse-with-stock is now blocked — the defensive filter is still worth proving.
 - Confirm the whole tenant suite green under the renamed schema.
 
 ## Edge cases & risks
 
 - **Migration order** — `locations` must precede `warehouses`; a wrong file
   number breaks the FK. Verified in the table above.
-- **Soft-delete cascade vs FK restrict** — hard-deleting a Location can't cascade
-  through `stock_movements` (restrict); real usage is soft-delete (app-cascade),
-  so this only matters for `migrate:fresh`/seeders, which recreate cleanly.
+- **Guards are app-level** — a soft delete is an `UPDATE`, so the delete "block"
+  lives in model/controller code; the `restrictOnDelete` FKs only backstop hard
+  deletes. `migrate:fresh`/seeders bypass the guards and recreate cleanly.
 - **`code` uniqueness** — warehouse `code` is now tenant-global unique; seed/demo
   data must not collide.
 - **Type drift** — every column rename must be mirrored in the DTO + regenerated
