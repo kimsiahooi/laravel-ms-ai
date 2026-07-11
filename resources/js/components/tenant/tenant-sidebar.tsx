@@ -81,14 +81,14 @@ export function TenantSidebar() {
             icon: Package,
         },
         {
-            title: 'Warehouses',
-            href: warehouses.index.url({ tenant: slug }),
-            icon: Warehouse,
-        },
-        {
             title: 'Locations',
             href: locations.index.url({ tenant: slug }),
             icon: MapPin,
+        },
+        {
+            title: 'Warehouses',
+            href: warehouses.index.url({ tenant: slug }),
+            icon: Warehouse,
         },
         {
             title: 'Stock movements',

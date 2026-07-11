@@ -1,7 +1,8 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { MapPin, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
@@ -19,24 +20,37 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { dashboard } from '@/routes/tenant';
+import locationsRoutes from '@/routes/tenant/locations';
 import warehousesRoutes from '@/routes/tenant/warehouses';
 import type { TenantPageProps } from '@/types';
 
 type Warehouse = App.Data.WarehouseData;
+type Option = App.Data.OptionData;
 
 type PageProps = TenantPageProps & {
     warehouses: Paginator<Warehouse>;
+    locations: Option[];
 };
 
 export default function WarehousesIndex() {
-    const { warehouses, filters, tenant } = usePageProps<PageProps>();
+    const { warehouses, filters, locations, tenant } =
+        usePageProps<PageProps>();
     const base = warehousesRoutes.index.url({ tenant: tenant.slug });
+    const locationsUrl = locationsRoutes.index.url({ tenant: tenant.slug });
 
+    const locationOptions = locations.map((location) => ({
+        value: String(location.id),
+        label: location.name,
+    }));
+    const canCreate = locations.length > 0;
+
+    const [locationId, setLocationId] = useState('');
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
     const [address, setAddress] = useState('');
 
     const resetForm = () => {
+        setLocationId('');
         setName('');
         setCode('');
         setAddress('');
@@ -45,6 +59,12 @@ export default function WarehousesIndex() {
     const dialog = useResourceDialog<Warehouse>({
         onCreate: resetForm,
         onEdit: (warehouse) => {
+            const locId = warehouse.location_id
+                ? String(warehouse.location_id)
+                : '';
+            setLocationId(
+                locationOptions.some((o) => o.value === locId) ? locId : '',
+            );
             setName(warehouse.name);
             setCode(warehouse.code ?? '');
             setAddress(warehouse.address ?? '');
@@ -66,6 +86,12 @@ export default function WarehousesIndex() {
             ),
         },
         {
+            accessorKey: 'location',
+            header: 'Location',
+            cell: ({ row }) => row.original.location ?? '—',
+            meta: { className: 'text-muted-foreground' },
+        },
+        {
             accessorKey: 'code',
             header: 'Code',
             cell: ({ row }) =>
@@ -83,7 +109,7 @@ export default function WarehousesIndex() {
             cell: ({ row }) => row.original.address ?? '—',
             meta: {
                 className:
-                    'hidden max-w-md truncate text-muted-foreground md:table-cell',
+                    'hidden max-w-md truncate text-muted-foreground lg:table-cell',
             },
         },
         {
@@ -117,7 +143,7 @@ export default function WarehousesIndex() {
                     {warehouseMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Manage the warehouses that hold your inventory.
+                    Warehouses that hold stock, grouped under a location.
                 </p>
             </div>
 
@@ -131,21 +157,46 @@ export default function WarehousesIndex() {
                 title={warehouseMeta.plural}
                 searchPlaceholder="Search name or code…"
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {warehouseMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {warehouseMeta.singular}
+                        </Button>
+                    ) : (
+                        <Button asChild variant="outline" className="shrink-0">
+                            <Link href={locationsUrl}>
+                                <MapPin className="size-4" />
+                                Create a location first
+                            </Link>
+                        </Button>
+                    )
                 }
                 emptyState={
                     <EmptyState
                         icon={warehouseMeta.icon}
-                        title={`No ${warehouseMeta.plural.toLowerCase()} yet`}
-                        description="Add your first warehouse to start organizing your inventory."
+                        title="No warehouses yet"
+                        description={
+                            canCreate
+                                ? 'Add a warehouse under one of your locations.'
+                                : 'Warehouses live under a location — create a location first, then add warehouses to it.'
+                        }
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {warehouseMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {warehouseMeta.singular}
+                                </Button>
+                            ) : (
+                                <Button asChild>
+                                    <Link href={locationsUrl}>
+                                        <MapPin className="size-4" />
+                                        Create a location first
+                                    </Link>
+                                </Button>
+                            )
                         }
                     />
                 }
@@ -160,6 +211,25 @@ export default function WarehousesIndex() {
             >
                 {({ errors }) => (
                     <>
+                        {/* Hidden input mirrors the combobox selection */}
+                        <input
+                            type="hidden"
+                            name="location_id"
+                            value={locationId}
+                        />
+
+                        <ComboboxField
+                            id="location"
+                            label="Location"
+                            hint="The site this warehouse belongs to."
+                            options={locationOptions}
+                            value={locationId}
+                            onChange={setLocationId}
+                            error={errors.location_id}
+                            placeholder="Select location"
+                            searchPlaceholder="Search locations…"
+                            emptyText="No locations."
+                        />
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
                             <Input
@@ -186,7 +256,7 @@ export default function WarehousesIndex() {
                         <div className="space-y-2">
                             <FieldLabel
                                 htmlFor="code"
-                                hint="A short code for this warehouse, such as “KL” or “WH-1”. It appears on transfers and stock lists."
+                                hint="A short code for this warehouse, such as “WH-1”. It appears on transfers and stock lists."
                             >
                                 Code{' '}
                                 <span className="font-normal text-muted-foreground">
@@ -253,9 +323,8 @@ export default function WarehousesIndex() {
                 title="Delete warehouse"
                 description={
                     <>
-                        Remove “{del.deleting?.name}” from your inventory?
-                        Locations and stock keep their data but lose this
-                        warehouse.
+                        Remove “{del.deleting?.name}” from your inventory? Its
+                        stock and history are removed with it.
                     </>
                 }
             />

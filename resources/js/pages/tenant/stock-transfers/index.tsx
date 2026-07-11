@@ -27,31 +27,31 @@ type ItemOption = { value: string; label: string };
 
 type PageProps = TenantPageProps & {
     transfers: Paginator<StockTransfer>;
-    locations: Option[];
+    warehouses: Option[];
     items: ItemOption[];
 };
 
 export default function StockTransfersIndex() {
-    const { transfers, filters, locations, items, tenant } =
+    const { transfers, filters, warehouses, items, tenant } =
         usePageProps<PageProps>();
     const base = stockTransfersRoutes.index.url({ tenant: tenant.slug });
 
-    const locationOptions = locations.map((location) => ({
-        value: String(location.id),
-        label: location.name,
+    const warehouseOptions = warehouses.map((warehouse) => ({
+        value: String(warehouse.id),
+        label: warehouse.name,
     }));
 
     const [stockable, setStockable] = useState('');
-    const [fromLocationId, setFromLocationId] = useState('');
-    const [toLocationId, setToLocationId] = useState('');
+    const [fromWarehouseId, setFromWarehouseId] = useState('');
+    const [toWarehouseId, setToWarehouseId] = useState('');
     const [quantity, setQuantity] = useState('');
     const [notes, setNotes] = useState('');
 
     const dialog = useResourceDialog<StockTransfer>({
         onCreate: () => {
             setStockable('');
-            setFromLocationId('');
-            setToLocationId('');
+            setFromWarehouseId('');
+            setToWarehouseId('');
             setQuantity('');
             setNotes('');
         },
@@ -121,7 +121,7 @@ export default function StockTransfersIndex() {
                     {stockTransferMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Move stock from one location to another.
+                    Move stock from one warehouse to another.
                 </p>
             </div>
 
@@ -143,7 +143,7 @@ export default function StockTransfersIndex() {
                     <EmptyState
                         icon={stockTransferMeta.icon}
                         title={`No ${stockTransferMeta.plural.toLowerCase()} yet`}
-                        description="Move stock between locations to see transfers here."
+                        description="Move stock between warehouses to see transfers here."
                         action={
                             <Button onClick={dialog.openCreate}>
                                 <Plus className="size-4" />
@@ -161,7 +161,7 @@ export default function StockTransfersIndex() {
                 entityLabel={stockTransferMeta.singular}
                 baseUrl={base}
                 description={{
-                    create: 'Move stock from a source to a destination location.',
+                    create: 'Move stock from a source to a destination warehouse.',
                     edit: '',
                 }}
             >
@@ -174,13 +174,13 @@ export default function StockTransfersIndex() {
                         />
                         <input
                             type="hidden"
-                            name="from_location_id"
-                            value={fromLocationId}
+                            name="from_warehouse_id"
+                            value={fromWarehouseId}
                         />
                         <input
                             type="hidden"
-                            name="to_location_id"
-                            value={toLocationId}
+                            name="to_warehouse_id"
+                            value={toWarehouseId}
                         />
 
                         <ComboboxField
@@ -196,33 +196,35 @@ export default function StockTransfersIndex() {
                         />
 
                         <ComboboxField
-                            id="from_location"
-                            label="From"
-                            options={locationOptions}
-                            value={fromLocationId}
-                            onChange={setFromLocationId}
-                            error={errors.from_location_id}
-                            placeholder="Source location"
-                            searchPlaceholder="Search locations…"
-                            emptyText="No locations found."
+                            id="from_warehouse"
+                            label="From warehouse"
+                            hint="The warehouse stock is moved out of."
+                            options={warehouseOptions}
+                            value={fromWarehouseId}
+                            onChange={setFromWarehouseId}
+                            error={errors.from_warehouse_id}
+                            placeholder="Source warehouse"
+                            searchPlaceholder="Search warehouses…"
+                            emptyText="No warehouses found."
                         />
 
                         <ComboboxField
-                            id="to_location"
-                            label="To"
-                            options={locationOptions}
-                            value={toLocationId}
-                            onChange={setToLocationId}
-                            error={errors.to_location_id}
-                            placeholder="Destination location"
-                            searchPlaceholder="Search locations…"
-                            emptyText="No locations found."
+                            id="to_warehouse"
+                            label="To warehouse"
+                            hint="The warehouse stock is moved into."
+                            options={warehouseOptions}
+                            value={toWarehouseId}
+                            onChange={setToWarehouseId}
+                            error={errors.to_warehouse_id}
+                            placeholder="Destination warehouse"
+                            searchPlaceholder="Search warehouses…"
+                            emptyText="No warehouses found."
                         />
 
                         <div className="space-y-2">
                             <FieldLabel
                                 htmlFor="quantity"
-                                hint="How much stock to move. It can't exceed what's on hand at the “From” location."
+                                hint="How much stock to move. It can't exceed what's on hand at the “From” warehouse."
                             >
                                 Quantity
                             </FieldLabel>

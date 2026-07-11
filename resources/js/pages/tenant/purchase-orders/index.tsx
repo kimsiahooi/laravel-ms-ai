@@ -50,7 +50,7 @@ type PageProps = TenantPageProps & {
     orders: Paginator<PurchaseOrder>;
     suppliers: Option[];
     rawMaterials: Option[];
-    locations: Option[];
+    warehouses: Option[];
 };
 
 type Line = {
@@ -61,7 +61,7 @@ type Line = {
 };
 
 export default function PurchaseOrdersIndex() {
-    const { orders, filters, suppliers, rawMaterials, locations, tenant } =
+    const { orders, filters, suppliers, rawMaterials, warehouses, tenant } =
         usePageProps<PageProps>();
     const base = poRoutes.index.url({ tenant: tenant.slug });
 
@@ -73,9 +73,9 @@ export default function PurchaseOrdersIndex() {
         value: String(r.id),
         label: r.name,
     }));
-    const locationOptions = locations.map((l) => ({
-        value: String(l.id),
-        label: l.name,
+    const warehouseOptions = warehouses.map((w) => ({
+        value: String(w.id),
+        label: w.name,
     }));
 
     const [supplierId, setSupplierId] = useState('');
@@ -85,7 +85,7 @@ export default function PurchaseOrdersIndex() {
     const lineKey = useRef(0);
 
     const [receiving, setReceiving] = useState<PurchaseOrder | null>(null);
-    const [receiveLocationId, setReceiveLocationId] = useState('');
+    const [receiveWarehouseId, setReceiveWarehouseId] = useState('');
     const [receiveProcessing, setReceiveProcessing] = useState(false);
     const [cancelling, setCancelling] = useState<PurchaseOrder | null>(null);
 
@@ -142,7 +142,7 @@ export default function PurchaseOrdersIndex() {
                 tenant: tenant.slug,
                 purchaseOrder: receiving.id,
             }),
-            { location_id: receiveLocationId },
+            { warehouse_id: receiveWarehouseId },
             {
                 preserveScroll: true,
                 onStart: () => setReceiveProcessing(true),
@@ -248,7 +248,7 @@ export default function PurchaseOrdersIndex() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onSelect={() => {
-                                            setReceiveLocationId('');
+                                            setReceiveWarehouseId('');
                                             setReceiving(order);
                                         }}
                                     >
@@ -301,7 +301,7 @@ export default function PurchaseOrdersIndex() {
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Order raw materials from suppliers, then receive them into a
-                    location.
+                    warehouse.
                 </p>
             </div>
 
@@ -539,19 +539,19 @@ export default function PurchaseOrdersIndex() {
                     <DialogHeader>
                         <DialogTitle>Receive PO #{receiving?.id}</DialogTitle>
                         <DialogDescription>
-                            Post each line into a location as a stock receipt.
+                            Post each line into a warehouse as a stock receipt.
                         </DialogDescription>
                     </DialogHeader>
                     <ComboboxField
-                        id="receive-location"
+                        id="receive-warehouse"
                         label="Receive into"
-                        hint="The location received stock is added to when you mark this order received."
-                        options={locationOptions}
-                        value={receiveLocationId}
-                        onChange={setReceiveLocationId}
-                        placeholder="Select location"
-                        searchPlaceholder="Search locations…"
-                        emptyText="No locations found."
+                        hint="The warehouse received stock is added to."
+                        options={warehouseOptions}
+                        value={receiveWarehouseId}
+                        onChange={setReceiveWarehouseId}
+                        placeholder="Select warehouse"
+                        searchPlaceholder="Search warehouses…"
+                        emptyText="No warehouses found."
                     />
                     <DialogFooter>
                         <DialogClose asChild>
@@ -564,7 +564,7 @@ export default function PurchaseOrdersIndex() {
                         </DialogClose>
                         <Button
                             onClick={submitReceive}
-                            disabled={receiveProcessing || !receiveLocationId}
+                            disabled={receiveProcessing || !receiveWarehouseId}
                         >
                             Receive
                         </Button>

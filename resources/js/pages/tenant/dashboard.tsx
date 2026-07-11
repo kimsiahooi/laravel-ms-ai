@@ -697,7 +697,7 @@ export default function TenantDashboard() {
                                                     {m.item}
                                                 </div>
                                                 <div className="text-muted-foreground text-xs">
-                                                    {m.reason} · {m.location}
+                                                    {m.reason} · {m.warehouse}
                                                 </div>
                                             </TableCell>
                                             <TableCell

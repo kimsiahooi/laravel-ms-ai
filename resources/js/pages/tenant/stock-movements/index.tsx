@@ -29,7 +29,7 @@ type MovementType = 'in' | 'out' | 'adjustment';
 
 type PageProps = TenantPageProps & {
     movements: Paginator<StockMovement>;
-    locations: Option[];
+    warehouses: Option[];
     items: ItemOption[];
 };
 
@@ -40,16 +40,16 @@ const TYPES: { value: MovementType; label: string }[] = [
 ];
 
 export default function StockMovementsIndex() {
-    const { movements, filters, locations, items, tenant } =
+    const { movements, filters, warehouses, items, tenant } =
         usePageProps<PageProps>();
     const base = stockMovementsRoutes.index.url({ tenant: tenant.slug });
 
-    const locationOptions = locations.map((location) => ({
-        value: String(location.id),
-        label: location.name,
+    const warehouseOptions = warehouses.map((warehouse) => ({
+        value: String(warehouse.id),
+        label: warehouse.name,
     }));
 
-    const [locationId, setLocationId] = useState('');
+    const [warehouseId, setWarehouseId] = useState('');
     const [stockable, setStockable] = useState('');
     const [type, setType] = useState<MovementType>('in');
     const [quantity, setQuantity] = useState('');
@@ -57,7 +57,7 @@ export default function StockMovementsIndex() {
 
     const dialog = useResourceDialog<StockMovement>({
         onCreate: () => {
-            setLocationId('');
+            setWarehouseId('');
             setStockable('');
             setType('in');
             setQuantity('');
@@ -79,9 +79,9 @@ export default function StockMovementsIndex() {
             ),
         },
         {
-            accessorKey: 'location',
-            header: 'Location',
-            cell: ({ row }) => row.original.location,
+            accessorKey: 'warehouse',
+            header: 'Warehouse',
+            cell: ({ row }) => row.original.warehouse,
             meta: { className: 'text-muted-foreground' },
         },
         {
@@ -186,7 +186,7 @@ export default function StockMovementsIndex() {
                 entityLabel={stockMovementMeta.singular}
                 baseUrl={base}
                 description={{
-                    create: 'Adjust on-hand at a location.',
+                    create: 'Adjust on-hand at a warehouse.',
                     edit: '',
                 }}
             >
@@ -194,8 +194,8 @@ export default function StockMovementsIndex() {
                     <>
                         <input
                             type="hidden"
-                            name="location_id"
-                            value={locationId}
+                            name="warehouse_id"
+                            value={warehouseId}
                         />
                         <input
                             type="hidden"
@@ -205,15 +205,16 @@ export default function StockMovementsIndex() {
                         <input type="hidden" name="type" value={type} />
 
                         <ComboboxField
-                            id="location"
-                            label="Location"
-                            options={locationOptions}
-                            value={locationId}
-                            onChange={setLocationId}
-                            error={errors.location_id}
-                            placeholder="Select location"
-                            searchPlaceholder="Search locations…"
-                            emptyText="No locations found."
+                            id="warehouse"
+                            label="Warehouse"
+                            hint="The warehouse whose on-hand quantity this movement changes."
+                            options={warehouseOptions}
+                            value={warehouseId}
+                            onChange={setWarehouseId}
+                            error={errors.warehouse_id}
+                            placeholder="Select warehouse"
+                            searchPlaceholder="Search warehouses…"
+                            emptyText="No warehouses found."
                         />
 
                         <ComboboxField

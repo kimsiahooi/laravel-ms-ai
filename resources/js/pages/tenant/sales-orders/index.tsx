@@ -50,7 +50,7 @@ type PageProps = TenantPageProps & {
     orders: Paginator<SalesOrder>;
     customers: Option[];
     products: Option[];
-    locations: Option[];
+    warehouses: Option[];
 };
 
 type Line = {
@@ -61,7 +61,7 @@ type Line = {
 };
 
 export default function SalesOrdersIndex() {
-    const { orders, filters, customers, products, locations, tenant } =
+    const { orders, filters, customers, products, warehouses, tenant } =
         usePageProps<PageProps>();
     const base = soRoutes.index.url({ tenant: tenant.slug });
 
@@ -73,9 +73,9 @@ export default function SalesOrdersIndex() {
         value: String(p.id),
         label: p.name,
     }));
-    const locationOptions = locations.map((l) => ({
-        value: String(l.id),
-        label: l.name,
+    const warehouseOptions = warehouses.map((w) => ({
+        value: String(w.id),
+        label: w.name,
     }));
 
     const [customerId, setCustomerId] = useState('');
@@ -85,7 +85,7 @@ export default function SalesOrdersIndex() {
     const lineKey = useRef(0);
 
     const [fulfilling, setFulfilling] = useState<SalesOrder | null>(null);
-    const [fulfillLocationId, setFulfillLocationId] = useState('');
+    const [fulfillWarehouseId, setFulfillWarehouseId] = useState('');
     const [fulfillProcessing, setFulfillProcessing] = useState(false);
     const [fulfillError, setFulfillError] = useState<string | null>(null);
     const [cancelling, setCancelling] = useState<SalesOrder | null>(null);
@@ -141,7 +141,7 @@ export default function SalesOrdersIndex() {
                 tenant: tenant.slug,
                 salesOrder: fulfilling.id,
             }),
-            { location_id: fulfillLocationId },
+            { warehouse_id: fulfillWarehouseId },
             {
                 preserveScroll: true,
                 onStart: () => {
@@ -152,7 +152,7 @@ export default function SalesOrdersIndex() {
                 onSuccess: () => setFulfilling(null),
                 onError: (errors) =>
                     setFulfillError(
-                        errors.location_id ?? 'Could not fulfill the order.',
+                        errors.warehouse_id ?? 'Could not fulfill the order.',
                     ),
             },
         );
@@ -254,7 +254,7 @@ export default function SalesOrdersIndex() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onSelect={() => {
-                                            setFulfillLocationId('');
+                                            setFulfillWarehouseId('');
                                             setFulfillError(null);
                                             setFulfilling(order);
                                         }}
@@ -308,7 +308,7 @@ export default function SalesOrdersIndex() {
                 </h1>
                 <p className="text-muted-foreground text-sm">
                     Sell products to customers, then fulfill them from a
-                    location.
+                    warehouse.
                 </p>
             </div>
 
@@ -546,21 +546,21 @@ export default function SalesOrdersIndex() {
                     <DialogHeader>
                         <DialogTitle>Fulfill SO #{fulfilling?.id}</DialogTitle>
                         <DialogDescription>
-                            Ship each line from a location as a stock
+                            Ship each line from a warehouse as a stock
                             fulfillment.
                         </DialogDescription>
                     </DialogHeader>
                     <ComboboxField
-                        id="fulfill-location"
+                        id="fulfill-warehouse"
                         label="Fulfill from"
-                        hint="The location stock is deducted from when you fulfill this order."
-                        options={locationOptions}
-                        value={fulfillLocationId}
-                        onChange={setFulfillLocationId}
+                        hint="The warehouse stock is deducted from."
+                        options={warehouseOptions}
+                        value={fulfillWarehouseId}
+                        onChange={setFulfillWarehouseId}
                         error={fulfillError ?? undefined}
-                        placeholder="Select location"
-                        searchPlaceholder="Search locations…"
-                        emptyText="No locations found."
+                        placeholder="Select warehouse"
+                        searchPlaceholder="Search warehouses…"
+                        emptyText="No warehouses found."
                     />
                     <DialogFooter>
                         <DialogClose asChild>
@@ -573,7 +573,7 @@ export default function SalesOrdersIndex() {
                         </DialogClose>
                         <Button
                             onClick={submitFulfill}
-                            disabled={fulfillProcessing || !fulfillLocationId}
+                            disabled={fulfillProcessing || !fulfillWarehouseId}
                         >
                             Fulfill
                         </Button>

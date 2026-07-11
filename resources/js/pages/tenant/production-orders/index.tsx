@@ -46,11 +46,11 @@ type PageProps = TenantPageProps & {
     orders: Paginator<ProductionOrder>;
     products: Option[];
     productBoms: Record<string, BomPreviewLine[]>;
-    locations: Option[];
+    warehouses: Option[];
 };
 
 export default function ProductionOrdersIndex() {
-    const { orders, filters, products, productBoms, locations, tenant } =
+    const { orders, filters, products, productBoms, warehouses, tenant } =
         usePageProps<PageProps>();
     const base = productionRoutes.index.url({ tenant: tenant.slug });
 
@@ -58,9 +58,9 @@ export default function ProductionOrdersIndex() {
         value: String(p.id),
         label: p.name,
     }));
-    const locationOptions = locations.map((l) => ({
-        value: String(l.id),
-        label: l.name,
+    const warehouseOptions = warehouses.map((w) => ({
+        value: String(w.id),
+        label: w.name,
     }));
 
     const [productId, setProductId] = useState('');
@@ -68,7 +68,7 @@ export default function ProductionOrdersIndex() {
     const [notes, setNotes] = useState('');
 
     const [completing, setCompleting] = useState<ProductionOrder | null>(null);
-    const [completeLocationId, setCompleteLocationId] = useState('');
+    const [completeWarehouseId, setCompleteWarehouseId] = useState('');
     const [completeProcessing, setCompleteProcessing] = useState(false);
     const [completeError, setCompleteError] = useState<string | null>(null);
     const [cancelling, setCancelling] = useState<ProductionOrder | null>(null);
@@ -92,7 +92,7 @@ export default function ProductionOrdersIndex() {
                 tenant: tenant.slug,
                 productionOrder: completing.id,
             }),
-            { location_id: completeLocationId },
+            { warehouse_id: completeWarehouseId },
             {
                 preserveScroll: true,
                 onStart: () => {
@@ -103,7 +103,7 @@ export default function ProductionOrdersIndex() {
                 onSuccess: () => setCompleting(null),
                 onError: (errors) =>
                     setCompleteError(
-                        errors.location_id ?? 'Could not complete the order.',
+                        errors.warehouse_id ?? 'Could not complete the order.',
                     ),
             },
         );
@@ -197,7 +197,7 @@ export default function ProductionOrdersIndex() {
                                 <>
                                     <DropdownMenuItem
                                         onSelect={() => {
-                                            setCompleteLocationId('');
+                                            setCompleteWarehouseId('');
                                             setCompleteError(null);
                                             setCompleting(order);
                                         }}
@@ -417,21 +417,21 @@ export default function ProductionOrdersIndex() {
                         <DialogTitle>Complete MO #{completing?.id}</DialogTitle>
                         <DialogDescription>
                             Consume the materials and stock the finished “
-                            {completing?.product}” at a location. If any
+                            {completing?.product}” at a warehouse. If any
                             material is short there, nothing is posted.
                         </DialogDescription>
                     </DialogHeader>
                     <ComboboxField
-                        id="complete-location"
-                        label="At location"
-                        hint="Where the finished units are added and the raw materials are consumed when you complete the build."
-                        options={locationOptions}
-                        value={completeLocationId}
-                        onChange={setCompleteLocationId}
+                        id="complete-warehouse"
+                        label="At warehouse"
+                        hint="Where the finished units are added and materials consumed."
+                        options={warehouseOptions}
+                        value={completeWarehouseId}
+                        onChange={setCompleteWarehouseId}
                         error={completeError ?? undefined}
-                        placeholder="Select location"
-                        searchPlaceholder="Search locations…"
-                        emptyText="No locations found."
+                        placeholder="Select warehouse"
+                        searchPlaceholder="Search warehouses…"
+                        emptyText="No warehouses found."
                     />
                     <DialogFooter>
                         <DialogClose asChild>
@@ -444,7 +444,9 @@ export default function ProductionOrdersIndex() {
                         </DialogClose>
                         <Button
                             onClick={submitComplete}
-                            disabled={completeProcessing || !completeLocationId}
+                            disabled={
+                                completeProcessing || !completeWarehouseId
+                            }
                         >
                             <Factory className="size-4" />
                             Complete build
