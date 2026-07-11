@@ -31,6 +31,13 @@ Always eyeball three widths before calling a UI change done: **375** (phone),
 column, which crams the DataTable header (title + search + "New …" button). Below
 `lg` the drawer opens from the `SidebarTrigger` (hamburger) in the header.
 
+> **⚠️ Keep the two sidebar breakpoints in lockstep.** The JS `MOBILE_BREAKPOINT`
+> (`use-mobile.tsx`) decides drawer-vs-rail; the **CSS** breakpoint inside
+> `components/ui/sidebar.tsx` (the `lg:block` / `lg:flex` gates) decides when the
+> rail is *painted*. If they disagree, SSR paints the rail at a width where JS
+> then rips it out → the sidebar **flashes open then closes on refresh**. Both
+> must be `lg`. If you ever change one, change the other.
+
 ## Patterns that keep it clean
 
 - **Page headers / toolbars** — stack on mobile, row on `sm`+:
@@ -82,3 +89,8 @@ Run it at 375 and 768 across the route list; anything `> 0` is a bug. For popove
   button a bit off at tablet"). DataTable header now stacks search above the
   action on phones. Date-range picker made viewport-safe (1 month + width cap +
   stacked times) — it was rendering a 480px popover on a 375px screen.
+- **2026-07-11** — Fixed a sidebar **flash on refresh at 768–1023px**: after the
+  breakpoint move above, `ui/sidebar.tsx` still gated the rail's CSS at `md`
+  (768) while JS gated the drawer at `lg` (1024). SSR painted the rail; hydration
+  swapped it for the drawer. Aligned every sidebar `md:` → `lg:` so CSS and JS
+  agree — the SSR rail is now `display:none` below `lg` from first paint.
