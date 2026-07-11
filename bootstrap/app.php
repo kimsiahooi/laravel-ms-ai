@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\BlockedByDependentsException;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -7,6 +8,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -54,4 +56,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // A blocked delete (a location that still has warehouses, or a warehouse
+        // holding stock) comes back as an error toast on the same page, not a 500.
+        $exceptions->render(function (BlockedByDependentsException $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        });
     })->create();

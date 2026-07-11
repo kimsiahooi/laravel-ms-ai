@@ -8,13 +8,13 @@ use App\Data\StockMovementData;
 use App\Enums\ProductionOrderStatus;
 use App\Enums\PurchaseOrderStatus;
 use App\Enums\SalesOrderStatus;
-use App\Models\LocationStock;
 use App\Models\Product;
 use App\Models\ProductionOrder;
 use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
 use App\Models\SalesOrder;
 use App\Models\StockMovement;
+use App\Models\WarehouseStock;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -86,7 +86,7 @@ class DashboardController
             'onHandByWarehouse' => $this->onHandByWarehouse(),
             'reorderList' => $lowStock->sortByDesc('deficit')->take(8)->values()->all(),
             'recentMovements' => StockMovement::query()
-                ->with(['location.warehouse', 'stockable', 'user'])
+                ->with(['warehouse.location', 'stockable', 'user'])
                 ->latest()
                 ->limit(8)
                 ->get()
@@ -128,21 +128,19 @@ class DashboardController
 
     /**
      * On-hand quantity summed per stockable id for one morph alias. Stock sitting
-     * in a soft-deleted location or warehouse is excluded — the same rule the
-     * "On-hand by warehouse" chart uses — so every on-hand surface agrees.
+     * in a soft-deleted warehouse is excluded — the same rule the "Stock by
+     * warehouse" chart uses — so every on-hand surface agrees.
      *
      * @return Collection<int, float> keyed by stockable_id
      */
     private function onHandMap(string $type): Collection
     {
-        return LocationStock::query()
-            ->join('locations', 'locations.id', '=', 'location_stocks.location_id')
-            ->join('warehouses', 'warehouses.id', '=', 'locations.warehouse_id')
-            ->whereNull('locations.deleted_at')
+        return WarehouseStock::query()
+            ->join('warehouses', 'warehouses.id', '=', 'warehouse_stocks.warehouse_id')
             ->whereNull('warehouses.deleted_at')
-            ->where('location_stocks.stockable_type', $type)
-            ->groupBy('location_stocks.stockable_id')
-            ->selectRaw('location_stocks.stockable_id as stockable_id, SUM(location_stocks.quantity) as qty')
+            ->where('warehouse_stocks.stockable_type', $type)
+            ->groupBy('warehouse_stocks.stockable_id')
+            ->selectRaw('warehouse_stocks.stockable_id as stockable_id, SUM(warehouse_stocks.quantity) as qty')
             ->pluck('qty', 'stockable_id')
             ->map(fn ($qty): float => (float) $qty);
     }
@@ -249,19 +247,17 @@ class DashboardController
     }
 
     /**
-     * On-hand units summed per warehouse (trashed warehouses/locations excluded).
+     * On-hand units summed per warehouse (trashed warehouses excluded).
      *
      * @return array<int, array{name: string, quantity: float}>
      */
     private function onHandByWarehouse(): array
     {
-        return LocationStock::query()
-            ->join('locations', 'locations.id', '=', 'location_stocks.location_id')
-            ->join('warehouses', 'warehouses.id', '=', 'locations.warehouse_id')
-            ->whereNull('locations.deleted_at')
+        return WarehouseStock::query()
+            ->join('warehouses', 'warehouses.id', '=', 'warehouse_stocks.warehouse_id')
             ->whereNull('warehouses.deleted_at')
             ->groupBy('warehouses.id', 'warehouses.name')
-            ->selectRaw('warehouses.name as name, SUM(location_stocks.quantity) as quantity')
+            ->selectRaw('warehouses.name as name, SUM(warehouse_stocks.quantity) as quantity')
             ->orderByDesc('quantity')
             ->get()
             ->map(fn ($row): array => [
