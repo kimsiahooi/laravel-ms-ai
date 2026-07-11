@@ -15,8 +15,9 @@ type FieldLabelProps = ComponentProps<typeof Label> & {
 /**
  * A form label with an optional info tooltip — the reusable shape for any field
  * that needs a plain-language explanation. Pass `hint` to reveal a muted (ⓘ)
- * icon after the label text; the tooltip opens on hover *and* keyboard focus so
- * the explanation is reachable without a mouse. Drop-in replacement for `Label`.
+ * icon after the label text; the tooltip opens on hover/tap. The icon is kept
+ * OUT of the tab order (`tabIndex={-1}`) so Tab flows field→field and never
+ * lands on the hint. Drop-in replacement for `Label`.
  */
 export function FieldLabel({ hint, children, ...props }: FieldLabelProps) {
     return (
@@ -27,6 +28,7 @@ export function FieldLabel({ hint, children, ...props }: FieldLabelProps) {
                     <TooltipTrigger asChild>
                         <button
                             type="button"
+                            tabIndex={-1}
                             aria-label="More information"
                             className="text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none"
                         >
