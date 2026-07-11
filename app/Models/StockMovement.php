@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * InitializeTenancyByPath has switched to the tenant database.
  *
  * @property int $id
- * @property int $location_id
+ * @property int $warehouse_id
  * @property string $stockable_type
  * @property int $stockable_id
  * @property string $quantity
@@ -26,11 +26,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read Location $location
+ * @property-read Warehouse $warehouse
  * @property-read Model $stockable
  * @property-read User|null $user
  */
-#[Fillable(['location_id', 'stockable_type', 'stockable_id', 'quantity', 'reason', 'user_id', 'notes'])]
+#[Fillable(['warehouse_id', 'stockable_type', 'stockable_id', 'quantity', 'reason', 'user_id', 'notes'])]
 class StockMovement extends Model
 {
     /**
@@ -45,13 +45,13 @@ class StockMovement extends Model
     }
 
     /**
-     * @return BelongsTo<Location, $this>
+     * @return BelongsTo<Warehouse, $this>
      */
-    public function location(): BelongsTo
+    public function warehouse(): BelongsTo
     {
-        // The ledger is append-only history: a movement's location is a fact that
-        // must still resolve even if that location was later soft-deleted.
-        return $this->belongsTo(Location::class)->withTrashed();
+        // The ledger is append-only history: a movement's warehouse is a fact that
+        // must still resolve even if that warehouse was later soft-deleted.
+        return $this->belongsTo(Warehouse::class)->withTrashed();
     }
 
     /**

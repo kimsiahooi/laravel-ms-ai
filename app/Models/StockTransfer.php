@@ -12,13 +12,13 @@ use Illuminate\Support\Carbon;
 
 /**
  * A stock transfer document — one stockable moved from a source to a destination
- * location. Its on-hand effect lives in the stock_movements ledger (a transfer_out
+ * warehouse. Its on-hand effect lives in the stock_movements ledger (a transfer_out
  * + a transfer_in), written atomically by StockService. Lives on the default
  * connection, which InitializeTenancyByPath has switched to the tenant database.
  *
  * @property int $id
- * @property int $from_location_id
- * @property int $to_location_id
+ * @property int $from_warehouse_id
+ * @property int $to_warehouse_id
  * @property string $stockable_type
  * @property int $stockable_id
  * @property string $quantity
@@ -26,12 +26,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read Location $fromLocation
- * @property-read Location $toLocation
+ * @property-read Warehouse $fromWarehouse
+ * @property-read Warehouse $toWarehouse
  * @property-read Model $stockable
  * @property-read User|null $user
  */
-#[Fillable(['from_location_id', 'to_location_id', 'stockable_type', 'stockable_id', 'quantity', 'user_id', 'notes'])]
+#[Fillable(['from_warehouse_id', 'to_warehouse_id', 'stockable_type', 'stockable_id', 'quantity', 'user_id', 'notes'])]
 class StockTransfer extends Model
 {
     /**
@@ -43,19 +43,19 @@ class StockTransfer extends Model
     }
 
     /**
-     * @return BelongsTo<Location, $this>
+     * @return BelongsTo<Warehouse, $this>
      */
-    public function fromLocation(): BelongsTo
+    public function fromWarehouse(): BelongsTo
     {
-        return $this->belongsTo(Location::class, 'from_location_id');
+        return $this->belongsTo(Warehouse::class, 'from_warehouse_id');
     }
 
     /**
-     * @return BelongsTo<Location, $this>
+     * @return BelongsTo<Warehouse, $this>
      */
-    public function toLocation(): BelongsTo
+    public function toWarehouse(): BelongsTo
     {
-        return $this->belongsTo(Location::class, 'to_location_id');
+        return $this->belongsTo(Warehouse::class, 'to_warehouse_id');
     }
 
     /**

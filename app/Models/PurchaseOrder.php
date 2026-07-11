@@ -24,16 +24,16 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property int|null $user_id
  * @property Carbon|null $received_at
- * @property int|null $received_location_id
+ * @property int|null $received_warehouse_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  * @property-read Supplier|null $supplier
  * @property-read Collection<int, PurchaseOrderItem> $items
  * @property-read User|null $user
- * @property-read Location|null $receivedLocation
+ * @property-read Warehouse|null $receivedWarehouse
  */
-#[Fillable(['supplier_id', 'status', 'currency', 'notes', 'user_id', 'received_at', 'received_location_id'])]
+#[Fillable(['supplier_id', 'status', 'currency', 'notes', 'user_id', 'received_at', 'received_warehouse_id'])]
 class PurchaseOrder extends Model
 {
     use SoftDeletes;
@@ -74,10 +74,10 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * @return BelongsTo<Location, $this>
+     * @return BelongsTo<Warehouse, $this>
      */
-    public function receivedLocation(): BelongsTo
+    public function receivedWarehouse(): BelongsTo
     {
-        return $this->belongsTo(Location::class, 'received_location_id');
+        return $this->belongsTo(Warehouse::class, 'received_warehouse_id');
     }
 }
