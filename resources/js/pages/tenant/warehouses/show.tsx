@@ -26,6 +26,7 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/tenant';
+import productsRoutes from '@/routes/tenant/products';
 import stockMovementsRoutes from '@/routes/tenant/stock-movements';
 import stockTransfersRoutes from '@/routes/tenant/stock-transfers';
 import warehousesRoutes from '@/routes/tenant/warehouses';
@@ -221,6 +222,48 @@ export default function WarehouseShow() {
         },
     ];
 
+    // Two empty-state variants: the "All items" view points a brand-new tenant at
+    // their (empty) catalog; the default in-stock view points at stock adjustment.
+    const emptyState =
+        filters.view === 'all' ? (
+            <EmptyState
+                icon={Package}
+                title="No items in your catalog yet"
+                description="Add a product or raw material first — then set its reorder level for this warehouse."
+                action={
+                    <Button asChild>
+                        <Link
+                            href={productsRoutes.index.url({
+                                tenant: tenant.slug,
+                            })}
+                        >
+                            <Plus className="size-4" />
+                            Go to Products
+                        </Link>
+                    </Button>
+                }
+            />
+        ) : (
+            <EmptyState
+                icon={Package}
+                title="No stock in this warehouse yet"
+                description="Receive or adjust stock to see it here — or switch to All items to set reorder levels."
+                action={
+                    <Button asChild>
+                        <Link
+                            href={stockMovementsRoutes.index.url(
+                                { tenant: tenant.slug },
+                                { query: { warehouse: warehouse.id } },
+                            )}
+                        >
+                            <Plus className="size-4" />
+                            Adjust stock
+                        </Link>
+                    </Button>
+                }
+            />
+        );
+
     return (
         <TenantLayout
             breadcrumbs={[
@@ -305,6 +348,9 @@ export default function WarehouseShow() {
                             <p className="text-muted-foreground text-sm">
                                 Needs reorder
                             </p>
+                            <p className="text-muted-foreground text-xs">
+                                below this warehouse's reorder level
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
@@ -351,26 +397,7 @@ export default function WarehouseShow() {
                 }
                 title={`${warehouse.name} stock`}
                 searchPlaceholder="Search item or SKU…"
-                emptyState={
-                    <EmptyState
-                        icon={Package}
-                        title="No stock in this warehouse yet"
-                        description="Receive or adjust stock to see it here — or switch to All items to set reorder levels."
-                        action={
-                            <Button asChild>
-                                <Link
-                                    href={stockMovementsRoutes.index.url(
-                                        { tenant: tenant.slug },
-                                        { query: { warehouse: warehouse.id } },
-                                    )}
-                                >
-                                    <Plus className="size-4" />
-                                    Adjust stock
-                                </Link>
-                            </Button>
-                        }
-                    />
-                }
+                emptyState={emptyState}
             />
         </TenantLayout>
     );

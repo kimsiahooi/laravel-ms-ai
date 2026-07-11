@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
@@ -64,6 +64,23 @@ export default function StockMovementsIndex() {
             setNotes('');
         },
     });
+
+    // Deep-link: /stock-movements?warehouse={id} opens the create dialog pre-scoped
+    // to that warehouse. openCreate() runs the onCreate reset (clears warehouseId),
+    // so it must fire BEFORE setWarehouseId — the pre-fill is the last write and
+    // wins. One-shot: strip the param so a reload / Back-Forward doesn't reopen a
+    // dismissed dialog.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional one-time mount effect
+    useEffect(() => {
+        const id = new URLSearchParams(window.location.search).get('warehouse');
+        if (id && warehouseOptions.some((o) => o.value === id)) {
+            dialog.openCreate();
+            setWarehouseId(id);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('warehouse');
+            window.history.replaceState(window.history.state, '', url);
+        }
+    }, []);
 
     const columns: ColumnDef<StockMovement>[] = [
         {

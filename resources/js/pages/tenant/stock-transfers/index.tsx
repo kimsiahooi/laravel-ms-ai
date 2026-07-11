@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowRight, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
@@ -56,6 +56,18 @@ export default function StockTransfersIndex() {
             setNotes('');
         },
     });
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional one-time mount effect
+    useEffect(() => {
+        const id = new URLSearchParams(window.location.search).get('from');
+        if (id && warehouseOptions.some((o) => o.value === id)) {
+            dialog.openCreate();
+            setFromWarehouseId(id);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('from');
+            window.history.replaceState(window.history.state, '', url);
+        }
+    }, []);
 
     const columns: ColumnDef<StockTransfer>[] = [
         {
