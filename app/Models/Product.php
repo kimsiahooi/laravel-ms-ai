@@ -24,7 +24,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $description
  * @property int|null $category_id
  * @property int|null $supplier_id
- * @property int $min_stock
  * @property string $unit
  * @property string|null $image
  * @property-read string|null $image_url
@@ -32,7 +31,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 #[Fillable([
     'name', 'sku', 'barcode', 'description',
-    'category_id', 'supplier_id', 'min_stock', 'unit', 'image',
+    'category_id', 'supplier_id', 'unit', 'image',
 ])]
 class Product extends Model
 {
@@ -46,7 +45,7 @@ class Product extends Model
      */
     protected function casts(): array
     {
-        return ['min_stock' => 'integer'];
+        return [];
     }
 
     /**

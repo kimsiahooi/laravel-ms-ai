@@ -147,7 +147,7 @@ it('transfers a raw material', function () {
     ['from' => $from, 'to' => $to] = seedTransferFixture();
 
     $rawMaterialId = $this->tenant->run(
-        fn () => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 0])->id,
+        fn () => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg'])->id,
     );
 
     $this->tenant->run(function () use ($from, $rawMaterialId) {

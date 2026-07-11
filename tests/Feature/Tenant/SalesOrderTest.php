@@ -30,7 +30,7 @@ function seedSalesFixture(): array
 
         return [
             'customer' => Customer::create(['name' => 'Globex'])->id,
-            'widget' => Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 0])->id,
+            'widget' => Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea'])->id,
             'warehouse' => Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id,
         ];
     });

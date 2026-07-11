@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku', 100)->unique();
             $table->string('unit', 20);
-            $table->decimal('min_stock', 12, 4)->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

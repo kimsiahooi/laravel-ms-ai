@@ -41,7 +41,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import productsRoutes from '@/routes/tenant/products';
 import type { TenantPageProps } from '@/types';
@@ -82,7 +81,6 @@ export default function ProductsIndex() {
     const [sku, setSku] = useState('');
     const [barcode, setBarcode] = useState('');
     const [unit, setUnit] = useState('');
-    const [minStock, setMinStock] = useState('0');
     const [categoryId, setCategoryId] = useState('');
     const [supplierId, setSupplierId] = useState('');
     const [description, setDescription] = useState('');
@@ -119,7 +117,6 @@ export default function ProductsIndex() {
         setSku('');
         setBarcode('');
         setUnit('');
-        setMinStock('0');
         setCategoryId('');
         setSupplierId('');
         setDescription('');
@@ -135,7 +132,6 @@ export default function ProductsIndex() {
         setSku(product.sku);
         setBarcode(product.barcode ?? '');
         setUnit(product.unit);
-        setMinStock(String(product.min_stock ?? 0));
         const catId = product.category_id ? String(product.category_id) : '';
         setCategoryId(
             categoryOptions.some((o) => o.value === catId) ? catId : '',
@@ -306,14 +302,6 @@ export default function ProductsIndex() {
             header: 'Supplier',
             cell: ({ row }) => row.original.supplier ?? '—',
             meta: { className: 'hidden text-muted-foreground lg:table-cell' },
-        },
-        {
-            accessorKey: 'min_stock',
-            header: 'Min stock',
-            cell: ({ row }) => formatQuantity(row.original.min_stock),
-            meta: {
-                className: 'text-right text-muted-foreground tabular-nums',
-            },
         },
         {
             accessorKey: 'unit',
@@ -563,37 +551,6 @@ export default function ProductsIndex() {
                                 searchPlaceholder="Search suppliers…"
                                 emptyText="No suppliers."
                             />
-                            <div className="space-y-2">
-                                <FieldLabel
-                                    htmlFor="min_stock"
-                                    hint="We flag this item as low on stock once the amount you have drops to or below this number. Set it to 0 to never flag it."
-                                >
-                                    Min stock
-                                </FieldLabel>
-                                <Input
-                                    id="min_stock"
-                                    name="min_stock"
-                                    type="number"
-                                    min={0}
-                                    step="1"
-                                    value={minStock}
-                                    onChange={(e) =>
-                                        setMinStock(e.target.value)
-                                    }
-                                    placeholder="0"
-                                    aria-invalid={!!errors.min_stock}
-                                    aria-describedby={
-                                        errors.min_stock
-                                            ? 'min_stock-error'
-                                            : undefined
-                                    }
-                                />
-                                <InputError
-                                    id="min_stock-error"
-                                    role="alert"
-                                    message={errors.min_stock}
-                                />
-                            </div>
                         </div>
 
                         {/* Image */}

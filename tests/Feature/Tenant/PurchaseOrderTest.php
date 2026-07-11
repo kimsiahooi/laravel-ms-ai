@@ -28,8 +28,8 @@ function seedPurchaseFixture(): array
 
         return [
             'supplier' => Supplier::create(['name' => 'Acme Metals'])->id,
-            'steel' => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 0])->id,
-            'bolt' => RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea', 'min_stock' => 0])->id,
+            'steel' => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg'])->id,
+            'bolt' => RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea'])->id,
             'warehouse' => Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id,
         ];
     });

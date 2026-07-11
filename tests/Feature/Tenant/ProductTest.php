@@ -60,7 +60,7 @@ it('searches products by name, sku or barcode', function () {
         );
 });
 
-it('creates a product with category, supplier and defaults min_stock to 0', function () {
+it('creates a product with category and supplier', function () {
     [$categoryId, $supplierId] = $this->tenant->run(function () {
         return [
             Category::create(['name' => 'Widgets'])->id,
@@ -81,7 +81,6 @@ it('creates a product with category, supplier and defaults min_stock to 0', func
     $this->tenant->run(function () use ($categoryId, $supplierId) {
         $product = Product::firstWhere('sku', 'P-001');
         expect($product)->not->toBeNull()
-            ->and($product->min_stock)->toBe(0)
             ->and($product->category_id)->toBe($categoryId)
             ->and($product->supplier_id)->toBe($supplierId)
             ->and($product->image)->toBeNull();
@@ -129,18 +128,6 @@ it('rejects a trashed category or supplier', function () {
         ->assertSessionHasErrors('category_id');
 });
 
-it('rejects a non-integer min_stock', function () {
-    loginAsAcmeUser();
-
-    $this->from('/acme/products')
-        ->post('/acme/products', [
-            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
-            'min_stock' => '1.5',
-        ])
-        ->assertRedirect('/acme/products')
-        ->assertSessionHasErrors('min_stock');
-});
-
 it('stores an uploaded image under the tenant assets folder', function () {
     Storage::fake('assets');
     loginAsAcmeUser();
@@ -172,7 +159,7 @@ it('updates a product and replaces its image', function () {
 
     $this->from('/acme/products')
         ->put("/acme/products/{$id}", [
-            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs', 'min_stock' => 5,
+            'name' => 'Widget A', 'sku' => 'P-001', 'unit' => 'pcs',
             'image' => UploadedFile::fake()->image('new.png', 150, 150),
         ])
         ->assertRedirect('/acme/products')
@@ -181,7 +168,6 @@ it('updates a product and replaces its image', function () {
     $path = $this->tenant->run(function () use ($id) {
         $product = Product::find($id);
         expect($product->name)->toBe('Widget A')
-            ->and($product->min_stock)->toBe(5)
             ->and($product->image)->not->toBeNull();
 
         return $product->image;
@@ -203,7 +189,7 @@ it('removes a product image when remove_image is set', function () {
 
     $this->from('/acme/products')
         ->put("/acme/products/{$id}", [
-            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'min_stock' => 0,
+            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
             'remove_image' => '1',
         ])
         ->assertRedirect('/acme/products')
@@ -226,7 +212,7 @@ it('deletes the previous image file when replacing it', function () {
 
     $this->from('/acme/products')
         ->put("/acme/products/{$id}", [
-            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'min_stock' => 0,
+            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
             'image' => UploadedFile::fake()->image('new.jpg'),
         ])
         ->assertRedirect('/acme/products')

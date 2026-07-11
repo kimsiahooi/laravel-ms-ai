@@ -17,9 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string $sku
  * @property string $unit
- * @property string $min_stock
  */
-#[Fillable(['name', 'sku', 'unit', 'min_stock'])]
+#[Fillable(['name', 'sku', 'unit'])]
 class RawMaterial extends Model
 {
     use Searchable;
@@ -32,6 +31,6 @@ class RawMaterial extends Model
      */
     protected function casts(): array
     {
-        return ['min_stock' => 'decimal:4'];
+        return [];
     }
 }

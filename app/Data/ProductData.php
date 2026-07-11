@@ -32,7 +32,6 @@ class ProductData extends Data
         public ?int $supplier_id,
         public ?string $category,
         public ?string $supplier,
-        public int $min_stock,
         public string $unit,
         public string $created_at,
         #[DataCollectionOf(BomItemData::class)]
@@ -52,7 +51,6 @@ class ProductData extends Data
             supplier_id: $product->supplier_id,
             category: $product->category?->name,
             supplier: $product->supplier?->name,
-            min_stock: $product->min_stock,
             unit: $product->unit,
             created_at: $product->created_at->toISOString(),
             bom: $product->relationLoaded('bomItems')

@@ -22,7 +22,6 @@ class RawMaterialData extends Data
         public string $name,
         public string $sku,
         public string $unit,
-        public string $min_stock,
         public string $created_at,
     ) {}
 
@@ -33,7 +32,6 @@ class RawMaterialData extends Data
             name: $rawMaterial->name,
             sku: $rawMaterial->sku,
             unit: $rawMaterial->unit,
-            min_stock: $rawMaterial->min_stock,
             created_at: $rawMaterial->created_at->toISOString(),
         );
     }

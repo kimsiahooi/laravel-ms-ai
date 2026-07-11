@@ -17,7 +17,6 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import rawMaterialsRoutes from '@/routes/tenant/raw-materials';
 import type { TenantPageProps } from '@/types';
@@ -35,20 +34,17 @@ export default function RawMaterialsIndex() {
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
     const [unit, setUnit] = useState('');
-    const [minStock, setMinStock] = useState('0');
 
     const dialog = useResourceDialog<RawMaterial>({
         onCreate: () => {
             setName('');
             setSku('');
             setUnit('');
-            setMinStock('0');
         },
         onEdit: (rawMaterial) => {
             setName(rawMaterial.name);
             setSku(rawMaterial.sku);
             setUnit(rawMaterial.unit);
-            setMinStock(String(Number(rawMaterial.min_stock ?? 0)));
         },
     });
 
@@ -80,14 +76,6 @@ export default function RawMaterialsIndex() {
             header: 'Unit',
             cell: ({ row }) => row.original.unit,
             meta: { className: 'hidden text-muted-foreground md:table-cell' },
-        },
-        {
-            accessorKey: 'min_stock',
-            header: 'Min stock',
-            cell: ({ row }) => formatQuantity(row.original.min_stock),
-            meta: {
-                className: 'text-right text-muted-foreground tabular-nums',
-            },
         },
         {
             id: 'actions',
@@ -236,37 +224,6 @@ export default function RawMaterialsIndex() {
                                 id="unit-error"
                                 role="alert"
                                 message={errors.unit}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <FieldLabel
-                                htmlFor="min_stock"
-                                hint="We flag this material as low on stock once the amount you have drops to or below this number. Set it to 0 to never flag it."
-                            >
-                                Min stock
-                            </FieldLabel>
-                            <Input
-                                id="min_stock"
-                                name="min_stock"
-                                type="number"
-                                min={0}
-                                step="any"
-                                value={minStock}
-                                onChange={(event) =>
-                                    setMinStock(event.target.value)
-                                }
-                                placeholder="0"
-                                aria-invalid={!!errors.min_stock}
-                                aria-describedby={
-                                    errors.min_stock
-                                        ? 'min_stock-error'
-                                        : undefined
-                                }
-                            />
-                            <InputError
-                                id="min_stock-error"
-                                role="alert"
-                                message={errors.min_stock}
                             />
                         </div>
                     </>

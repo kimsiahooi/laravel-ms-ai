@@ -24,7 +24,6 @@ return new class extends Migration
                 ->constrained('categories')->nullOnDelete();
             $table->foreignId('supplier_id')->nullable()
                 ->constrained('suppliers')->nullOnDelete();
-            $table->unsignedInteger('min_stock')->default(0);
             $table->string('unit');
             $table->string('image')->nullable();
             $table->timestamps();

@@ -4,19 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
-use App\Http\Requests\Concerns\NormalizesNumericInput;
 use App\Models\Product;
 use Illuminate\Validation\Rule;
 
 class ProductRequest extends TenantFormRequest
 {
-    use NormalizesNumericInput;
-
-    protected function prepareForValidation(): void
-    {
-        $this->defaultBlankToZero('min_stock');
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -41,7 +33,6 @@ class ProductRequest extends TenantFormRequest
                 'nullable',
                 Rule::exists('suppliers', 'id')->whereNull('deleted_at'),
             ],
-            'min_stock' => ['required', 'integer', 'min:0'],
             'unit' => ['required', 'string', 'max:20'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image' => ['nullable', 'boolean'],

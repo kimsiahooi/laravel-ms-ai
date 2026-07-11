@@ -33,7 +33,7 @@ it('lists a tenant’s raw materials, paginated', function () {
         );
 });
 
-it('creates a raw material and defaults min_stock to 0', function () {
+it('creates a raw material', function () {
     loginAsAcmeUser();
 
     $this->from('/acme/raw-materials')
@@ -47,8 +47,7 @@ it('creates a raw material and defaults min_stock to 0', function () {
 
     $this->tenant->run(function () {
         $rm = RawMaterial::firstWhere('sku', 'RM-001');
-        expect($rm)->not->toBeNull()
-            ->and((float) $rm->min_stock)->toBe(0.0);
+        expect($rm)->not->toBeNull();
     });
 });
 
@@ -72,13 +71,13 @@ it('updates a raw material', function () {
 
     $this->from('/acme/raw-materials')
         ->put("/acme/raw-materials/{$id}", [
-            'name' => 'Steel Rod', 'sku' => 'RM-001', 'unit' => 'kg', 'min_stock' => 25.5,
+            'name' => 'Steel Rod', 'sku' => 'RM-001', 'unit' => 'kg',
         ])
         ->assertRedirect('/acme/raw-materials')
         ->assertToast('Raw material updated.');
 
     $this->tenant->run(function () use ($id) {
-        expect((float) RawMaterial::find($id)->min_stock)->toBe(25.5);
+        expect(RawMaterial::find($id)->name)->toBe('Steel Rod');
     });
 });
 

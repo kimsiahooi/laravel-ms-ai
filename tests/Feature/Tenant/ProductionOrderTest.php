@@ -27,9 +27,9 @@ function seedProductionFixture(): array
 {
     return test()->tenant->run(function () {
         $location = Location::create(['name' => 'KL HQ']);
-        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 0]);
-        $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 0]);
-        $bolt = RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea', 'min_stock' => 0]);
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
+        $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg']);
+        $bolt = RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea']);
         $widget->bomItems()->create(['raw_material_id' => $steel->id, 'quantity' => 2]);
         $widget->bomItems()->create(['raw_material_id' => $bolt->id, 'quantity' => 4]);
 
@@ -136,7 +136,7 @@ it('rejects creating a production order for a product with no BOM', function () 
     ['warehouse' => $warehouse] = seedProductionFixture();
 
     $plain = test()->tenant->run(
-        fn () => Product::create(['name' => 'Plain', 'sku' => 'P-1', 'unit' => 'ea', 'min_stock' => 0])->id,
+        fn () => Product::create(['name' => 'Plain', 'sku' => 'P-1', 'unit' => 'ea'])->id,
     );
 
     loginAsAcmeUser();

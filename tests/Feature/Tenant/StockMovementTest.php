@@ -177,7 +177,7 @@ it('records a movement for a raw material, storing the raw_material morph type',
     });
 
     $rawMaterialId = $this->tenant->run(
-        fn () => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 0])->id,
+        fn () => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg'])->id,
     );
 
     loginAsAcmeUser();
