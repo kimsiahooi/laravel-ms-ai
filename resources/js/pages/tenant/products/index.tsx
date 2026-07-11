@@ -202,6 +202,17 @@ export default function ProductsIndex() {
             ),
         );
 
+    // Raw materials already chosen in the recipe. Each material can be picked
+    // only once: other rows filter it out, and the "Add material" button hides
+    // once every material is already in the recipe.
+    const usedRawMaterialIds = new Set(
+        bomLines
+            .filter((line) => line.rawMaterialId !== '')
+            .map((line) => line.rawMaterialId),
+    );
+    const allRawMaterialsUsed =
+        usedRawMaterialIds.size >= rawMaterialOptions.length;
+
     const saveBom = () => {
         if (!bomProduct) {
             return;
@@ -731,9 +742,14 @@ export default function ProductsIndex() {
                                                     <ComboboxField
                                                         id={`bom-${line.key}`}
                                                         label="Raw material"
-                                                        options={
-                                                            rawMaterialOptions
-                                                        }
+                                                        options={rawMaterialOptions.filter(
+                                                            (o) =>
+                                                                o.value ===
+                                                                    line.rawMaterialId ||
+                                                                !usedRawMaterialIds.has(
+                                                                    o.value,
+                                                                ),
+                                                        )}
                                                         value={
                                                             line.rawMaterialId
                                                         }
@@ -815,15 +831,17 @@ export default function ProductsIndex() {
                                     })()}
                                 </div>
 
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addBomLine}
-                                >
-                                    <Plus className="size-4" />
-                                    Add material
-                                </Button>
+                                {!allRawMaterialsUsed && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={addBomLine}
+                                    >
+                                        <Plus className="size-4" />
+                                        Add material
+                                    </Button>
+                                )}
                             </>
                         )}
                     </div>
