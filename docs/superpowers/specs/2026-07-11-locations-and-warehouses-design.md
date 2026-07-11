@@ -15,7 +15,7 @@ stock is held **per warehouse**. This replaces today's inverted model where
 - The top-level site entity is named **`Location`** (table `locations`, repurposed).
 - A **Warehouse keeps its own `address`** (a warehouse may sit at a different spot than the site's main address).
 - A **Warehouse `code` is unique per tenant** (global unique, nullable).
-- Deleting a **Location cascades** to its warehouses (and their stock) — see *Delete semantics*.
+- Deleting a **Location is blocked while it still has warehouses** — remove/reassign them first (safer than cascade). See *Delete semantics*.
 
 ## Current → target
 
@@ -39,7 +39,7 @@ Migrations are renumbered so `locations` (the site) is created **before**
 | # (new) | File | Table | Columns |
 |---|---|---|---|
 | 000001 | `create_locations_table` | `locations` (site) | `id, name, code(50, nullable, unique), address(text, nullable), timestamps, softDeletes` |
-| 000002 | `create_warehouses_table` | `warehouses` | `id, location_id(FK→locations, cascadeOnDelete), name, code(50, nullable, unique), address(text, nullable), timestamps, softDeletes` |
+| 000002 | `create_warehouses_table` | `warehouses` | `id, location_id(FK→locations, restrictOnDelete), name, code(50, nullable, unique), address(text, nullable), timestamps, softDeletes` |
 | 000003 | `create_stock_movements_table` | `stock_movements` | `location_id` → **`warehouse_id`** (FK→warehouses, restrictOnDelete) |
 | 000004 | `create_warehouse_stocks_table` | `warehouse_stocks` (was `location_stocks`) | `id, warehouse_id(FK cascade), morphs(stockable), quantity(15,4), unique(warehouse_id, stockable_type, stockable_id)` |
 | 000005 | `create_stock_transfers_table` | `stock_transfers` | `from_location_id/to_location_id` → **`from_warehouse_id/to_warehouse_id`** (FK→warehouses, restrictOnDelete) |
@@ -51,29 +51,39 @@ Migrations are renumbered so `locations` (the site) is created **before**
 `locations`(site)=000001 and `warehouses`=000002. The `warehouse_stocks` rename keeps
 its 000004 slot. File renames must keep alphabetical order intact.
 
-## Delete semantics (the "cascade" decision, with soft-deletes)
+## Delete semantics — block, not cascade
 
-Every table uses `SoftDeletes`, and a DB-level `onDelete('cascade')` only fires on
-a **hard** delete. So "cascade" is implemented at two layers:
+Deletion is **guarded, not cascaded** — the safe/standard ERP behaviour and the
+simplest to reason about (no cascade hooks, no delete/restore symmetry to keep).
+All tables use `SoftDeletes`; the guard runs at the app level (a soft delete is
+an `UPDATE`, so a DB FK constraint alone can't block it).
 
-- **DB FK cascade** (hard deletes): `warehouses.location_id` and
-  `warehouse_stocks.warehouse_id` → `cascadeOnDelete`.
-- **App-level soft-delete cascade**: a `Location::deleting` model hook soft-deletes
-  its warehouses. `warehouse_stocks` rows are **left intact** (they're a ledger,
-  not soft-deletable), but a soft-deleted warehouse drops out of every on-hand
-  surface — reusing the existing "soft-deleted holder is not in stock" behaviour
-  (already covered by `DashboardController::onHandMap`'s `whereNull(deleted_at)`
-  join and the `StockMovement::warehouse()->withTrashed()` null-safety we added).
-- `stock_movements` and `stock_transfers` keep **`restrictOnDelete`** so movement
-  history is never destroyed by a hard delete.
+- **Location** — cannot be soft-deleted while it still has any non-trashed
+  warehouse. A `Location::deleting` guard (mirrored by a check in
+  `LocationController::destroy`) aborts with a toast:
+  *"This location still has N warehouses — remove them first."*
+- **Warehouse → stock** — *proposed, confirm:* for consistency, a Warehouse can't
+  be deleted while it holds on-hand stock (any `warehouse_stock` with quantity ≠ 0);
+  zero it out (adjust/transfer) first. This supersedes today's "soft-delete strands
+  the stock" behaviour. *(If you'd rather keep allow-and-strand, we drop this guard;
+  the defensive on-hand filter below stays either way.)*
+- **FKs**: `warehouses.location_id`, `stock_movements.warehouse_id`,
+  `stock_transfers.from/to_warehouse_id` → **`restrictOnDelete`** (history and
+  parents are never destroyed by a hard delete); `warehouse_stocks.warehouse_id`
+  → `cascadeOnDelete` (a force-deleted warehouse drops its ledger rows).
+- **Defensive on-hand filter (kept regardless)** — every on-hand surface still
+  excludes trashed holders (`DashboardController::onHandMap`'s
+  `whereNull(deleted_at)` join + `StockMovement::warehouse()->withTrashed()`
+  null-safety), so even a force-deleted/imported edge case can't show phantom stock.
 
 ## Models & relationships
 
 - **`Location`** — `#[Fillable(['name','code','address'])]`, `SoftDeletes`,
-  `warehouses(): HasMany`. Add the `deleting` soft-delete cascade.
+  `warehouses(): HasMany`. Add a `deleting` guard that blocks while `warehouses()->exists()`.
 - **`Warehouse`** — `#[Fillable(['location_id','name','code','address'])]`,
   `SoftDeletes`, `location(): BelongsTo`, `warehouseStocks(): HasMany`,
-  `stockMovements(): HasMany`. `deleting` cascade to stock rows.
+  `stockMovements(): HasMany`. `deleting` guard blocking while it holds on-hand
+  stock (per *Delete semantics*, pending confirmation).
 - **`LocationStock` → `WarehouseStock`** — rename model + `$table`; `warehouse(): BelongsTo`.
 - **`StockMovement`** — `location()` → `warehouse()` (`->withTrashed()`), `warehouse_id` fillable.
 - **`StockTransfer`** — `fromLocation/toLocation` → `fromWarehouse/toWarehouse`.
@@ -144,6 +154,10 @@ such dependency.
 
 - Rename/rewrite `LocationTest` (now a site catalog resource) + `WarehouseTest`
   (now requires a `location_id`, has address).
+- **Delete guards**: `LocationTest` — deleting a location with warehouses is
+  blocked (error/toast) and succeeds once empty. `WarehouseTest` — deleting a
+  warehouse holding stock is blocked and succeeds once zeroed (if the
+  warehouse→stock guard is confirmed).
 - `StockServiceTest`, `StockMovement`/`StockTransfer` feature tests — `Location`→`Warehouse`.
 - `ReceivePurchaseOrder`/`FulfillSalesOrder`/`CompleteProductionOrder` tests — warehouse.
 - `DashboardTest` — the seed scenario builds `Location → Warehouse`; `onHandByWarehouse`,
