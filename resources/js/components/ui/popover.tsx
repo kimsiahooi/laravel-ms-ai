@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Popover as PopoverPrimitive } from "radix-ui"
 
@@ -21,32 +19,21 @@ function PopoverContent({
   className,
   align = "center",
   sideOffset = 4,
-  portal = true,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content> & {
-  // Pass portal={false} to render the content INSIDE the trigger's tree instead
-  // of at the body. Needed for a combobox inside a Dialog: a portaled popover
-  // lands outside the Dialog's focus trap, so its search input can't hold focus.
-  // Radix still positions it `fixed`, so it isn't clipped by the dialog's scroll.
-  portal?: boolean
-}) {
-  const content = (
-    <PopoverPrimitive.Content
-      data-slot="popover-content"
-      align={align}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-        className
-      )}
-      {...props}
-    />
-  )
-
-  return portal ? (
-    <PopoverPrimitive.Portal>{content}</PopoverPrimitive.Portal>
-  ) : (
-    content
+}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  return (
+    <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Content
+        data-slot="popover-content"
+        align={align}
+        sideOffset={sideOffset}
+        className={cn(
+          "z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          className
+        )}
+        {...props}
+      />
+    </PopoverPrimitive.Portal>
   )
 }
 
