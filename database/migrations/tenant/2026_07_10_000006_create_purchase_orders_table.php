@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamp('received_at')->nullable();
-            $table->foreignId('received_location_id')->nullable()->constrained('locations')->nullOnDelete();
+            $table->foreignId('received_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

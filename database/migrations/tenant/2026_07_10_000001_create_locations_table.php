@@ -6,21 +6,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// Per-tenant storage location within a warehouse. Code is unique per warehouse
-// (a compound unique key), so the same code may repeat across warehouses.
+// Per-tenant site / branch / outlet — the top of the inventory hierarchy. It is
+// registered first and owns warehouses. Code is unique within the tenant
+// (nullable — MySQL permits multiple NULLs), name is not unique.
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('warehouse_id')->constrained()->cascadeOnDelete();
-            $table->string('code', 50);
-            $table->string('name')->nullable();
+            $table->string('name');
+            $table->string('code', 50)->nullable()->unique();
+            $table->text('address')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
-            $table->unique(['warehouse_id', 'code']);
         });
     }
 

@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('stock_transfers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('from_location_id')->constrained('locations')->restrictOnDelete();
-            $table->foreignId('to_location_id')->constrained('locations')->restrictOnDelete();
+            $table->foreignId('from_warehouse_id')->constrained('warehouses')->restrictOnDelete();
+            $table->foreignId('to_warehouse_id')->constrained('warehouses')->restrictOnDelete();
             $table->morphs('stockable');
             $table->decimal('quantity', 15, 4);
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
