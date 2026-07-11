@@ -10,16 +10,20 @@ import SettingsLayout from '@/layouts/settings/layout';
 // whenever an observer callback (Radix/floating-ui popovers, recharts) schedules
 // a resize that simply re-runs on the next frame. It breaks nothing but pollutes
 // the console and dev error overlay, so swallow ONLY that specific message.
-window.addEventListener('error', (event) => {
-    if (
-        /ResizeObserver loop (limit exceeded|completed with undelivered notifications)/.test(
-            event.message,
-        )
-    ) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-    }
-});
+// Guarded for SSR: this module is also evaluated in Node (Inertia SSR), where
+// `window` is undefined — registering the listener only in the browser.
+if (typeof window !== 'undefined') {
+    window.addEventListener('error', (event) => {
+        if (
+            /ResizeObserver loop (limit exceeded|completed with undelivered notifications)/.test(
+                event.message,
+            )
+        ) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+        }
+    });
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
