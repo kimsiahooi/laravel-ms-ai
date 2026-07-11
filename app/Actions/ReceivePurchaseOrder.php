@@ -6,21 +6,21 @@ namespace App\Actions;
 
 use App\Enums\PurchaseOrderStatus;
 use App\Enums\StockMovementReason;
-use App\Models\Location;
 use App\Models\PurchaseOrder;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Receive a pending purchase order into a location: atomically post a
+ * Receive a pending purchase order into a warehouse: atomically post a
  * purchase_receipt IN per line to the Phase-3 ledger, then mark it received.
  */
 class ReceivePurchaseOrder
 {
     public function __construct(private readonly StockService $stock) {}
 
-    public function handle(PurchaseOrder $order, Location $location, ?User $user = null): PurchaseOrder
+    public function handle(PurchaseOrder $order, Warehouse $warehouse, ?User $user = null): PurchaseOrder
     {
         abort_unless(
             $order->status === PurchaseOrderStatus::Pending,
@@ -28,7 +28,7 @@ class ReceivePurchaseOrder
             'Only a pending purchase order can be received.',
         );
 
-        return DB::transaction(function () use ($order, $location, $user): PurchaseOrder {
+        return DB::transaction(function () use ($order, $warehouse, $user): PurchaseOrder {
             $order->loadMissing('items.rawMaterial');
 
             foreach ($order->items as $item) {
@@ -39,7 +39,7 @@ class ReceivePurchaseOrder
                 );
 
                 $this->stock->record(
-                    $location,
+                    $warehouse,
                     $item->rawMaterial,
                     (float) $item->quantity,
                     StockMovementReason::PurchaseReceipt,
@@ -51,7 +51,7 @@ class ReceivePurchaseOrder
             $order->update([
                 'status' => PurchaseOrderStatus::Received,
                 'received_at' => now(),
-                'received_location_id' => $location->id,
+                'received_warehouse_id' => $warehouse->id,
             ]);
 
             return $order;

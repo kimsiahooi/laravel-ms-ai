@@ -6,17 +6,17 @@ namespace App\Services;
 
 use App\Enums\StockMovementReason;
 use App\Exceptions\InsufficientStockException;
-use App\Models\Location;
-use App\Models\LocationStock;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
  * The single gateway for every on-hand mutation. Each call locks the
- * (location, stockable) on-hand row, applies a signed delta, refuses to go
+ * (warehouse, stockable) on-hand row, applies a signed delta, refuses to go
  * negative, and appends one ledger row — all inside one DB transaction so the
  * materialized on-hand and the ledger never drift apart.
  */
@@ -28,30 +28,30 @@ class StockService
      * @throws InsufficientStockException when the delta would drive on-hand below zero
      */
     public function record(
-        Location $location,
+        Warehouse $warehouse,
         Model $stockable,
         float $delta,
         StockMovementReason $reason,
         ?User $user = null,
         ?string $notes = null,
     ): StockMovement {
-        return DB::transaction(function () use ($location, $stockable, $delta, $reason, $user, $notes): StockMovement {
-            $this->applyLockedDelta($location, $stockable, $delta);
+        return DB::transaction(function () use ($warehouse, $stockable, $delta, $reason, $user, $notes): StockMovement {
+            $this->applyLockedDelta($warehouse, $stockable, $delta);
 
-            return $this->writeMovement($location, $stockable, $delta, $reason, $user, $notes);
+            return $this->writeMovement($warehouse, $stockable, $delta, $reason, $user, $notes);
         });
     }
 
     /**
-     * Move a quantity of one stockable from a source to a destination location.
+     * Move a quantity of one stockable from a source to a destination warehouse.
      * Atomic: the source OUT + destination IN + the transfer record all commit
      * together, or none do (so an insufficient source rolls the whole thing back).
      *
      * @throws InsufficientStockException when the source lacks the quantity
      */
     public function transfer(
-        Location $from,
-        Location $to,
+        Warehouse $from,
+        Warehouse $to,
         Model $stockable,
         float $quantity,
         ?User $user = null,
@@ -62,8 +62,8 @@ class StockService
             $this->record($to, $stockable, $quantity, StockMovementReason::TransferIn, $user, $notes);
 
             return StockTransfer::create([
-                'from_location_id' => $from->id,
-                'to_location_id' => $to->id,
+                'from_warehouse_id' => $from->id,
+                'to_warehouse_id' => $to->id,
                 'stockable_type' => $stockable->getMorphClass(),
                 'stockable_id' => $stockable->getKey(),
                 'quantity' => $quantity,
@@ -81,19 +81,19 @@ class StockService
      * @throws InsufficientStockException when the target is negative
      */
     public function setLevel(
-        Location $location,
+        Warehouse $warehouse,
         Model $stockable,
         float $target,
         ?User $user = null,
         ?string $notes = null,
     ): StockMovement {
-        return DB::transaction(function () use ($location, $stockable, $target, $user, $notes): StockMovement {
-            $current = $this->currentQuantity($location, $stockable);
+        return DB::transaction(function () use ($warehouse, $stockable, $target, $user, $notes): StockMovement {
+            $current = $this->currentQuantity($warehouse, $stockable);
             $delta = $target - $current;
 
-            $this->applyLockedDelta($location, $stockable, $delta);
+            $this->applyLockedDelta($warehouse, $stockable, $delta);
 
-            return $this->writeMovement($location, $stockable, $delta, StockMovementReason::Adjustment, $user, $notes);
+            return $this->writeMovement($warehouse, $stockable, $delta, StockMovementReason::Adjustment, $user, $notes);
         });
     }
 
@@ -103,9 +103,9 @@ class StockService
      *
      * @throws InsufficientStockException when the resulting level is negative
      */
-    private function applyLockedDelta(Location $location, Model $stockable, float $delta): float
+    private function applyLockedDelta(Warehouse $warehouse, Model $stockable, float $delta): float
     {
-        $stock = $this->lockedStock($location, $stockable);
+        $stock = $this->lockedStock($warehouse, $stockable);
 
         $current = (float) ($stock?->quantity ?? 0);
         $new = $current + $delta;
@@ -119,8 +119,8 @@ class StockService
         if ($stock !== null) {
             $stock->update(['quantity' => $new]);
         } else {
-            LocationStock::create([
-                'location_id' => $location->id,
+            WarehouseStock::create([
+                'warehouse_id' => $warehouse->id,
                 'stockable_type' => $stockable->getMorphClass(),
                 'stockable_id' => $stockable->getKey(),
                 'quantity' => $new,
@@ -131,16 +131,16 @@ class StockService
     }
 
     /** Current on-hand under a row lock (0 when no row exists yet). */
-    private function currentQuantity(Location $location, Model $stockable): float
+    private function currentQuantity(Warehouse $warehouse, Model $stockable): float
     {
-        return (float) ($this->lockedStock($location, $stockable)?->quantity ?? 0);
+        return (float) ($this->lockedStock($warehouse, $stockable)?->quantity ?? 0);
     }
 
-    /** The on-hand row for (location, stockable), locked FOR UPDATE, or null. */
-    private function lockedStock(Location $location, Model $stockable): ?LocationStock
+    /** The on-hand row for (warehouse, stockable), locked FOR UPDATE, or null. */
+    private function lockedStock(Warehouse $warehouse, Model $stockable): ?WarehouseStock
     {
-        return LocationStock::query()
-            ->where('location_id', $location->id)
+        return WarehouseStock::query()
+            ->where('warehouse_id', $warehouse->id)
             ->where('stockable_type', $stockable->getMorphClass())
             ->where('stockable_id', $stockable->getKey())
             ->lockForUpdate()
@@ -149,7 +149,7 @@ class StockService
 
     /** Append one ledger row with the signed delta. */
     private function writeMovement(
-        Location $location,
+        Warehouse $warehouse,
         Model $stockable,
         float $delta,
         StockMovementReason $reason,
@@ -157,7 +157,7 @@ class StockService
         ?string $notes,
     ): StockMovement {
         return StockMovement::create([
-            'location_id' => $location->id,
+            'warehouse_id' => $warehouse->id,
             'stockable_type' => $stockable->getMorphClass(),
             'stockable_id' => $stockable->getKey(),
             'quantity' => $delta,

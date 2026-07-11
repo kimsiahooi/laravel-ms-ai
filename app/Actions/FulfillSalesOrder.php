@@ -7,16 +7,16 @@ namespace App\Actions;
 use App\Enums\SalesOrderStatus;
 use App\Enums\StockMovementReason;
 use App\Exceptions\InsufficientStockException;
-use App\Models\Location;
 use App\Models\SalesOrder;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Fulfill a pending sales order from a location: atomically post a
+ * Fulfill a pending sales order from a warehouse: atomically post a
  * sales_fulfillment OUT per line to the Phase-3 ledger, then mark it fulfilled.
- * If the location is short on any line, StockService throws and the whole fulfill
+ * If the warehouse is short on any line, StockService throws and the whole fulfill
  * rolls back — no stock leaves, the order stays pending.
  */
 class FulfillSalesOrder
@@ -24,9 +24,9 @@ class FulfillSalesOrder
     public function __construct(private readonly StockService $stock) {}
 
     /**
-     * @throws InsufficientStockException when the location cannot cover a line
+     * @throws InsufficientStockException when the warehouse cannot cover a line
      */
-    public function handle(SalesOrder $order, Location $location, ?User $user = null): SalesOrder
+    public function handle(SalesOrder $order, Warehouse $warehouse, ?User $user = null): SalesOrder
     {
         abort_unless(
             $order->status === SalesOrderStatus::Pending,
@@ -34,7 +34,7 @@ class FulfillSalesOrder
             'Only a pending sales order can be fulfilled.',
         );
 
-        return DB::transaction(function () use ($order, $location, $user): SalesOrder {
+        return DB::transaction(function () use ($order, $warehouse, $user): SalesOrder {
             $order->loadMissing('items.product');
 
             foreach ($order->items as $item) {
@@ -45,7 +45,7 @@ class FulfillSalesOrder
                 );
 
                 $this->stock->record(
-                    $location,
+                    $warehouse,
                     $item->product,
                     -(float) $item->quantity,
                     StockMovementReason::SalesFulfillment,
@@ -57,7 +57,7 @@ class FulfillSalesOrder
             $order->update([
                 'status' => SalesOrderStatus::Fulfilled,
                 'fulfilled_at' => now(),
-                'fulfilled_location_id' => $location->id,
+                'fulfilled_warehouse_id' => $warehouse->id,
             ]);
 
             return $order;

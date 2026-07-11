@@ -7,16 +7,16 @@ namespace App\Actions;
 use App\Enums\ProductionOrderStatus;
 use App\Enums\StockMovementReason;
 use App\Exceptions\InsufficientStockException;
-use App\Models\Location;
 use App\Models\ProductionOrder;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Complete a pending production order at a location: atomically post a
+ * Complete a pending production order at a warehouse: atomically post a
  * production_consume OUT for every exploded BOM line, then a production_output IN
- * for the finished product, then mark it completed. If the location is short on
+ * for the finished product, then mark it completed. If the warehouse is short on
  * any material, StockService throws and the whole completion rolls back — no
  * stock moves and the order stays pending.
  */
@@ -25,9 +25,9 @@ class CompleteProductionOrder
     public function __construct(private readonly StockService $stock) {}
 
     /**
-     * @throws InsufficientStockException when the location cannot cover a material
+     * @throws InsufficientStockException when the warehouse cannot cover a material
      */
-    public function handle(ProductionOrder $order, Location $location, ?User $user = null): ProductionOrder
+    public function handle(ProductionOrder $order, Warehouse $warehouse, ?User $user = null): ProductionOrder
     {
         abort_unless(
             $order->status === ProductionOrderStatus::Pending,
@@ -41,7 +41,7 @@ class CompleteProductionOrder
             'This production order references a product that no longer exists.',
         );
 
-        return DB::transaction(function () use ($order, $location, $user): ProductionOrder {
+        return DB::transaction(function () use ($order, $warehouse, $user): ProductionOrder {
             $order->loadMissing('items.rawMaterial', 'product');
 
             // Consume every material first; a shortage throws here and rolls back
@@ -54,7 +54,7 @@ class CompleteProductionOrder
                 );
 
                 $this->stock->record(
-                    $location,
+                    $warehouse,
                     $item->rawMaterial,
                     -(float) $item->quantity_required,
                     StockMovementReason::ProductionConsume,
@@ -63,9 +63,9 @@ class CompleteProductionOrder
                 );
             }
 
-            // Produce the finished goods into the same location.
+            // Produce the finished goods into the same warehouse.
             $this->stock->record(
-                $location,
+                $warehouse,
                 $order->product,
                 (float) $order->quantity,
                 StockMovementReason::ProductionOutput,
@@ -76,7 +76,7 @@ class CompleteProductionOrder
             $order->update([
                 'status' => ProductionOrderStatus::Completed,
                 'completed_at' => now(),
-                'completed_location_id' => $location->id,
+                'completed_warehouse_id' => $warehouse->id,
             ]);
 
             return $order;
