@@ -7,12 +7,17 @@
 Give each **warehouse** its own reorder threshold per item, and a **warehouse
 detail page** to (a) see what stock is currently held there and (b) set those
 thresholds. This **replaces** the single global item-level `min_stock` (which lived
-on the product / raw-material) with a per-`(warehouse, item)` threshold, and
-redefines the dashboard's low-stock KPI to aggregate the new per-warehouse alerts.
+on the product / raw-material) with a per-`(warehouse, item)` threshold.
 
 Today the Warehouses page is CRUD-only; on-hand lives in `warehouse_stocks`;
 `min_stock` is one global number per item. After this change, "is this low?" is
 answered per warehouse.
+
+> **Scope note (2026-07-11):** the tenant dashboard's analytics were later removed
+> (it now shows only user + organisation identity), so this feature **no longer
+> touches the dashboard** — there is no low-stock KPI to redefine. If a reorder KPI
+> is ever wanted again, it is built fresh on this per-warehouse model as part of that
+> future dashboard-charts work, not here.
 
 ## Decisions (locked with the user)
 
@@ -25,9 +30,8 @@ answered per warehouse.
 - **Storage: a dedicated `warehouse_reorder_levels` table** — reorder *policy* is
   kept out of the StockService-owned `warehouse_stocks` *ledger*, and a threshold
   can exist with no stock row.
-- **Reorder flag is per-warehouse:** `on_hand@wh < min@wh` (and `min > 0`). The
-  dashboard aggregates exactly these per-warehouse alerts, so the two never
-  disagree (the global-vs-local contradiction of the previous design is gone).
+- **Reorder flag is per-warehouse:** `on_hand@wh < min@wh` (and `min > 0`) — shown
+  as a badge on the detail page. (There is no global default left to disagree with.)
 - **Entry point:** clicking a warehouse **row** navigates to its detail page;
   Edit/Delete stay in the `⋯` menu.
 - **Quick actions** (Adjust / Transfer) deep-link to those pages with the warehouse
@@ -348,43 +352,15 @@ once and pre-scopes the form:
   — extra visit — nor a bare `replaceState(null,…)` — drops Inertia state).
 - Unknown/absent id → no-op.
 
-## Dashboard redefinition — `DashboardController` + `dashboard.tsx`
+## Dashboard — out of scope (removed 2026-07-11)
 
-`min_stock` no longer exists on items, so `lowStock()` is rebuilt around
-`warehouse_reorder_levels`:
-
-- **Reorder alerts are per `(warehouse, item)`:** for every reorder-level with
-  `min_stock > 0`, resolve that warehouse's on-hand for the item
-  (`COALESCE(warehouse_stocks.quantity, 0)`, joined on the same warehouse+item); an
-  alert is any row where `on_hand < min_stock`. Each alert row:
-  `{ warehouse_id, warehouse (label "Location · Warehouse"), type, id, name, sku,
-  on_hand, min_stock, deficit }` (`deficit = min_stock - on_hand`), item name/sku
-  resolved per morph type.
-- **Exclude trashed warehouses AND trashed items.** Soft-deleting either does not
-  drop `warehouse_reorder_levels` (the FK cascades only on a *hard* warehouse
-  delete), so an orphaned level can outlive its warehouse or item. Join
-  `warehouses` (also the source of the "Location · Warehouse" label) with
-  `whereNull('warehouses.deleted_at')`, and exclude trashed items with
-  `whereNull('products.deleted_at')` / `whereNull('raw_materials.deleted_at')` in
-  each per-morph name-resolution join. **This preserves today's behaviour:** the
-  current `lowStock()` resolves items via Eloquent (`Product::where(...)->get()`), so
-  its SoftDeletes scope already hides trashed items — the rewrite must not regress it.
-- **KPIs:** `low_stock.count` = number of alert rows; `low_stock.out_of_stock` =
-  alerts with `on_hand <= 0`. (`skus_in_stock`, `onHandByWarehouse`, and the charts
-  are unaffected — they never used `min_stock`.)
-- **`reorderList`** = alerts sorted by `deficit` desc, `take(8)`, now carrying the
-  **warehouse** (keep `warehouse_id` in the payload — needed for the React key below).
-- **`dashboard.tsx`**:
-  - `ReorderRow` gains `warehouse: string` (the label, for a new column/subtitle) **and
-    `warehouse_id: number`**.
-  - **Fix the React key:** the card currently keys rows `` `${row.type}:${row.id}` `` —
-    now that one item can alert in multiple warehouses, that collides. Change to
-    `` `${row.warehouse_id}:${row.type}:${row.id}` ``.
-  - **Relabel the StatCard.** `low_stock.count` now counts per-`(warehouse, item)`
-    alerts (one item low in N warehouses = N), so the "Low-stock items" / "below
-    minimum" copy over-counts *items*. Rename to **"Reorder alerts"** with sub copy
-    **"below reorder level"** (and the `out_of_stock` sub as out-of-stock *alerts*) —
-    consistent with the detail page's "Needs reorder" tile.
+An earlier draft of this spec rebuilt the dashboard's low-stock KPI + reorder list
+(which used item-level `min_stock`) around per-warehouse alerts. **The dashboard's
+analytics have since been removed** — it now shows only user + organisation
+identity — so this feature makes **no dashboard changes**. Removing item `min_stock`
+(below) therefore has no dashboard fallout to reconcile. If a reorder KPI is ever
+wanted again, it is built fresh on `warehouse_reorder_levels` as part of the future
+dashboard-charts rebuild, not here.
 
 ## Removing item-level `min_stock` — remaining touch-points
 
@@ -440,20 +416,10 @@ reorder levels)` by direct model creation.
 - **`WarehouseItemData::fromRow`** — maps product and raw-material union rows: `type`
   label derived from the alias, null sku, `on_hand`/`min_stock` cast to floats,
   `stockable_id` to int, `needs_reorder` at the boundary.
-- **Dashboard** — rewrite `DashboardTest` for per-warehouse alerts: an item with a
-  reorder level in warehouse A and on-hand below it **is** listed (with A as its
-  warehouse); the same item well-stocked in warehouse B is **not** a separate alert;
-  an item with `min_stock = 0` never alerts; `out_of_stock` counts zero-on-hand
-  alerts; `reorderList` is deficit-sorted and includes the warehouse. **Adapt the
-  existing "stranded in a soft-deleted warehouse" regression** (drop its removed
-  `min_stock => 5` field): seed on-hand 10 + a level of 5 for `(warehouse, item)`,
-  soft-delete the warehouse, and assert on-hand surfaces still drop it
-  (`skus_in_stock.count === 0`) **and** the orphaned level raises **no** alert
-  (`low_stock.count === 0`, `reorderList` empty) — proving the `whereNull(
-  warehouses.deleted_at)` filter. Add a **trashed-item** case: soft-delete an item
-  that has a level below its on-hand and assert it does not alert.
 - **Product / RawMaterial** — drop the `min_stock` assertions/fields; remove the
   "rejects non-integer min_stock" / "defaults min_stock to 0" cases (field is gone).
+  (`DashboardTest` already no longer references `min_stock` — the dashboard was
+  decoupled when its analytics were removed, so nothing to change there.)
 - **Route** — `warehouses.show` and `warehouses.reorder-levels.update` registered
   and tenant-scoped.
 
@@ -462,7 +428,7 @@ demo tenant → open a warehouse) in the finalize step, specifically:
 - toggle **All items**, then **type in search / change per-page** → unstocked rows
   stay (view=all survives the DataTable's own reloads — the view-aware `baseUrl`);
 - edit a **Min here**, press Enter → toast, and the row badge + "Needs reorder" tile
-  + dashboard "Reorder alerts" all update;
+  both update;
 - a rapid second edit doesn't leave the first row's spinner stuck.
 
 ## Edge cases & risks
@@ -477,12 +443,10 @@ demo tenant → open a warehouse) in the finalize step, specifically:
   **tiebreaker** so `LIMIT/OFFSET` pages don't duplicate/drop tied `on_hand` rows.
 - **Soft-delete consistency** — items soft-delete but keep their stock/level rows
   (FK cascades only on warehouse hard-delete). Every full-set surface — the item
-  list, `summary.in_stock`/`needs_reorder`, and the dashboard alerts — filters
-  trashed items so the tiles, the table, and the dashboard reconcile (and today's
-  Eloquent-scoped dashboard behaviour isn't regressed).
-- **Reorder flag = per-warehouse, dashboard-consistent** — the badge means "below
-  *this warehouse's* level"; the dashboard lists the same per-`(warehouse, item)`
-  alerts, so numbers reconcile. No global default remains to disagree with.
+  list and `summary.in_stock`/`needs_reorder` — filters trashed items so the tiles
+  and the table reconcile.
+- **Reorder flag = per-warehouse** — the badge means "below *this warehouse's*
+  level". No global default remains to disagree with.
 - **Inline edit** — controlled input over **local state** (seeded from `min_stock`),
   `aria-label`ed; commits on Enter/blur (not per keystroke); the input is in the
   row-click `closest()` bail list so editing never navigates; spinner driven by
