@@ -337,7 +337,7 @@ export default function ProductsIndex() {
                             onSelect={() => openBom(row.original)}
                         >
                             <ListTree className="size-4" />
-                            Recipe
+                            Bill of materials
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             variant="destructive"
@@ -690,7 +690,7 @@ export default function ProductsIndex() {
             >
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Recipe</DialogTitle>
+                        <DialogTitle>Bill of materials</DialogTitle>
                         <DialogDescription>
                             The raw materials and how much of each it takes to
                             make one “{bomProduct?.name}”. New production orders

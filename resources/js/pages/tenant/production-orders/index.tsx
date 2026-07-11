@@ -280,7 +280,7 @@ export default function ProductionOrdersIndex() {
                         title={`No ${productionOrderMeta.plural.toLowerCase()} yet`}
                         description={
                             products.length === 0
-                                ? 'Give a product a recipe first, then you can build it here.'
+                                ? 'Give a product a bill of materials first, then you can build it here.'
                                 : 'Create your first production order to start manufacturing.'
                         }
                         action={
@@ -331,7 +331,7 @@ export default function ProductionOrdersIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="quantity"
-                                    hint="How many finished units to build. The raw materials needed come from the product's recipe, multiplied by this number."
+                                    hint="How many finished units to build. The raw materials needed come from the product's bill of materials, multiplied by this number."
                                 >
                                     Quantity
                                 </FieldLabel>
