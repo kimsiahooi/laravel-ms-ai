@@ -83,9 +83,11 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // A product's bill of materials (its recipe).
             Route::put('products/{product}/bom', [ProductController::class, 'updateBom'])
                 ->name('products.bom');
-            Route::resource('warehouses', WarehouseController::class)
-                ->only(['index', 'store', 'update', 'destroy']);
+            // Location (site) is the top of the inventory hierarchy — register it
+            // first; warehouses live under a location.
             Route::resource('locations', LocationController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('warehouses', WarehouseController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
             // Inventory ledger — append-only, so only list + create (no edit/delete).
