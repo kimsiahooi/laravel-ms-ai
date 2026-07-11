@@ -11,22 +11,22 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
- * Materialized on-hand quantity for one (location, stockable) pair. Maintained
+ * Materialized on-hand quantity for one (warehouse, stockable) pair. Maintained
  * exclusively by StockService under a row lock. Lives on the default connection,
  * which InitializeTenancyByPath has switched to the tenant database.
  *
  * @property int $id
- * @property int $location_id
+ * @property int $warehouse_id
  * @property string $stockable_type
  * @property int $stockable_id
  * @property string $quantity
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read Location $location
+ * @property-read Warehouse $warehouse
  * @property-read Model $stockable
  */
-#[Fillable(['location_id', 'stockable_type', 'stockable_id', 'quantity'])]
-class LocationStock extends Model
+#[Fillable(['warehouse_id', 'stockable_type', 'stockable_id', 'quantity'])]
+class WarehouseStock extends Model
 {
     /**
      * @return array<string, string>
@@ -37,11 +37,11 @@ class LocationStock extends Model
     }
 
     /**
-     * @return BelongsTo<Location, $this>
+     * @return BelongsTo<Warehouse, $this>
      */
-    public function location(): BelongsTo
+    public function warehouse(): BelongsTo
     {
-        return $this->belongsTo(Location::class);
+        return $this->belongsTo(Warehouse::class);
     }
 
     /**
