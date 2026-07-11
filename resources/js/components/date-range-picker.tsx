@@ -407,7 +407,10 @@ export function DateRangePicker({
                         ))}
                     </div>
                     <div className="flex flex-col">
-                        <div className="p-2">
+                        {/* center the calendar: on mobile the single month is
+                            narrower than the popover (presets/footer set the
+                            width), so it would otherwise sit left-aligned. */}
+                        <div className="flex justify-center p-2">
                             <Calendar
                                 mode="range"
                                 numberOfMonths={monthsToShow}
