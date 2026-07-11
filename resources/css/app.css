@@ -178,3 +178,29 @@
         background: #fff !important;
     }
 }
+
+/* ── Sidebar responsive breakpoint ──────────────────────────────────────────
+   hooks/use-mobile.ts switches the sidebar to an off-canvas drawer below lg
+   (1024px) so tablets (iPad portrait, 768px) get full-width content. shadcn's
+   vendored sidebar, though, paints its pinned desktop rail from `md` (768px) up
+   — which on refresh at 768–1023px flashes the rail open, then closes it once
+   hydration swaps in the drawer, and insets the content by 2px in between.
+   These rules re-map that desktop rail (and its inset chrome) to the same lg
+   breakpoint from app CSS, instead of editing components/ui/sidebar.tsx
+   (vendored, read-only — see docs/CODING-STANDARDS.md). Unlayered, so they win
+   over Tailwind's layered `md:` utilities without !important. */
+@media (max-width: 1023.98px) {
+    /* Hide the pinned desktop rail (but NOT the mobile drawer, which is
+       data-mobile="true" and portaled to the body). */
+    [data-slot='sidebar'][data-state]:not([data-mobile='true']) {
+        display: none;
+    }
+
+    /* Drop the inset chrome the rail's `md:` peer utilities still apply while
+       the rail is hidden, so the content isn't a floating rounded panel. */
+    [data-slot='sidebar-inset'] {
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
