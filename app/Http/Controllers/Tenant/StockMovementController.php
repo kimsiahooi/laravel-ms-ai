@@ -11,10 +11,10 @@ use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\StockMovementRequest;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
+use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -35,7 +35,7 @@ class StockMovementController
         $perPage = $this->perPage($request);
 
         $movements = StockMovement::query()
-            ->with(['location.warehouse', 'stockable', 'user'])
+            ->with(['warehouse.warehouse', 'stockable', 'user'])
             ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
             ->latest()
             ->paginate($perPage)
@@ -44,7 +44,7 @@ class StockMovementController
 
         return Inertia::render('tenant/stock-movements/index', [
             'movements' => $movements,
-            'locations' => $this->stockLocationOptions(),
+            'warehouses' => $this->stockWarehouseOptions(),
             'items' => $this->stockItemOptions(),
             'filters' => [
                 'search' => $search,
@@ -55,7 +55,7 @@ class StockMovementController
 
     /**
      * Filter the ledger by item name/sku (product or raw material), reason,
-     * notes, or the movement's location code / warehouse name.
+     * notes, or the movement's warehouse code / warehouse name.
      *
      * @param  Builder<StockMovement>  $query
      */
@@ -72,7 +72,7 @@ class StockMovementController
                     [Product::class, RawMaterial::class],
                     fn (Builder $item) => $item->where('name', 'like', $like)->orWhere('sku', 'like', $like),
                 )
-                ->orWhereHas('location', fn (Builder $location) => $location
+                ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse
                     ->where('code', 'like', $like)
                     ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse->where('name', 'like', $like)));
         });
@@ -86,20 +86,20 @@ class StockMovementController
             ? Product::findOrFail($id)
             : RawMaterial::findOrFail($id);
 
-        $location = Location::findOrFail($request->integer('location_id'));
+        $warehouse = Warehouse::findOrFail($request->integer('warehouse_id'));
         $user = $request->user();
         $quantity = (float) $request->input('quantity');
         $notes = $request->input('notes');
 
         try {
             match ($request->input('type')) {
-                'in' => $service->record($location, $stockable, $quantity, StockMovementReason::Adjustment, $user, $notes),
-                'out' => $service->record($location, $stockable, -$quantity, StockMovementReason::Adjustment, $user, $notes),
-                'adjustment' => $service->setLevel($location, $stockable, $quantity, $user, $notes),
+                'in' => $service->record($warehouse, $stockable, $quantity, StockMovementReason::Adjustment, $user, $notes),
+                'out' => $service->record($warehouse, $stockable, -$quantity, StockMovementReason::Adjustment, $user, $notes),
+                'adjustment' => $service->setLevel($warehouse, $stockable, $quantity, $user, $notes),
             };
         } catch (InsufficientStockException) {
             throw ValidationException::withMessages([
-                'quantity' => 'Not enough stock at this location.',
+                'quantity' => 'Not enough stock at this warehouse.',
             ]);
         }
 

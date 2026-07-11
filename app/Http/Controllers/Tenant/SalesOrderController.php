@@ -14,9 +14,9 @@ use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\SalesOrderRequest;
 use App\Models\Customer;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\SalesOrder;
+use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +46,7 @@ class SalesOrderController
             'orders' => $orders,
             'customers' => OptionData::collect(Customer::orderBy('name')->get(['id', 'name'])),
             'products' => OptionData::collect(Product::orderBy('name')->get(['id', 'name'])),
-            'locations' => $this->stockLocationOptions(),
+            'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
                 'search' => '',
                 'per_page' => $perPage,
@@ -114,18 +114,18 @@ class SalesOrderController
     public function fulfill(Request $request, SalesOrder $salesOrder, FulfillSalesOrder $action): RedirectResponse
     {
         $validated = $request->validate([
-            'location_id' => ['required', Rule::exists('locations', 'id')->whereNull('deleted_at')],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->whereNull('deleted_at')],
         ]);
 
         try {
             $action->handle(
                 $salesOrder,
-                Location::findOrFail($validated['location_id']),
+                Warehouse::findOrFail($validated['warehouse_id']),
                 $request->user(),
             );
         } catch (InsufficientStockException) {
             throw ValidationException::withMessages([
-                'location_id' => 'Not enough stock at this location to fulfill the order.',
+                'warehouse_id' => 'Not enough stock at this warehouse to fulfill the order.',
             ]);
         }
 

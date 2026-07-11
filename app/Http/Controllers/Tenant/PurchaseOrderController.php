@@ -12,10 +12,10 @@ use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\PurchaseOrderRequest;
-use App\Models\Location;
 use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
 use App\Models\Supplier;
+use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +44,7 @@ class PurchaseOrderController
             'orders' => $orders,
             'suppliers' => OptionData::collect(Supplier::orderBy('name')->get(['id', 'name'])),
             'rawMaterials' => OptionData::collect(RawMaterial::orderBy('name')->get(['id', 'name'])),
-            'locations' => $this->stockLocationOptions(),
+            'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
                 'search' => '',
                 'per_page' => $perPage,
@@ -112,12 +112,12 @@ class PurchaseOrderController
     public function receive(Request $request, PurchaseOrder $purchaseOrder, ReceivePurchaseOrder $action): RedirectResponse
     {
         $validated = $request->validate([
-            'location_id' => ['required', Rule::exists('locations', 'id')->whereNull('deleted_at')],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->whereNull('deleted_at')],
         ]);
 
         $action->handle(
             $purchaseOrder,
-            Location::findOrFail($validated['location_id']),
+            Warehouse::findOrFail($validated['warehouse_id']),
             $request->user(),
         );
 

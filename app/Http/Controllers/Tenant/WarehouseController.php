@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\OptionData;
 use App\Data\WarehouseData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\WarehouseRequest;
+use App\Models\Location;
 use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class WarehouseController
         $perPage = $this->perPage($request);
 
         $warehouses = Warehouse::query()
+            ->with('location')
             ->search($search)
             ->latest()
             ->paginate($perPage)
@@ -38,6 +41,7 @@ class WarehouseController
                 'search' => $search,
                 'per_page' => $perPage,
             ],
+            'locations' => OptionData::collect(Location::orderBy('name')->get(['id', 'name'])),
         ]);
     }
 

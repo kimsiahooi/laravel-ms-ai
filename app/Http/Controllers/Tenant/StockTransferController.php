@@ -10,10 +10,10 @@ use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\StockTransferRequest;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\StockTransfer;
+use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +34,7 @@ class StockTransferController
         $perPage = $this->perPage($request);
 
         $transfers = StockTransfer::query()
-            ->with(['fromLocation.warehouse', 'toLocation.warehouse', 'stockable', 'user'])
+            ->with(['fromWarehouse.warehouse', 'toWarehouse.warehouse', 'stockable', 'user'])
             ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
             ->latest()
             ->paginate($perPage)
@@ -43,7 +43,7 @@ class StockTransferController
 
         return Inertia::render('tenant/stock-transfers/index', [
             'transfers' => $transfers,
-            'locations' => $this->stockLocationOptions(),
+            'warehouses' => $this->stockWarehouseOptions(),
             'items' => $this->stockItemOptions(),
             'filters' => [
                 'search' => $search,
@@ -54,7 +54,7 @@ class StockTransferController
 
     /**
      * Filter the transfer ledger by item name/sku, notes, or either endpoint's
-     * location code / warehouse name.
+     * warehouse code / warehouse name.
      *
      * @param  Builder<StockTransfer>  $query
      */
@@ -62,7 +62,7 @@ class StockTransferController
     {
         $like = '%'.$search.'%';
 
-        $endpoint = fn (Builder $location) => $location
+        $endpoint = fn (Builder $warehouse) => $warehouse
             ->where('code', 'like', $like)
             ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse->where('name', 'like', $like));
 
@@ -74,8 +74,8 @@ class StockTransferController
                     [Product::class, RawMaterial::class],
                     fn (Builder $item) => $item->where('name', 'like', $like)->orWhere('sku', 'like', $like),
                 )
-                ->orWhereHas('fromLocation', $endpoint)
-                ->orWhereHas('toLocation', $endpoint);
+                ->orWhereHas('fromWarehouse', $endpoint)
+                ->orWhereHas('toWarehouse', $endpoint);
         });
     }
 
@@ -87,8 +87,8 @@ class StockTransferController
             ? Product::findOrFail($id)
             : RawMaterial::findOrFail($id);
 
-        $from = Location::findOrFail($request->integer('from_location_id'));
-        $to = Location::findOrFail($request->integer('to_location_id'));
+        $from = Warehouse::findOrFail($request->integer('from_warehouse_id'));
+        $to = Warehouse::findOrFail($request->integer('to_warehouse_id'));
 
         try {
             $service->transfer(
@@ -101,7 +101,7 @@ class StockTransferController
             );
         } catch (InsufficientStockException) {
             throw ValidationException::withMessages([
-                'quantity' => 'Not enough stock at the source location.',
+                'quantity' => 'Not enough stock at the source warehouse.',
             ]);
         }
 

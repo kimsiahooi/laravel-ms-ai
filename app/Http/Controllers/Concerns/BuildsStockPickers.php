@@ -5,31 +5,31 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Concerns;
 
 use App\Data\OptionData;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\RawMaterial;
+use App\Models\Warehouse;
 use Spatie\LaravelData\DataCollection;
 
 /**
  * Shared form-picker options for the inventory screens (stock movements + transfers):
- * the location list and the merged product/raw-material item list.
+ * the warehouse list and the merged product/raw-material item list.
  */
 trait BuildsStockPickers
 {
     /**
-     * Locations for a picker, each labelled "Warehouse · code".
+     * Warehouses for a picker, each labelled "Site · Warehouse".
      *
      * @return DataCollection<int, OptionData>
      */
-    protected function stockLocationOptions(): DataCollection
+    protected function stockWarehouseOptions(): DataCollection
     {
         return OptionData::collect(
-            Location::with('warehouse')
-                ->orderBy('code')
+            Warehouse::with('location')
+                ->orderBy('name')
                 ->get()
-                ->map(fn (Location $location): array => [
-                    'id' => $location->id,
-                    'name' => ($location->warehouse?->name ?? '?').' · '.$location->code,
+                ->map(fn (Warehouse $warehouse): array => [
+                    'id' => $warehouse->id,
+                    'name' => ($warehouse->location?->name ?? '?').' · '.$warehouse->name,
                 ]),
             DataCollection::class,
         );

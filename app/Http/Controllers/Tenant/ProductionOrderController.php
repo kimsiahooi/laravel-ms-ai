@@ -14,9 +14,9 @@ use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\ProductionOrderRequest;
 use App\Models\BomItem;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\ProductionOrder;
+use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +63,7 @@ class ProductionOrderController
                     'quantity' => (float) $bom->quantity,
                 ])->all(),
             ])->all(),
-            'locations' => $this->stockLocationOptions(),
+            'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
                 'search' => '',
                 'per_page' => $perPage,
@@ -137,18 +137,18 @@ class ProductionOrderController
     public function complete(Request $request, ProductionOrder $productionOrder, CompleteProductionOrder $action): RedirectResponse
     {
         $validated = $request->validate([
-            'location_id' => ['required', Rule::exists('locations', 'id')->whereNull('deleted_at')],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->whereNull('deleted_at')],
         ]);
 
         try {
             $action->handle(
                 $productionOrder,
-                Location::findOrFail($validated['location_id']),
+                Warehouse::findOrFail($validated['warehouse_id']),
                 $request->user(),
             );
         } catch (InsufficientStockException) {
             throw ValidationException::withMessages([
-                'location_id' => 'Not enough raw material at this location to complete this order.',
+                'warehouse_id' => 'Not enough raw material at this warehouse to complete this order.',
             ]);
         }
 
