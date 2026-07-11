@@ -699,7 +699,7 @@ export default function ProductsIndex() {
                     }
                 }}
             >
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Bill of materials</DialogTitle>
                         <DialogDescription>
@@ -709,7 +709,16 @@ export default function ProductsIndex() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4">
+                    {/* Scroll the rows here (not on DialogContent) so an open
+                        combobox dropdown can float over the viewport instead of
+                        being clipped by the dialog's overflow. The max-height caps
+                        the whole dialog (header + body + footer ≈ 13rem of chrome)
+                        to the viewport, so a short viewport can't push the header
+                        out of reach now that DialogContent no longer scrolls. */}
+                    <div
+                        className="-mr-2 space-y-4 overflow-y-auto pr-2"
+                        style={{ maxHeight: 'min(60vh, calc(90vh - 13rem))' }}
+                    >
                         {bomErrors.items ? (
                             <p className="text-destructive text-sm">
                                 {bomErrors.items}
