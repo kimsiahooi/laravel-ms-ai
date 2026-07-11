@@ -31,9 +31,11 @@ Build **product-grade UI, not plain black-and-white forms.** Full policy:
   (`layouts/central-admin-layout.tsx`, `layouts/tenant-layout.tsx`); auth pages use
   the split-screen brand-panel + form-card pattern (`pages/*/login.tsx`).
 - **a11y + responsive + SSR:** bind labels, `focus-visible` rings, `aria-label` on
-  icon buttons; no horizontal body scroll, hide non-essential columns on small
-  screens; compute `Date`/`window`-derived content post-mount or use
-  `suppressHydrationWarning`.
+  icon buttons; **no horizontal body scroll at any width** (verify 375/768/1024) —
+  sidebar is a drawer below `lg`, toolbars stack on mobile, hide non-essential
+  columns on small screens, cap wide popovers with `max-w-[calc(100vw-1rem)]`
+  (see `docs/RESPONSIVE.md`); compute `Date`/`window`-derived content post-mount
+  or use `suppressHydrationWarning`.
 - **Honest data only** — no invented metrics, fake charts, or actions without an
   endpoint.
 

@@ -12,7 +12,7 @@ import {
     subWeeks,
 } from 'date-fns';
 import { CalendarDays, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -287,6 +287,24 @@ export function DateRangePicker({
     // false = a complete range is shown; the next click starts a fresh one.
     // true = a start is picked and the next click sets the end.
     const [pickingEnd, setPickingEnd] = useState(false);
+    // A 2-month calendar is ~480px wide — too wide for a phone. Show one month
+    // below `sm` (the popover then fits a 375px screen), two on larger screens.
+    // The popover only renders on open (client-side), so reading matchMedia here
+    // is hydration-safe.
+    const [monthsToShow, setMonthsToShow] = useState<1 | 2>(() =>
+        typeof window !== 'undefined' &&
+        window.matchMedia('(min-width: 640px)').matches
+            ? 2
+            : 1,
+    );
+
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 640px)');
+        const update = () => setMonthsToShow(mq.matches ? 2 : 1);
+        update();
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
 
     const syncToValue = () => {
         setRange({ from: parseISO(value.from), to: parseISO(value.to) });
@@ -363,7 +381,10 @@ export function DateRangePicker({
                     <ChevronDown className="size-4 text-muted-foreground" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-auto p-0">
+            <PopoverContent
+                align="end"
+                className="w-auto max-w-[calc(100vw-1rem)] p-0"
+            >
                 <div className="flex max-sm:flex-col">
                     <div className="flex shrink-0 flex-col gap-0.5 border-b p-2 sm:w-40 sm:border-r sm:border-b-0">
                         <p className="px-2 pt-1 pb-1.5 font-medium text-muted-foreground text-xs">
@@ -389,13 +410,13 @@ export function DateRangePicker({
                         <div className="p-2">
                             <Calendar
                                 mode="range"
-                                numberOfMonths={2}
+                                numberOfMonths={monthsToShow}
                                 selected={range}
                                 onSelect={(_selected, day) => pickDay(day)}
                                 defaultMonth={range?.from}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-3 border-t p-3">
+                        <div className="grid grid-cols-1 gap-3 border-t p-3 sm:grid-cols-2">
                             <TimeSelect
                                 idPrefix="range-from-time"
                                 label="From time"

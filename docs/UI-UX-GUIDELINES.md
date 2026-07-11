@@ -109,7 +109,10 @@ sidebar, breadcrumb, alert, collapsible, navigation-menu`.
 - **Timestamps** — relative time ("2h ago") with the absolute time on hover
   (`title`/Tooltip).
 - **Responsive** — mobile-first; the body must **never scroll horizontally**;
-  collapse side panels and hide secondary columns on small screens.
+  the sidebar is a drawer below `lg` (1024) and pinned at `lg`+, headers/toolbars
+  stack on mobile, secondary table columns hide on small screens, and wide
+  popovers (calendars) cap width + reduce content. Verify at 375 / 768 / 1024.
+  Full guide + verification recipe: [`RESPONSIVE.md`](RESPONSIVE.md).
 - **Keyboard & a11y** — labels bound to inputs, visible `focus-visible` rings,
   icon buttons labelled, tooltip triggers keyboard-reachable, and respect the
   user's reduced-motion setting.

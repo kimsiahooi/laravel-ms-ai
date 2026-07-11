@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react';
 
-const MOBILE_BREAKPOINT = 768;
+// Below this width the sidebar collapses to an off-canvas drawer instead of a
+// pinned column, so tablets (e.g. iPad portrait at 768px) get the full content
+// width instead of a cramped ~510px column. Matches Tailwind's `lg` breakpoint.
+const MOBILE_BREAKPOINT = 1024;
 
 const mql =
     typeof window === 'undefined'
