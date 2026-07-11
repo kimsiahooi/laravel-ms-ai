@@ -17,9 +17,9 @@ class StockMovementRequest extends TenantFormRequest
     public function rules(): array
     {
         return [
-            'location_id' => [
+            'warehouse_id' => [
                 'required',
-                Rule::exists('locations', 'id')->whereNull('deleted_at'),
+                Rule::exists('warehouses', 'id')->whereNull('deleted_at'),
             ],
             // The merged item-picker value, e.g. "product:5" or "raw_material:3".
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],

@@ -18,18 +18,13 @@ class LocationRequest extends TenantFormRequest
         $ignoreId = $location instanceof Location ? $location->getKey() : null;
 
         return [
-            'warehouse_id' => [
-                'required',
-                Rule::exists('warehouses', 'id')->whereNull('deleted_at'),
-            ],
+            'name' => ['required', 'string', 'max:255'],
             'code' => [
-                'required', 'string', 'max:50',
-                // Unique per warehouse within this tenant (ignore self on update).
-                Rule::unique('locations', 'code')
-                    ->where(fn ($query) => $query->where('warehouse_id', $this->input('warehouse_id')))
-                    ->ignore($ignoreId),
+                'nullable', 'string', 'max:50',
+                // Unique within this tenant's database (ignore self on update).
+                Rule::unique('locations', 'code')->ignore($ignoreId),
             ],
-            'name' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

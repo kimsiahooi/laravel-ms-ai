@@ -17,14 +17,14 @@ class StockTransferRequest extends TenantFormRequest
     public function rules(): array
     {
         return [
-            'from_location_id' => [
+            'from_warehouse_id' => [
                 'required',
-                Rule::exists('locations', 'id')->whereNull('deleted_at'),
+                Rule::exists('warehouses', 'id')->whereNull('deleted_at'),
             ],
-            'to_location_id' => [
+            'to_warehouse_id' => [
                 'required',
-                'different:from_location_id',
-                Rule::exists('locations', 'id')->whereNull('deleted_at'),
+                'different:from_warehouse_id',
+                Rule::exists('warehouses', 'id')->whereNull('deleted_at'),
             ],
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],
             'quantity' => ['required', 'numeric', 'gt:0'],

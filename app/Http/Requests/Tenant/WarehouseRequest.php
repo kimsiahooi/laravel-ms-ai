@@ -18,6 +18,10 @@ class WarehouseRequest extends TenantFormRequest
         $ignoreId = $warehouse instanceof Warehouse ? $warehouse->getKey() : null;
 
         return [
+            'location_id' => [
+                'required',
+                Rule::exists('locations', 'id')->whereNull('deleted_at'),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'code' => [
                 'nullable', 'string', 'max:50',
