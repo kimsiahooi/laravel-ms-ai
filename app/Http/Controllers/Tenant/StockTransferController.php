@@ -34,7 +34,7 @@ class StockTransferController
         $perPage = $this->perPage($request);
 
         $transfers = StockTransfer::query()
-            ->with(['fromWarehouse.warehouse', 'toWarehouse.warehouse', 'stockable', 'user'])
+            ->with(['fromWarehouse.location', 'toWarehouse.location', 'stockable', 'user'])
             ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
             ->latest()
             ->paginate($perPage)
@@ -64,7 +64,7 @@ class StockTransferController
 
         $endpoint = fn (Builder $warehouse) => $warehouse
             ->where('code', 'like', $like)
-            ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse->where('name', 'like', $like));
+            ->orWhereHas('location', fn (Builder $location) => $location->where('name', 'like', $like));
 
         $query->where(function (Builder $group) use ($like, $endpoint): void {
             $group

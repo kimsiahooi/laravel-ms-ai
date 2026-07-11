@@ -4,11 +4,11 @@ use App\Actions\ProvisionTenant;
 use App\Enums\StockMovementReason;
 use App\Models\Customer;
 use App\Models\Location;
-use App\Models\LocationStock;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use App\Services\StockService;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -19,19 +19,19 @@ beforeEach(function () {
 });
 
 /**
- * Customer + product + a location, in the tenant DB.
+ * Customer + product + a warehouse (stock holder), in the tenant DB.
  *
- * @return array{customer: int, widget: int, location: int}
+ * @return array{customer: int, widget: int, warehouse: int}
  */
 function seedSalesFixture(): array
 {
     return test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
+        $location = Location::create(['name' => 'KL HQ']);
 
         return [
             'customer' => Customer::create(['name' => 'Globex'])->id,
             'widget' => Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 0])->id,
-            'location' => Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id,
+            'warehouse' => Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id,
         ];
     });
 }
@@ -56,12 +56,12 @@ function makePendingSo(int $customerId, int $widgetId): int
     });
 }
 
-/** Put $qty of $productId on-hand at $locationId via the service. */
-function seedOnHand(int $locationId, int $productId, float $qty): void
+/** Put $qty of $productId on-hand at $warehouseId via the service. */
+function seedOnHand(int $warehouseId, int $productId, float $qty): void
 {
-    test()->tenant->run(function () use ($locationId, $productId, $qty) {
+    test()->tenant->run(function () use ($warehouseId, $productId, $qty) {
         app(StockService::class)->record(
-            Location::find($locationId),
+            Warehouse::find($warehouseId),
             Product::find($productId),
             $qty,
             StockMovementReason::Adjustment,
@@ -114,44 +114,44 @@ it('creates a sales order with line items and snapshots', function () {
 });
 
 it('fulfills a pending SO: posts sales_fulfillment OUT and drops on-hand', function () {
-    ['customer' => $customer, 'widget' => $widget, 'location' => $location] = seedSalesFixture();
-    seedOnHand($location, $widget, 20);
+    ['customer' => $customer, 'widget' => $widget, 'warehouse' => $warehouse] = seedSalesFixture();
+    seedOnHand($warehouse, $widget, 20);
     $soId = makePendingSo($customer, $widget);
 
     loginAsAcmeUser();
 
     $this->from('/acme/sales-orders')
-        ->post("/acme/sales-orders/{$soId}/fulfill", ['location_id' => $location])
+        ->post("/acme/sales-orders/{$soId}/fulfill", ['warehouse_id' => $warehouse])
         ->assertRedirect('/acme/sales-orders')
         ->assertToast('Sales order fulfilled.');
 
-    $this->tenant->run(function () use ($soId, $widget, $location) {
+    $this->tenant->run(function () use ($soId, $widget, $warehouse) {
         $order = SalesOrder::find($soId);
         expect($order->status->value)->toBe('fulfilled')
             ->and($order->fulfilled_at)->not->toBeNull()
-            ->and($order->fulfilled_location_id)->toBe($location);
+            ->and($order->fulfilled_warehouse_id)->toBe($warehouse);
 
-        $stock = LocationStock::where('location_id', $location)->where('stockable_id', $widget)->first();
+        $stock = WarehouseStock::where('warehouse_id', $warehouse)->where('stockable_id', $widget)->first();
         expect((float) $stock->quantity)->toBe(15.0) // 20 − 5
             ->and(StockMovement::where('reason', 'sales_fulfillment')->count())->toBe(1);
     });
 });
 
-it('rolls back the whole fulfill when the location is short', function () {
-    ['customer' => $customer, 'widget' => $widget, 'location' => $location] = seedSalesFixture();
-    seedOnHand($location, $widget, 3); // less than the order's 5
+it('rolls back the whole fulfill when the warehouse is short', function () {
+    ['customer' => $customer, 'widget' => $widget, 'warehouse' => $warehouse] = seedSalesFixture();
+    seedOnHand($warehouse, $widget, 3); // less than the order's 5
     $soId = makePendingSo($customer, $widget);
 
     loginAsAcmeUser();
 
     $this->from('/acme/sales-orders')
-        ->post("/acme/sales-orders/{$soId}/fulfill", ['location_id' => $location])
+        ->post("/acme/sales-orders/{$soId}/fulfill", ['warehouse_id' => $warehouse])
         ->assertRedirect('/acme/sales-orders')
-        ->assertInvalid('location_id');
+        ->assertInvalid('warehouse_id');
 
-    $this->tenant->run(function () use ($soId, $widget, $location) {
+    $this->tenant->run(function () use ($soId, $widget, $warehouse) {
         // Nothing changed: on-hand intact, order still pending, no fulfillment movement.
-        $stock = LocationStock::where('location_id', $location)->where('stockable_id', $widget)->first();
+        $stock = WarehouseStock::where('warehouse_id', $warehouse)->where('stockable_id', $widget)->first();
         expect((float) $stock->quantity)->toBe(3.0)
             ->and(SalesOrder::find($soId)->status->value)->toBe('pending')
             ->and(StockMovement::where('reason', 'sales_fulfillment')->count())->toBe(0);
@@ -159,21 +159,21 @@ it('rolls back the whole fulfill when the location is short', function () {
 });
 
 it('rejects fulfilling a non-pending SO', function () {
-    ['customer' => $customer, 'widget' => $widget, 'location' => $location] = seedSalesFixture();
-    seedOnHand($location, $widget, 20);
+    ['customer' => $customer, 'widget' => $widget, 'warehouse' => $warehouse] = seedSalesFixture();
+    seedOnHand($warehouse, $widget, 20);
     $soId = makePendingSo($customer, $widget);
 
     loginAsAcmeUser();
 
-    $this->post("/acme/sales-orders/{$soId}/fulfill", ['location_id' => $location]);
+    $this->post("/acme/sales-orders/{$soId}/fulfill", ['warehouse_id' => $warehouse]);
 
-    $this->post("/acme/sales-orders/{$soId}/fulfill", ['location_id' => $location])
+    $this->post("/acme/sales-orders/{$soId}/fulfill", ['warehouse_id' => $warehouse])
         ->assertStatus(422);
 });
 
 it('cancels a pending SO but not a fulfilled one', function () {
-    ['customer' => $customer, 'widget' => $widget, 'location' => $location] = seedSalesFixture();
-    seedOnHand($location, $widget, 20);
+    ['customer' => $customer, 'widget' => $widget, 'warehouse' => $warehouse] = seedSalesFixture();
+    seedOnHand($warehouse, $widget, 20);
     $soId = makePendingSo($customer, $widget);
 
     loginAsAcmeUser();
@@ -185,13 +185,13 @@ it('cancels a pending SO but not a fulfilled one', function () {
 
     $this->tenant->run(fn () => expect(SalesOrder::find($soId)->status->value)->toBe('cancelled'));
 
-    $this->post("/acme/sales-orders/{$soId}/fulfill", ['location_id' => $location])
+    $this->post("/acme/sales-orders/{$soId}/fulfill", ['warehouse_id' => $warehouse])
         ->assertStatus(422);
 });
 
 it('updates a pending SO but rejects updating a fulfilled one', function () {
-    ['customer' => $customer, 'widget' => $widget, 'location' => $location] = seedSalesFixture();
-    seedOnHand($location, $widget, 20);
+    ['customer' => $customer, 'widget' => $widget, 'warehouse' => $warehouse] = seedSalesFixture();
+    seedOnHand($warehouse, $widget, 20);
     $soId = makePendingSo($customer, $widget);
 
     loginAsAcmeUser();
@@ -209,7 +209,7 @@ it('updates a pending SO but rejects updating a fulfilled one', function () {
         expect((float) SalesOrder::with('items')->find($soId)->items->first()->quantity)->toBe(2.0);
     });
 
-    $this->post("/acme/sales-orders/{$soId}/fulfill", ['location_id' => $location]);
+    $this->post("/acme/sales-orders/{$soId}/fulfill", ['warehouse_id' => $warehouse]);
 
     $this->put("/acme/sales-orders/{$soId}", [
         'customer_id' => $customer,
@@ -246,6 +246,6 @@ it('lists sales orders with picker options', function () {
             ->has('orders.data', 1)
             ->has('customers', 1)
             ->has('products', 1)
-            ->has('locations', 1)
+            ->has('warehouses', 1)
         );
 });

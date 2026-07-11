@@ -3,6 +3,7 @@
 use App\Actions\ProvisionTenant;
 use App\Models\Location;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -128,6 +129,45 @@ it('soft-deletes an empty warehouse', function () {
     $id = $this->tenant->run(fn () => Warehouse::create(['location_id' => $locId, 'name' => 'Main'])->id);
 
     loginAsAcmeUser();
+
+    $this->from('/acme/warehouses')
+        ->delete("/acme/warehouses/{$id}")
+        ->assertRedirect('/acme/warehouses')
+        ->assertToast('Warehouse deleted.');
+
+    $this->tenant->run(function () use ($id) {
+        expect(Warehouse::find($id))->toBeNull()
+            ->and(Warehouse::withTrashed()->find($id))->not->toBeNull();
+    });
+});
+
+it('blocks deleting a warehouse that holds stock, then allows it once zeroed', function () {
+    $locId = acmeLocationId();
+
+    [$id, $stockId] = $this->tenant->run(function () use ($locId) {
+        $warehouse = Warehouse::create(['location_id' => $locId, 'name' => 'Main']);
+        $stock = WarehouseStock::create([
+            'warehouse_id' => $warehouse->id,
+            'stockable_type' => 'product',
+            'stockable_id' => 1,
+            'quantity' => 5,
+        ]);
+
+        return [$warehouse->id, $stock->id];
+    });
+
+    loginAsAcmeUser();
+
+    // On-hand stock blocks the delete: an error toast, and the row survives.
+    $this->from('/acme/warehouses')
+        ->delete("/acme/warehouses/{$id}")
+        ->assertRedirect('/acme/warehouses')
+        ->assertToast('Move or adjust this warehouse’s stock to zero before deleting it.', 'error');
+
+    $this->tenant->run(fn () => expect(Warehouse::find($id))->not->toBeNull());
+
+    // Zero the on-hand, and the delete goes through.
+    $this->tenant->run(fn () => WarehouseStock::where('id', $stockId)->update(['quantity' => 0]));
 
     $this->from('/acme/warehouses')
         ->delete("/acme/warehouses/{$id}")

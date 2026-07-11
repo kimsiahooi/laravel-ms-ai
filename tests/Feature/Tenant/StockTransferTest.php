@@ -3,12 +3,12 @@
 use App\Actions\ProvisionTenant;
 use App\Enums\StockMovementReason;
 use App\Models\Location;
-use App\Models\LocationStock;
 use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use App\Services\StockService;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -19,28 +19,28 @@ beforeEach(function () {
 });
 
 /**
- * Warehouse + two locations + a product, inside the tenant DB.
+ * A site + two warehouses (the stock holders) + a product, inside the tenant DB.
  *
  * @return array{from: int, to: int, product: int}
  */
 function seedTransferFixture(): array
 {
     return test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $from = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
-        $to = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'B-01']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $from = Warehouse::create(['location_id' => $location->id, 'name' => 'Main', 'code' => 'A-01']);
+        $to = Warehouse::create(['location_id' => $location->id, 'name' => 'Overflow', 'code' => 'B-01']);
         $product = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
 
         return ['from' => $from->id, 'to' => $to->id, 'product' => $product->id];
     });
 }
 
-/** Put $qty of $productId on-hand at $locationId via the service. */
-function seedSourceStock(int $locationId, int $productId, float $qty): void
+/** Put $qty of $productId on-hand at $warehouseId via the service. */
+function seedSourceStock(int $warehouseId, int $productId, float $qty): void
 {
-    test()->tenant->run(function () use ($locationId, $productId, $qty) {
+    test()->tenant->run(function () use ($warehouseId, $productId, $qty) {
         app(StockService::class)->record(
-            Location::find($locationId),
+            Warehouse::find($warehouseId),
             Product::find($productId),
             $qty,
             StockMovementReason::Adjustment,
@@ -53,7 +53,7 @@ it('redirects a guest from the stock transfers page to the tenant login', functi
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
-it('transfers stock between locations, moving on-hand and writing the ledger', function () {
+it('transfers stock between warehouses, moving on-hand and writing the ledger', function () {
     ['from' => $from, 'to' => $to, 'product' => $product] = seedTransferFixture();
     seedSourceStock($from, $product, 10);
 
@@ -61,8 +61,8 @@ it('transfers stock between locations, moving on-hand and writing the ledger', f
 
     $this->from('/acme/stock-transfers')
         ->post('/acme/stock-transfers', [
-            'from_location_id' => $from,
-            'to_location_id' => $to,
+            'from_warehouse_id' => $from,
+            'to_warehouse_id' => $to,
             'stockable' => "product:{$product}",
             'quantity' => 4,
         ])
@@ -71,15 +71,15 @@ it('transfers stock between locations, moving on-hand and writing the ledger', f
         ->assertToast('Transfer recorded.');
 
     $this->tenant->run(function () use ($from, $to, $product) {
-        $sourceStock = LocationStock::where('location_id', $from)->where('stockable_id', $product)->first();
-        $destStock = LocationStock::where('location_id', $to)->where('stockable_id', $product)->first();
+        $sourceStock = WarehouseStock::where('warehouse_id', $from)->where('stockable_id', $product)->first();
+        $destStock = WarehouseStock::where('warehouse_id', $to)->where('stockable_id', $product)->first();
 
         expect((float) $sourceStock->quantity)->toBe(6.0)
             ->and((float) $destStock->quantity)->toBe(4.0)
             ->and(StockTransfer::count())->toBe(1)
             // Two ledger rows for the transfer (out + in), plus the initial seed.
-            ->and(StockMovement::where('reason', 'transfer_out')->where('location_id', $from)->count())->toBe(1)
-            ->and(StockMovement::where('reason', 'transfer_in')->where('location_id', $to)->count())->toBe(1);
+            ->and(StockMovement::where('reason', 'transfer_out')->where('warehouse_id', $from)->count())->toBe(1)
+            ->and(StockMovement::where('reason', 'transfer_in')->where('warehouse_id', $to)->count())->toBe(1);
     });
 });
 
@@ -91,8 +91,8 @@ it('rolls the whole transfer back when the source is short', function () {
 
     $this->from('/acme/stock-transfers')
         ->post('/acme/stock-transfers', [
-            'from_location_id' => $from,
-            'to_location_id' => $to,
+            'from_warehouse_id' => $from,
+            'to_warehouse_id' => $to,
             'stockable' => "product:{$product}",
             'quantity' => 10,
         ])
@@ -100,17 +100,17 @@ it('rolls the whole transfer back when the source is short', function () {
         ->assertInvalid('quantity');
 
     $this->tenant->run(function () use ($from, $to, $product) {
-        $sourceStock = LocationStock::where('location_id', $from)->where('stockable_id', $product)->first();
+        $sourceStock = WarehouseStock::where('warehouse_id', $from)->where('stockable_id', $product)->first();
 
         // Nothing moved: source unchanged, no destination row, no transfer, no transfer ledger rows.
         expect((float) $sourceStock->quantity)->toBe(3.0)
-            ->and(LocationStock::where('location_id', $to)->exists())->toBeFalse()
+            ->and(WarehouseStock::where('warehouse_id', $to)->exists())->toBeFalse()
             ->and(StockTransfer::count())->toBe(0)
             ->and(StockMovement::whereIn('reason', ['transfer_in', 'transfer_out'])->count())->toBe(0);
     });
 });
 
-it('rejects a transfer to the same location', function () {
+it('rejects a transfer to the same warehouse', function () {
     ['from' => $from, 'product' => $product] = seedTransferFixture();
     seedSourceStock($from, $product, 10);
 
@@ -118,13 +118,13 @@ it('rejects a transfer to the same location', function () {
 
     $this->from('/acme/stock-transfers')
         ->post('/acme/stock-transfers', [
-            'from_location_id' => $from,
-            'to_location_id' => $from,
+            'from_warehouse_id' => $from,
+            'to_warehouse_id' => $from,
             'stockable' => "product:{$product}",
             'quantity' => 4,
         ])
         ->assertRedirect('/acme/stock-transfers')
-        ->assertInvalid('to_location_id');
+        ->assertInvalid('to_warehouse_id');
 });
 
 it('rejects a non-positive quantity', function () {
@@ -134,8 +134,8 @@ it('rejects a non-positive quantity', function () {
 
     $this->from('/acme/stock-transfers')
         ->post('/acme/stock-transfers', [
-            'from_location_id' => $from,
-            'to_location_id' => $to,
+            'from_warehouse_id' => $from,
+            'to_warehouse_id' => $to,
             'stockable' => "product:{$product}",
             'quantity' => 0,
         ])
@@ -152,7 +152,7 @@ it('transfers a raw material', function () {
 
     $this->tenant->run(function () use ($from, $rawMaterialId) {
         app(StockService::class)->record(
-            Location::find($from),
+            Warehouse::find($from),
             RawMaterial::find($rawMaterialId),
             50,
             StockMovementReason::Adjustment,
@@ -163,8 +163,8 @@ it('transfers a raw material', function () {
 
     $this->from('/acme/stock-transfers')
         ->post('/acme/stock-transfers', [
-            'from_location_id' => $from,
-            'to_location_id' => $to,
+            'from_warehouse_id' => $from,
+            'to_warehouse_id' => $to,
             'stockable' => "raw_material:{$rawMaterialId}",
             'quantity' => 20,
         ])
@@ -172,7 +172,7 @@ it('transfers a raw material', function () {
         ->assertSessionHasNoErrors();
 
     $this->tenant->run(function () use ($to, $rawMaterialId) {
-        $destStock = LocationStock::where('location_id', $to)
+        $destStock = WarehouseStock::where('warehouse_id', $to)
             ->where('stockable_type', 'raw_material')
             ->where('stockable_id', $rawMaterialId)
             ->first();
@@ -189,8 +189,8 @@ it('rejects a stockable that does not exist', function () {
 
     $this->from('/acme/stock-transfers')
         ->post('/acme/stock-transfers', [
-            'from_location_id' => $from,
-            'to_location_id' => $to,
+            'from_warehouse_id' => $from,
+            'to_warehouse_id' => $to,
             'stockable' => 'product:999999',
             'quantity' => 4,
         ])
@@ -205,8 +205,8 @@ it('lists the transfers with picker options', function () {
     loginAsAcmeUser();
 
     $this->post('/acme/stock-transfers', [
-        'from_location_id' => $from,
-        'to_location_id' => $to,
+        'from_warehouse_id' => $from,
+        'to_warehouse_id' => $to,
         'stockable' => "product:{$product}",
         'quantity' => 4,
     ]);
@@ -216,23 +216,23 @@ it('lists the transfers with picker options', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/stock-transfers/index')
             ->has('transfers.data', 1)
-            ->has('locations', 2)
+            ->has('warehouses', 2)
             ->has('items', 1)
         );
 });
 
-it('filters the transfer ledger by item name and by endpoint location', function () {
+it('filters the transfer ledger by item name and by endpoint warehouse', function () {
     test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $from = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
-        $to = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'B-01']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $from = Warehouse::create(['location_id' => $location->id, 'name' => 'Main', 'code' => 'A-01']);
+        $to = Warehouse::create(['location_id' => $location->id, 'name' => 'Overflow', 'code' => 'B-01']);
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
         $gadget = Product::create(['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'ea']);
 
         foreach ([$widget->id, $gadget->id] as $id) {
             StockTransfer::create([
-                'from_location_id' => $from->id,
-                'to_location_id' => $to->id,
+                'from_warehouse_id' => $from->id,
+                'to_warehouse_id' => $to->id,
                 'stockable_type' => 'product',
                 'stockable_id' => $id,
                 'quantity' => 3,
@@ -251,7 +251,7 @@ it('filters the transfer ledger by item name and by endpoint location', function
             ->where('filters.search', 'Gadget')
         );
 
-    // The destination location code matches both transfers.
+    // The destination warehouse code matches both transfers.
     $this->get('/acme/stock-transfers?search=B-01')
         ->assertInertia(fn (Assert $page) => $page->has('transfers.data', 2));
 

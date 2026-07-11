@@ -16,11 +16,10 @@ it('redirects a guest from the locations page to the tenant login', function () 
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
-it('lists a tenant’s locations with warehouse options, paginated', function () {
+it('lists a tenant’s locations, paginated', function () {
     $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01', 'name' => 'Aisle 1']);
-        Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-02']);
+        Location::create(['name' => 'KL HQ', 'code' => 'KL', 'address' => '1 Jalan Ampang']);
+        Location::create(['name' => 'Penang Branch']);
     });
 
     loginAsAcmeUser();
@@ -32,105 +31,74 @@ it('lists a tenant’s locations with warehouse options, paginated', function ()
             ->has('locations.data', 2)
             ->where('locations.total', 2)
             ->where('filters.per_page', 10)
-            ->has('warehouses', 1)
         );
 });
 
 it('creates a location', function () {
-    $warehouseId = $this->tenant->run(fn () => Warehouse::create(['name' => 'Main'])->id);
-
     loginAsAcmeUser();
 
     $this->from('/acme/locations')
         ->post('/acme/locations', [
-            'warehouse_id' => $warehouseId,
-            'code' => 'A-01',
-            'name' => 'Aisle 1',
+            'name' => 'KL HQ',
+            'code' => 'KL',
+            'address' => '1 Jalan Ampang',
         ])
         ->assertRedirect('/acme/locations')
         ->assertToast('Location created.');
 
-    $this->tenant->run(function () use ($warehouseId) {
-        expect(Location::where('warehouse_id', $warehouseId)->where('code', 'A-01')->exists())->toBeTrue();
+    $this->tenant->run(function () {
+        expect(Location::where('name', 'KL HQ')->where('code', 'KL')->exists())->toBeTrue();
     });
 });
 
-it('requires a warehouse and code', function () {
+it('requires a name', function () {
     loginAsAcmeUser();
 
     $this->from('/acme/locations')
         ->post('/acme/locations', [])
         ->assertRedirect('/acme/locations')
-        ->assertSessionHasErrors(['warehouse_id', 'code']);
+        ->assertSessionHasErrors('name');
 });
 
-it('rejects a duplicate code within the same warehouse', function () {
-    $warehouseId = $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
-
-        return $warehouse->id;
-    });
+it('rejects a duplicate code', function () {
+    $this->tenant->run(fn () => Location::create(['name' => 'KL HQ', 'code' => 'KL']));
 
     loginAsAcmeUser();
 
     $this->from('/acme/locations')
-        ->post('/acme/locations', ['warehouse_id' => $warehouseId, 'code' => 'A-01'])
+        ->post('/acme/locations', ['name' => 'Other', 'code' => 'KL'])
         ->assertRedirect('/acme/locations')
         ->assertSessionHasErrors('code');
 });
 
-it('allows the same code in a different warehouse', function () {
-    [$mainId, $overflowId] = $this->tenant->run(function () {
-        $main = Warehouse::create(['name' => 'Main']);
-        $overflow = Warehouse::create(['name' => 'Overflow']);
-        Location::create(['warehouse_id' => $main->id, 'code' => 'A-01']);
-
-        return [$main->id, $overflow->id];
-    });
-
+it('allows multiple locations with no code', function () {
     loginAsAcmeUser();
 
-    $this->from('/acme/locations')
-        ->post('/acme/locations', ['warehouse_id' => $overflowId, 'code' => 'A-01'])
-        ->assertRedirect('/acme/locations')
-        ->assertSessionHasNoErrors();
+    $this->post('/acme/locations', ['name' => 'No Code One'])->assertSessionHasNoErrors();
+    $this->post('/acme/locations', ['name' => 'No Code Two'])->assertSessionHasNoErrors();
 
-    $this->tenant->run(function () use ($overflowId) {
-        expect(Location::where('warehouse_id', $overflowId)->where('code', 'A-01')->exists())->toBeTrue();
+    $this->tenant->run(function () {
+        expect(Location::whereNull('code')->count())->toBe(2);
     });
 });
 
 it('updates a location', function () {
-    [$id, $warehouseId] = $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
-
-        return [$location->id, $warehouse->id];
-    });
+    $id = $this->tenant->run(fn () => Location::create(['name' => 'KL HQ'])->id);
 
     loginAsAcmeUser();
 
     $this->from('/acme/locations')
-        ->put("/acme/locations/{$id}", [
-            'warehouse_id' => $warehouseId,
-            'code' => 'A-01',
-            'name' => 'Aisle One',
-        ])
+        ->put("/acme/locations/{$id}", ['name' => 'KL Headquarters'])
         ->assertRedirect('/acme/locations')
         ->assertToast('Location updated.');
 
     $this->tenant->run(function () use ($id) {
-        expect(Location::find($id)->name)->toBe('Aisle One');
+        expect(Location::find($id)->name)->toBe('KL Headquarters');
     });
 });
 
-it('soft-deletes a location', function () {
-    $id = $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-
-        return Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id;
-    });
+it('soft-deletes an empty location', function () {
+    $id = $this->tenant->run(fn () => Location::create(['name' => 'KL HQ'])->id);
 
     loginAsAcmeUser();
 
@@ -145,19 +113,39 @@ it('soft-deletes a location', function () {
     });
 });
 
-it('searches locations by code or name', function () {
-    $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01', 'name' => 'Aisle 1']);
-        Location::create(['warehouse_id' => $warehouse->id, 'code' => 'B-02', 'name' => 'Bay 2']);
+it('blocks deleting a location that still owns warehouses', function () {
+    $id = $this->tenant->run(function () {
+        $location = Location::create(['name' => 'KL HQ']);
+        Warehouse::create(['location_id' => $location->id, 'name' => 'Main']);
+
+        return $location->id;
     });
 
     loginAsAcmeUser();
 
-    $this->get('/acme/locations?search=B-02')
+    $this->from('/acme/locations')
+        ->delete("/acme/locations/{$id}")
+        ->assertRedirect('/acme/locations')
+        ->assertToast('Remove this location’s warehouses before deleting it.', 'error');
+
+    // The location is still there — the block left it untouched.
+    $this->tenant->run(function () use ($id) {
+        expect(Location::find($id))->not->toBeNull();
+    });
+});
+
+it('searches locations by name or code', function () {
+    $this->tenant->run(function () {
+        Location::create(['name' => 'KL HQ', 'code' => 'KL']);
+        Location::create(['name' => 'Penang Branch', 'code' => 'PG']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/locations?search=PG')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('locations.data', 1)
-            ->where('locations.data.0.name', 'Bay 2')
+            ->where('locations.data.0.name', 'Penang Branch')
         );
 });

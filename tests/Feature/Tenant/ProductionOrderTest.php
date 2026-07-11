@@ -3,12 +3,12 @@
 use App\Actions\ProvisionTenant;
 use App\Enums\StockMovementReason;
 use App\Models\Location;
-use App\Models\LocationStock;
 use App\Models\Product;
 use App\Models\ProductionOrder;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use App\Services\StockService;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -19,14 +19,14 @@ beforeEach(function () {
 });
 
 /**
- * A product with a two-line BOM (2× Steel + 4× Bolt per unit) and a location.
+ * A product with a two-line BOM (2× Steel + 4× Bolt per unit) and a warehouse.
  *
- * @return array{widget: int, steel: int, bolt: int, location: int}
+ * @return array{widget: int, steel: int, bolt: int, warehouse: int}
  */
 function seedProductionFixture(): array
 {
     return test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
+        $location = Location::create(['name' => 'KL HQ']);
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 0]);
         $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 0]);
         $bolt = RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea', 'min_stock' => 0]);
@@ -37,7 +37,7 @@ function seedProductionFixture(): array
             'widget' => $widget->id,
             'steel' => $steel->id,
             'bolt' => $bolt->id,
-            'location' => Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id,
+            'warehouse' => Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id,
         ];
     });
 }
@@ -70,12 +70,12 @@ function makePendingMo(int $widgetId, float $qty = 3): int
     });
 }
 
-/** Put $qty of a raw material on-hand at $locationId via the service. */
-function seedRawOnHand(int $locationId, int $rawMaterialId, float $qty): void
+/** Put $qty of a raw material on-hand at $warehouseId via the service. */
+function seedRawOnHand(int $warehouseId, int $rawMaterialId, float $qty): void
 {
-    test()->tenant->run(function () use ($locationId, $rawMaterialId, $qty) {
+    test()->tenant->run(function () use ($warehouseId, $rawMaterialId, $qty) {
         app(StockService::class)->record(
-            Location::find($locationId),
+            Warehouse::find($warehouseId),
             RawMaterial::find($rawMaterialId),
             $qty,
             StockMovementReason::Adjustment,
@@ -133,7 +133,7 @@ it('creates a production order, exploding the BOM into snapshotted items', funct
 });
 
 it('rejects creating a production order for a product with no BOM', function () {
-    ['location' => $location] = seedProductionFixture();
+    ['warehouse' => $warehouse] = seedProductionFixture();
 
     $plain = test()->tenant->run(
         fn () => Product::create(['name' => 'Plain', 'sku' => 'P-1', 'unit' => 'ea', 'min_stock' => 0])->id,
@@ -153,29 +153,29 @@ it('rejects creating a production order for a product with no BOM', function () 
 });
 
 it('completes an order: consumes materials OUT and outputs the product IN', function () {
-    ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt, 'location' => $location] = seedProductionFixture();
-    seedRawOnHand($location, $steel, 10);
-    seedRawOnHand($location, $bolt, 20);
+    ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt, 'warehouse' => $warehouse] = seedProductionFixture();
+    seedRawOnHand($warehouse, $steel, 10);
+    seedRawOnHand($warehouse, $bolt, 20);
     $moId = makePendingMo($widget, 3); // needs 6 steel + 12 bolt, makes 3 widgets
 
     loginAsAcmeUser();
 
     $this->from('/acme/production-orders')
-        ->post("/acme/production-orders/{$moId}/complete", ['location_id' => $location])
+        ->post("/acme/production-orders/{$moId}/complete", ['warehouse_id' => $warehouse])
         ->assertRedirect('/acme/production-orders')
         ->assertToast('Production order completed.');
 
-    $this->tenant->run(function () use ($moId, $widget, $steel, $bolt, $location) {
+    $this->tenant->run(function () use ($moId, $widget, $steel, $bolt, $warehouse) {
         $order = ProductionOrder::find($moId);
         expect($order->status->value)->toBe('completed')
             ->and($order->completed_at)->not->toBeNull()
-            ->and($order->completed_location_id)->toBe($location);
+            ->and($order->completed_warehouse_id)->toBe($warehouse);
 
-        $steelStock = LocationStock::where('location_id', $location)
+        $steelStock = WarehouseStock::where('warehouse_id', $warehouse)
             ->where('stockable_type', 'raw_material')->where('stockable_id', $steel)->first();
-        $boltStock = LocationStock::where('location_id', $location)
+        $boltStock = WarehouseStock::where('warehouse_id', $warehouse)
             ->where('stockable_type', 'raw_material')->where('stockable_id', $bolt)->first();
-        $widgetStock = LocationStock::where('location_id', $location)
+        $widgetStock = WarehouseStock::where('warehouse_id', $warehouse)
             ->where('stockable_type', 'product')->where('stockable_id', $widget)->first();
 
         expect((float) $steelStock->quantity)->toBe(4.0)   // 10 − 6
@@ -187,23 +187,23 @@ it('completes an order: consumes materials OUT and outputs the product IN', func
 });
 
 it('rolls back the whole completion when a material is short', function () {
-    ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt, 'location' => $location] = seedProductionFixture();
-    seedRawOnHand($location, $steel, 10); // enough
-    seedRawOnHand($location, $bolt, 5);   // short: needs 12
+    ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt, 'warehouse' => $warehouse] = seedProductionFixture();
+    seedRawOnHand($warehouse, $steel, 10); // enough
+    seedRawOnHand($warehouse, $bolt, 5);   // short: needs 12
     $moId = makePendingMo($widget, 3);
 
     loginAsAcmeUser();
 
     $this->from('/acme/production-orders')
-        ->post("/acme/production-orders/{$moId}/complete", ['location_id' => $location])
+        ->post("/acme/production-orders/{$moId}/complete", ['warehouse_id' => $warehouse])
         ->assertRedirect('/acme/production-orders')
-        ->assertInvalid('location_id');
+        ->assertInvalid('warehouse_id');
 
-    $this->tenant->run(function () use ($moId, $widget, $steel, $location) {
+    $this->tenant->run(function () use ($moId, $widget, $steel, $warehouse) {
         // Steel was consumed first but the bolt shortage rolls the whole thing back.
-        $steelStock = LocationStock::where('location_id', $location)
+        $steelStock = WarehouseStock::where('warehouse_id', $warehouse)
             ->where('stockable_type', 'raw_material')->where('stockable_id', $steel)->first();
-        $widgetStock = LocationStock::where('location_id', $location)
+        $widgetStock = WarehouseStock::where('warehouse_id', $warehouse)
             ->where('stockable_type', 'product')->where('stockable_id', $widget)->first();
 
         expect((float) $steelStock->quantity)->toBe(10.0) // untouched
@@ -215,9 +215,9 @@ it('rolls back the whole completion when a material is short', function () {
 });
 
 it('cancels a pending order and then refuses to complete it', function () {
-    ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt, 'location' => $location] = seedProductionFixture();
-    seedRawOnHand($location, $steel, 10);
-    seedRawOnHand($location, $bolt, 20);
+    ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt, 'warehouse' => $warehouse] = seedProductionFixture();
+    seedRawOnHand($warehouse, $steel, 10);
+    seedRawOnHand($warehouse, $bolt, 20);
     $moId = makePendingMo($widget, 3);
 
     loginAsAcmeUser();
@@ -229,7 +229,7 @@ it('cancels a pending order and then refuses to complete it', function () {
 
     $this->tenant->run(fn () => expect(ProductionOrder::find($moId)->status->value)->toBe('cancelled'));
 
-    $this->post("/acme/production-orders/{$moId}/complete", ['location_id' => $location])
+    $this->post("/acme/production-orders/{$moId}/complete", ['warehouse_id' => $warehouse])
         ->assertStatus(422);
 });
 
@@ -247,6 +247,6 @@ it('lists production orders with picker options', function () {
             ->has('orders.data.0.items', 2)
             ->has('products', 1)
             ->has('productBoms')
-            ->has('locations', 1)
+            ->has('warehouses', 1)
         );
 });

@@ -2,11 +2,11 @@
 
 use App\Actions\ProvisionTenant;
 use App\Models\Location;
-use App\Models\LocationStock;
 use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -16,18 +16,19 @@ beforeEach(function () {
 });
 
 /**
- * Seed a warehouse + location + a product inside the tenant DB and return the ids.
+ * Seed a site + warehouse (the stock holder) + a product inside the tenant DB
+ * and return the ids.
  *
- * @return array{location: int, product: int}
+ * @return array{warehouse: int, product: int}
  */
 function seedStockFixture(): array
 {
     return test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $warehouse = Warehouse::create(['location_id' => $location->id, 'name' => 'Main']);
         $product = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
 
-        return ['location' => $location->id, 'product' => $product->id];
+        return ['warehouse' => $warehouse->id, 'product' => $product->id];
     });
 }
 
@@ -37,13 +38,13 @@ it('redirects a guest from the stock movements page to the tenant login', functi
 });
 
 it('records an IN movement, increasing on-hand and writing a ledger row', function () {
-    ['location' => $locationId, 'product' => $productId] = seedStockFixture();
+    ['warehouse' => $warehouseId, 'product' => $productId] = seedStockFixture();
 
     loginAsAcmeUser();
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => "product:{$productId}",
             'type' => 'in',
             'quantity' => 10,
@@ -52,8 +53,8 @@ it('records an IN movement, increasing on-hand and writing a ledger row', functi
         ->assertSessionHasNoErrors()
         ->assertToast('Movement recorded.');
 
-    $this->tenant->run(function () use ($locationId, $productId) {
-        $stock = LocationStock::where('location_id', $locationId)
+    $this->tenant->run(function () use ($warehouseId, $productId) {
+        $stock = WarehouseStock::where('warehouse_id', $warehouseId)
             ->where('stockable_type', 'product')
             ->where('stockable_id', $productId)
             ->first();
@@ -68,13 +69,13 @@ it('records an IN movement, increasing on-hand and writing a ledger row', functi
 });
 
 it('records an OUT movement, decreasing on-hand', function () {
-    ['location' => $locationId, 'product' => $productId] = seedStockFixture();
+    ['warehouse' => $warehouseId, 'product' => $productId] = seedStockFixture();
 
     loginAsAcmeUser();
 
     // Seed 10 in first.
     $this->post('/acme/stock-movements', [
-        'location_id' => $locationId,
+        'warehouse_id' => $warehouseId,
         'stockable' => "product:{$productId}",
         'type' => 'in',
         'quantity' => 10,
@@ -82,7 +83,7 @@ it('records an OUT movement, decreasing on-hand', function () {
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => "product:{$productId}",
             'type' => 'out',
             'quantity' => 3,
@@ -90,8 +91,8 @@ it('records an OUT movement, decreasing on-hand', function () {
         ->assertRedirect('/acme/stock-movements')
         ->assertSessionHasNoErrors();
 
-    $this->tenant->run(function () use ($locationId, $productId) {
-        $stock = LocationStock::where('location_id', $locationId)
+    $this->tenant->run(function () use ($warehouseId, $productId) {
+        $stock = WarehouseStock::where('warehouse_id', $warehouseId)
             ->where('stockable_id', $productId)
             ->first();
 
@@ -101,12 +102,12 @@ it('records an OUT movement, decreasing on-hand', function () {
 });
 
 it('rejects an OUT movement that would drive on-hand negative', function () {
-    ['location' => $locationId, 'product' => $productId] = seedStockFixture();
+    ['warehouse' => $warehouseId, 'product' => $productId] = seedStockFixture();
 
     loginAsAcmeUser();
 
     $this->post('/acme/stock-movements', [
-        'location_id' => $locationId,
+        'warehouse_id' => $warehouseId,
         'stockable' => "product:{$productId}",
         'type' => 'in',
         'quantity' => 10,
@@ -114,7 +115,7 @@ it('rejects an OUT movement that would drive on-hand negative', function () {
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => "product:{$productId}",
             'type' => 'out',
             'quantity' => 100,
@@ -122,8 +123,8 @@ it('rejects an OUT movement that would drive on-hand negative', function () {
         ->assertRedirect('/acme/stock-movements')
         ->assertInvalid('quantity');
 
-    $this->tenant->run(function () use ($locationId, $productId) {
-        $stock = LocationStock::where('location_id', $locationId)
+    $this->tenant->run(function () use ($warehouseId, $productId) {
+        $stock = WarehouseStock::where('warehouse_id', $warehouseId)
             ->where('stockable_id', $productId)
             ->first();
 
@@ -134,13 +135,13 @@ it('rejects an OUT movement that would drive on-hand negative', function () {
 });
 
 it('adjusts on-hand to an absolute target, recording the signed delta', function () {
-    ['location' => $locationId, 'product' => $productId] = seedStockFixture();
+    ['warehouse' => $warehouseId, 'product' => $productId] = seedStockFixture();
 
     loginAsAcmeUser();
 
     // Bring on-hand to 10 first.
     $this->post('/acme/stock-movements', [
-        'location_id' => $locationId,
+        'warehouse_id' => $warehouseId,
         'stockable' => "product:{$productId}",
         'type' => 'in',
         'quantity' => 10,
@@ -148,7 +149,7 @@ it('adjusts on-hand to an absolute target, recording the signed delta', function
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => "product:{$productId}",
             'type' => 'adjustment',
             'quantity' => 8,
@@ -156,8 +157,8 @@ it('adjusts on-hand to an absolute target, recording the signed delta', function
         ->assertRedirect('/acme/stock-movements')
         ->assertSessionHasNoErrors();
 
-    $this->tenant->run(function () use ($locationId, $productId) {
-        $stock = LocationStock::where('location_id', $locationId)
+    $this->tenant->run(function () use ($warehouseId, $productId) {
+        $stock = WarehouseStock::where('warehouse_id', $warehouseId)
             ->where('stockable_id', $productId)
             ->first();
 
@@ -169,10 +170,10 @@ it('adjusts on-hand to an absolute target, recording the signed delta', function
 });
 
 it('records a movement for a raw material, storing the raw_material morph type', function () {
-    $locationId = $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
+    $warehouseId = $this->tenant->run(function () {
+        $location = Location::create(['name' => 'KL HQ']);
 
-        return Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id;
+        return Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id;
     });
 
     $rawMaterialId = $this->tenant->run(
@@ -183,7 +184,7 @@ it('records a movement for a raw material, storing the raw_material morph type',
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => "raw_material:{$rawMaterialId}",
             'type' => 'in',
             'quantity' => 25,
@@ -191,8 +192,8 @@ it('records a movement for a raw material, storing the raw_material morph type',
         ->assertRedirect('/acme/stock-movements')
         ->assertSessionHasNoErrors();
 
-    $this->tenant->run(function () use ($locationId, $rawMaterialId) {
-        $stock = LocationStock::where('location_id', $locationId)
+    $this->tenant->run(function () use ($warehouseId, $rawMaterialId) {
+        $stock = WarehouseStock::where('warehouse_id', $warehouseId)
             ->where('stockable_type', 'raw_material')
             ->where('stockable_id', $rawMaterialId)
             ->first();
@@ -204,17 +205,17 @@ it('records a movement for a raw material, storing the raw_material morph type',
 });
 
 it('rejects a malformed stockable value', function () {
-    $locationId = $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
+    $warehouseId = $this->tenant->run(function () {
+        $location = Location::create(['name' => 'KL HQ']);
 
-        return Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id;
+        return Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id;
     });
 
     loginAsAcmeUser();
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => 'banana:1',
             'type' => 'in',
             'quantity' => 5,
@@ -224,17 +225,17 @@ it('rejects a malformed stockable value', function () {
 });
 
 it('rejects a stockable that does not exist', function () {
-    $locationId = $this->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
+    $warehouseId = $this->tenant->run(function () {
+        $location = Location::create(['name' => 'KL HQ']);
 
-        return Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id;
+        return Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id;
     });
 
     loginAsAcmeUser();
 
     $this->from('/acme/stock-movements')
         ->post('/acme/stock-movements', [
-            'location_id' => $locationId,
+            'warehouse_id' => $warehouseId,
             'stockable' => 'product:999999',
             'type' => 'in',
             'quantity' => 5,
@@ -244,12 +245,12 @@ it('rejects a stockable that does not exist', function () {
 });
 
 it('lists the ledger with picker options', function () {
-    ['location' => $locationId, 'product' => $productId] = seedStockFixture();
+    ['warehouse' => $warehouseId, 'product' => $productId] = seedStockFixture();
 
     loginAsAcmeUser();
 
     $this->post('/acme/stock-movements', [
-        'location_id' => $locationId,
+        'warehouse_id' => $warehouseId,
         'stockable' => "product:{$productId}",
         'type' => 'in',
         'quantity' => 10,
@@ -260,22 +261,22 @@ it('lists the ledger with picker options', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/stock-movements/index')
             ->has('movements.data', 1)
-            ->has('locations', 1)
+            ->has('warehouses', 1)
             ->has('items', 1)
             ->where('items.0.value', "product:{$productId}")
         );
 });
 
-it('filters the movement ledger by item name and by location', function () {
+it('filters the movement ledger by item name and by warehouse', function () {
     test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $warehouse = Warehouse::create(['location_id' => $location->id, 'name' => 'Main']);
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
         $gadget = Product::create(['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'ea']);
 
         foreach ([[$widget->id, 5], [$gadget->id, 7]] as [$id, $qty]) {
             StockMovement::create([
-                'location_id' => $location->id,
+                'warehouse_id' => $warehouse->id,
                 'stockable_type' => 'product',
                 'stockable_id' => $id,
                 'quantity' => $qty,
@@ -296,8 +297,8 @@ it('filters the movement ledger by item name and by location', function () {
             ->where('filters.search', 'Widget')
         );
 
-    // Warehouse name matches every row at that warehouse.
-    $this->get('/acme/stock-movements?search=Main')
+    // The site name matches every row at that warehouse.
+    $this->get('/acme/stock-movements?search=KL')
         ->assertInertia(fn (Assert $page) => $page->has('movements.data', 2));
 
     // A term that matches nothing returns an empty ledger.

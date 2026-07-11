@@ -35,7 +35,7 @@ class StockMovementController
         $perPage = $this->perPage($request);
 
         $movements = StockMovement::query()
-            ->with(['warehouse.warehouse', 'stockable', 'user'])
+            ->with(['warehouse.location', 'stockable', 'user'])
             ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
             ->latest()
             ->paginate($perPage)
@@ -74,7 +74,7 @@ class StockMovementController
                 )
                 ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse
                     ->where('code', 'like', $like)
-                    ->orWhereHas('warehouse', fn (Builder $warehouse) => $warehouse->where('name', 'like', $like)));
+                    ->orWhereHas('location', fn (Builder $location) => $location->where('name', 'like', $like)));
         });
     }
 

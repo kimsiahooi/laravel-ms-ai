@@ -33,8 +33,8 @@ function seedDashboardScenario(): void
 {
     test()->tenant->run(function () {
         $stock = app(StockService::class);
-        $wh = Warehouse::create(['name' => 'Main']);
-        $loc = Location::create(['warehouse_id' => $wh->id, 'code' => 'A-01']);
+        $loc = Location::create(['name' => 'KL HQ']);
+        $wh = Warehouse::create(['location_id' => $loc->id, 'name' => 'Main']);
 
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 5]);
         $gizmo = Product::create(['name' => 'Gizmo', 'sku' => 'G-1', 'unit' => 'ea', 'min_stock' => 0]);
@@ -43,8 +43,8 @@ function seedDashboardScenario(): void
 
         $gizmo->bomItems()->create(['raw_material_id' => $steel->id, 'quantity' => 2]);
 
-        $stock->record($loc, $widget, 2, StockMovementReason::Adjustment);
-        $stock->record($loc, $steel, 30, StockMovementReason::Adjustment);
+        $stock->record($wh, $widget, 2, StockMovementReason::Adjustment);
+        $stock->record($wh, $steel, 30, StockMovementReason::Adjustment);
 
         PurchaseOrder::create(['status' => 'pending', 'currency' => 'USD']);
         SalesOrder::create(['status' => 'pending', 'currency' => 'USD']);
@@ -67,7 +67,7 @@ function seedDashboardScenario(): void
         };
 
         $mk(1, 2); // stays pending
-        app(CompleteProductionOrder::class)->handle($mk(4, 8), $loc); // consumes 8 steel, outputs 4 gizmo
+        app(CompleteProductionOrder::class)->handle($mk(4, 8), $wh); // consumes 8 steel, outputs 4 gizmo
     });
 }
 
@@ -104,16 +104,17 @@ it('renders dashboard aggregates for a seeded workspace', function () {
         );
 });
 
-it('drops stock stranded in a soft-deleted location from every on-hand surface', function () {
+it('drops stock stranded in a soft-deleted warehouse from every on-hand surface', function () {
     test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $warehouse = Warehouse::create(['location_id' => $location->id, 'name' => 'Main']);
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 5]);
 
-        // 10 on-hand — comfortably above the min of 5 — then the location holding
-        // it is soft-deleted, stranding the stock.
-        app(StockService::class)->record($location, $widget, 10, StockMovementReason::Adjustment);
-        $location->delete();
+        // 10 on-hand — comfortably above the min of 5 — then the warehouse holding
+        // it is soft-deleted, stranding the stock. A normal delete is now blocked
+        // while stock remains, so bypass the guard to reach the stranded state.
+        app(StockService::class)->record($warehouse, $widget, 10, StockMovementReason::Adjustment);
+        Warehouse::withoutEvents(fn () => $warehouse->delete());
     });
 
     loginAsAcmeUser();
@@ -163,12 +164,12 @@ it('windows the time-series to a requested datetime range and echoes it back', f
 
 it('buckets a movement by the offset in the range value, not the UTC day', function () {
     test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
-        $location = Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $warehouse = Warehouse::create(['location_id' => $location->id, 'name' => 'Main']);
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea', 'min_stock' => 0]);
 
         $movement = StockMovement::create([
-            'location_id' => $location->id,
+            'warehouse_id' => $warehouse->id,
             'stockable_type' => 'product',
             'stockable_id' => $widget->id,
             'quantity' => 5,

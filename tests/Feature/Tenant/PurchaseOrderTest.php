@@ -2,12 +2,12 @@
 
 use App\Actions\ProvisionTenant;
 use App\Models\Location;
-use App\Models\LocationStock;
 use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -17,20 +17,20 @@ beforeEach(function () {
 });
 
 /**
- * Supplier + two raw materials + a location, in the tenant DB.
+ * Supplier + two raw materials + a warehouse (stock holder), in the tenant DB.
  *
- * @return array{supplier: int, steel: int, bolt: int, location: int}
+ * @return array{supplier: int, steel: int, bolt: int, warehouse: int}
  */
 function seedPurchaseFixture(): array
 {
     return test()->tenant->run(function () {
-        $warehouse = Warehouse::create(['name' => 'Main']);
+        $location = Location::create(['name' => 'KL HQ']);
 
         return [
             'supplier' => Supplier::create(['name' => 'Acme Metals'])->id,
             'steel' => RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg', 'min_stock' => 0])->id,
             'bolt' => RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea', 'min_stock' => 0])->id,
-            'location' => Location::create(['warehouse_id' => $warehouse->id, 'code' => 'A-01'])->id,
+            'warehouse' => Warehouse::create(['location_id' => $location->id, 'name' => 'Main'])->id,
         ];
     });
 }
@@ -101,38 +101,38 @@ it('creates a purchase order with line items and snapshots', function () {
 });
 
 it('receives a pending PO: posts purchase_receipt IN per line and marks it received', function () {
-    ['supplier' => $supplier, 'steel' => $steel, 'location' => $location] = seedPurchaseFixture();
+    ['supplier' => $supplier, 'steel' => $steel, 'warehouse' => $warehouse] = seedPurchaseFixture();
     $poId = makePendingPo($supplier, $steel);
 
     loginAsAcmeUser();
 
     $this->from('/acme/purchase-orders')
-        ->post("/acme/purchase-orders/{$poId}/receive", ['location_id' => $location])
+        ->post("/acme/purchase-orders/{$poId}/receive", ['warehouse_id' => $warehouse])
         ->assertRedirect('/acme/purchase-orders')
         ->assertToast('Purchase order received.');
 
-    $this->tenant->run(function () use ($poId, $steel, $location) {
+    $this->tenant->run(function () use ($poId, $steel, $warehouse) {
         $order = PurchaseOrder::find($poId);
         expect($order->status->value)->toBe('received')
             ->and($order->received_at)->not->toBeNull()
-            ->and($order->received_location_id)->toBe($location);
+            ->and($order->received_warehouse_id)->toBe($warehouse);
 
-        $stock = LocationStock::where('location_id', $location)->where('stockable_id', $steel)->first();
+        $stock = WarehouseStock::where('warehouse_id', $warehouse)->where('stockable_id', $steel)->first();
         expect((float) $stock->quantity)->toBe(10.0)
             ->and(StockMovement::where('reason', 'purchase_receipt')->count())->toBe(1);
     });
 });
 
 it('rejects receiving a PO that is not pending', function () {
-    ['supplier' => $supplier, 'steel' => $steel, 'location' => $location] = seedPurchaseFixture();
+    ['supplier' => $supplier, 'steel' => $steel, 'warehouse' => $warehouse] = seedPurchaseFixture();
     $poId = makePendingPo($supplier, $steel);
 
     loginAsAcmeUser();
 
-    $this->post("/acme/purchase-orders/{$poId}/receive", ['location_id' => $location]);
+    $this->post("/acme/purchase-orders/{$poId}/receive", ['warehouse_id' => $warehouse]);
 
     // Second receive on the now-received PO is rejected.
-    $this->post("/acme/purchase-orders/{$poId}/receive", ['location_id' => $location])
+    $this->post("/acme/purchase-orders/{$poId}/receive", ['warehouse_id' => $warehouse])
         ->assertStatus(422);
 
     $this->tenant->run(function () {
@@ -141,7 +141,7 @@ it('rejects receiving a PO that is not pending', function () {
 });
 
 it('cancels a pending PO but not a received one', function () {
-    ['supplier' => $supplier, 'steel' => $steel, 'location' => $location] = seedPurchaseFixture();
+    ['supplier' => $supplier, 'steel' => $steel, 'warehouse' => $warehouse] = seedPurchaseFixture();
     $poId = makePendingPo($supplier, $steel);
 
     loginAsAcmeUser();
@@ -154,12 +154,12 @@ it('cancels a pending PO but not a received one', function () {
     $this->tenant->run(fn () => expect(PurchaseOrder::find($poId)->status->value)->toBe('cancelled'));
 
     // A cancelled PO can't be received.
-    $this->post("/acme/purchase-orders/{$poId}/receive", ['location_id' => $location])
+    $this->post("/acme/purchase-orders/{$poId}/receive", ['warehouse_id' => $warehouse])
         ->assertStatus(422);
 });
 
 it('updates a pending PO but rejects updating a received one', function () {
-    ['supplier' => $supplier, 'steel' => $steel, 'bolt' => $bolt, 'location' => $location] = seedPurchaseFixture();
+    ['supplier' => $supplier, 'steel' => $steel, 'bolt' => $bolt, 'warehouse' => $warehouse] = seedPurchaseFixture();
     $poId = makePendingPo($supplier, $steel);
 
     loginAsAcmeUser();
@@ -181,7 +181,7 @@ it('updates a pending PO but rejects updating a received one', function () {
     });
 
     // Receive it, then updating is rejected.
-    $this->post("/acme/purchase-orders/{$poId}/receive", ['location_id' => $location]);
+    $this->post("/acme/purchase-orders/{$poId}/receive", ['warehouse_id' => $warehouse]);
 
     $this->put("/acme/purchase-orders/{$poId}", [
         'supplier_id' => $supplier,
@@ -218,6 +218,6 @@ it('lists purchase orders with picker options', function () {
             ->has('orders.data', 1)
             ->has('suppliers', 1)
             ->has('rawMaterials', 2)
-            ->has('locations', 1)
+            ->has('warehouses', 1)
         );
 });
