@@ -18,6 +18,9 @@ class WarehouseData extends Data
 {
     public function __construct(
         public int $id,
+        public int $location_id,
+        /** The parent site's name, for the table's Location column. */
+        public ?string $location,
         public string $name,
         public ?string $code,
         public ?string $address,
@@ -28,6 +31,8 @@ class WarehouseData extends Data
     {
         return new self(
             id: $warehouse->id,
+            location_id: $warehouse->location_id,
+            location: $warehouse->location?->name,
             name: $warehouse->name,
             code: $warehouse->code,
             address: $warehouse->address,

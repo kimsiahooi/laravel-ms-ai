@@ -19,9 +19,9 @@ class StockTransferData extends Data
         public int $id,
         /** "Item name · Product|Raw material". */
         public string $item,
-        /** Source "Warehouse · code". */
+        /** Source "Site · Warehouse". */
         public string $from,
-        /** Destination "Warehouse · code". */
+        /** Destination "Site · Warehouse". */
         public string $to,
         public float $quantity,
         public ?string $user,
@@ -35,8 +35,8 @@ class StockTransferData extends Data
         return new self(
             id: $transfer->id,
             item: ($transfer->stockable?->name ?? '—').' · '.$kind,
-            from: ($transfer->fromLocation->warehouse?->name ?? '?').' · '.$transfer->fromLocation->code,
-            to: ($transfer->toLocation->warehouse?->name ?? '?').' · '.$transfer->toLocation->code,
+            from: ($transfer->fromWarehouse->location?->name ?? '?').' · '.$transfer->fromWarehouse->name,
+            to: ($transfer->toWarehouse->location?->name ?? '?').' · '.$transfer->toWarehouse->name,
             quantity: (float) $transfer->quantity,
             user: $transfer->user?->name,
             created_at: $transfer->created_at->toISOString(),

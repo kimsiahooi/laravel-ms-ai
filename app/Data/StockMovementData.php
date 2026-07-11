@@ -17,8 +17,8 @@ class StockMovementData extends Data
 {
     public function __construct(
         public int $id,
-        /** "Warehouse · code", e.g. "Main · A-01". */
-        public string $location,
+        /** "Site · Warehouse", e.g. "KL HQ · Main Store". */
+        public string $warehouse,
         /** "Item name · Product|Raw material". */
         public string $item,
         public float $quantity,
@@ -31,14 +31,14 @@ class StockMovementData extends Data
     {
         $kind = $movement->stockable_type === 'product' ? 'Product' : 'Raw material';
 
-        // `location` is loaded withTrashed (append-only ledger), but stay defensive
+        // `warehouse` is loaded withTrashed (append-only ledger), but stay defensive
         // in case the row can't be resolved at all.
-        $location = $movement->location;
+        $warehouse = $movement->warehouse;
 
         return new self(
             id: $movement->id,
-            location: $location
-                ? ($location->warehouse?->name ?? '?').' · '.$location->code
+            warehouse: $warehouse
+                ? ($warehouse->location?->name ?? '?').' · '.$warehouse->name
                 : '—',
             item: ($movement->stockable?->name ?? '—').' · '.$kind,
             quantity: (float) $movement->quantity,

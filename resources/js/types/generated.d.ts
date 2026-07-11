@@ -23,10 +23,9 @@ created_at: string,
 };
 export type LocationData = {
 id: number,
-warehouse_id: number,
-warehouse: string | null,
-code: string,
-name: string | null,
+name: string,
+code: string | null,
+address: string | null,
 created_at: string,
 };
 export type OptionData = {
@@ -115,7 +114,7 @@ unit_price: number,
 };
 export type StockMovementData = {
 id: number,
-location: string,
+warehouse: string,
 item: string,
 quantity: number,
 reason: string,
@@ -142,6 +141,8 @@ created_at: string,
 };
 export type WarehouseData = {
 id: number,
+location_id: number,
+location: string | null,
 name: string,
 code: string | null,
 address: string | null,
