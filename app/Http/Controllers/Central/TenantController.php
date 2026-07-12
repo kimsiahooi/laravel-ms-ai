@@ -26,21 +26,21 @@ class TenantController
 
         $perPage = $this->perPage($request);
 
-        $tenants = Tenant::query()
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $group) use ($search): void {
-                    $group->where('id', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
-                });
-            })
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (Tenant $tenant): array => [
-                'slug' => $tenant->getKey(),
-                'name' => $tenant->name,
-                'created_at' => $tenant->created_at,
-            ]);
+        $tenants = $this->paginateList(
+            Tenant::query()
+                ->when($search !== '', function (Builder $query) use ($search): void {
+                    $query->where(function (Builder $group) use ($search): void {
+                        $group->where('id', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
+                })
+                ->latest(),
+            $perPage,
+        )->through(fn (Tenant $tenant): array => [
+            'slug' => $tenant->getKey(),
+            'name' => $tenant->name,
+            'created_at' => $tenant->created_at,
+        ]);
 
         return Inertia::render('admin/tenants/index', [
             'tenants' => $tenants,
@@ -75,21 +75,21 @@ class TenantController
 
         $perPage = $this->perPage($request);
 
-        $tenants = Tenant::onlyTrashed()
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $group) use ($search): void {
-                    $group->where('id', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
-                });
-            })
-            ->orderByDesc('deleted_at')
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (Tenant $tenant): array => [
-                'slug' => $tenant->getKey(),
-                'name' => $tenant->name,
-                'deleted_at' => $tenant->deleted_at,
-            ]);
+        $tenants = $this->paginateList(
+            Tenant::onlyTrashed()
+                ->when($search !== '', function (Builder $query) use ($search): void {
+                    $query->where(function (Builder $group) use ($search): void {
+                        $group->where('id', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
+                })
+                ->orderByDesc('deleted_at'),
+            $perPage,
+        )->through(fn (Tenant $tenant): array => [
+            'slug' => $tenant->getKey(),
+            'name' => $tenant->name,
+            'deleted_at' => $tenant->deleted_at,
+        ]);
 
         return Inertia::render('admin/tenants/trashed', [
             'tenants' => $tenants,

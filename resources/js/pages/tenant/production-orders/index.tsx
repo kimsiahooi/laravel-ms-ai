@@ -246,6 +246,7 @@ export default function ProductionOrdersIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['orders', 'filters']}
+                exportResource="production-orders"
                 getRowId={(order) => String(order.id)}
                 title={productionOrderMeta.plural}
                 toolbar={

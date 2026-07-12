@@ -16,15 +16,18 @@ import {
 export function ExportMenu({
     resource,
     search,
+    params: extraParams,
 }: {
     resource: string;
     search?: string;
+    /** Extra query params to forward (e.g. a report's `from`/`to` range). */
+    params?: Record<string, string>;
 }) {
     const { props } = usePage();
     const slug = (props.tenant as { slug: string } | undefined)?.slug ?? '';
 
     const href = (format: 'csv' | 'xlsx') => {
-        const params = new URLSearchParams({ format });
+        const params = new URLSearchParams({ format, ...extraParams });
         if (search) {
             params.set('search', search);
         }

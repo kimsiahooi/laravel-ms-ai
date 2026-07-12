@@ -147,6 +147,7 @@ export default function ActivityIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['activities', 'filters']}
+                exportResource="activity"
                 getRowId={(item) => String(item.id)}
                 title="Activity"
                 searchPlaceholder="Search by action, record or person…"

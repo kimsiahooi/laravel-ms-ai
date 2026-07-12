@@ -264,6 +264,7 @@ export default function SalesReturnsIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['returns', 'filters']}
+                exportResource="sales-returns"
                 getRowId={(ret) => String(ret.id)}
                 title="Sales returns"
                 toolbar={

@@ -191,6 +191,26 @@ class DemoTenantSeeder extends Seeder
     }
 
     /**
+     * $count spread-out moments within the last ~$maxDaysAgo days, sorted oldest-first.
+     * Stamping a table's rows in creation order with these makes created_at rise with the
+     * id — so a newest-first list (created_at DESC, id DESC) reads as a clean descending
+     * run of order numbers instead of a shuffle, while the dates still span the window.
+     *
+     * @return list<CarbonInterface>
+     */
+    private function spreadDates(int $count, int $maxDaysAgo = 88): array
+    {
+        $dates = [];
+        for ($i = 0; $i < $count; $i++) {
+            $dates[] = $this->randomDate($maxDaysAgo);
+        }
+
+        usort($dates, fn (CarbonInterface $a, CarbonInterface $b): int => $a->getTimestamp() <=> $b->getTimestamp());
+
+        return $dates;
+    }
+
+    /**
      * Backdate a model's timestamps (and any extra date columns) without firing model
      * events. forceFill bypasses guarded columns; saveQuietly skips the activity log.
      *
@@ -371,10 +391,11 @@ class DemoTenantSeeder extends Seeder
 
     private function seedPurchaseOrders(): void
     {
-        // 10 pending, 7 received, 3 cancelled.
+        // 10 pending, 7 received, 3 cancelled. Dates rise with the loop so order # descends.
+        $dates = $this->spreadDates(20);
         for ($i = 0; $i < 20; $i++) {
             $status = $i < 10 ? PurchaseOrderStatus::Pending : ($i < 17 ? PurchaseOrderStatus::Pending : PurchaseOrderStatus::Cancelled);
-            $when = $this->randomDate();
+            $when = $dates[$i];
             $supplier = $this->suppliers[array_rand($this->suppliers)];
 
             $po = PurchaseOrder::create(['supplier_id' => $supplier->id, 'currency' => self::CURRENCIES[array_rand(self::CURRENCIES)], 'status' => $status, 'user_id' => $this->admin->id]);
@@ -393,10 +414,11 @@ class DemoTenantSeeder extends Seeder
 
     private function seedProductionOrders(): void
     {
-        // 10 pending, 7 completed, 3 cancelled.
+        // 10 pending, 7 completed, 3 cancelled. Dates rise with the loop so order # descends.
+        $dates = $this->spreadDates(20);
         for ($i = 0; $i < 20; $i++) {
             $status = $i < 10 ? ProductionOrderStatus::Pending : ($i < 17 ? ProductionOrderStatus::Pending : ProductionOrderStatus::Cancelled);
-            $when = $this->randomDate();
+            $when = $dates[$i];
             $product = $this->manufacturable[array_rand($this->manufacturable)];
             $order = $this->productionOrder($product, random_int(5, 25));
 
@@ -414,10 +436,11 @@ class DemoTenantSeeder extends Seeder
 
     private function seedSalesOrders(): void
     {
-        // 10 pending, 7 fulfilled, 3 cancelled.
+        // 10 pending, 7 fulfilled, 3 cancelled. Dates rise with the loop so order # descends.
+        $dates = $this->spreadDates(20);
         for ($i = 0; $i < 20; $i++) {
             $status = $i < 17 ? SalesOrderStatus::Pending : SalesOrderStatus::Cancelled;
-            $when = $this->randomDate();
+            $when = $dates[$i];
             $customer = $this->customers[array_rand($this->customers)];
 
             $so = SalesOrder::create(['customer_id' => $customer->id, 'currency' => self::CURRENCIES[array_rand(self::CURRENCIES)], 'status' => $status, 'user_id' => $this->admin->id]);
@@ -436,10 +459,11 @@ class DemoTenantSeeder extends Seeder
 
     private function seedPurchaseReturns(): void
     {
-        // 10 pending, 7 completed, 3 cancelled.
+        // 10 pending, 7 completed, 3 cancelled. Dates rise with the loop so return # descends.
+        $dates = $this->spreadDates(20);
         for ($i = 0; $i < 20; $i++) {
             $status = $i < 17 ? ReturnStatus::Pending : ReturnStatus::Cancelled;
-            $when = $this->randomDate();
+            $when = $dates[$i];
             $pr = PurchaseReturn::create(['supplier_id' => $this->suppliers[array_rand($this->suppliers)]->id, 'status' => $status, 'user_id' => $this->admin->id, 'notes' => 'Damaged on arrival']);
             $pr->items()->create($this->rmLine($this->rawMaterials[array_rand($this->rawMaterials)], random_int(2, 20)));
 
@@ -454,10 +478,11 @@ class DemoTenantSeeder extends Seeder
 
     private function seedSalesReturns(): void
     {
-        // 10 pending, 7 completed, 3 cancelled.
+        // 10 pending, 7 completed, 3 cancelled. Dates rise with the loop so return # descends.
+        $dates = $this->spreadDates(20);
         for ($i = 0; $i < 20; $i++) {
             $status = $i < 17 ? ReturnStatus::Pending : ReturnStatus::Cancelled;
-            $when = $this->randomDate();
+            $when = $dates[$i];
             $sr = SalesReturn::create(['customer_id' => $this->customers[array_rand($this->customers)]->id, 'status' => $status, 'user_id' => $this->admin->id, 'notes' => 'Customer changed their mind']);
             $sr->items()->create($this->productLine($this->products[array_rand($this->products)], random_int(1, 8)));
 
@@ -472,9 +497,10 @@ class DemoTenantSeeder extends Seeder
 
     private function seedStockTakes(): void
     {
-        // 10 draft, 7 posted, 3 cancelled.
+        // 10 draft, 7 posted, 3 cancelled. Dates rise with the loop so the count # descends.
+        $dates = $this->spreadDates(20);
         for ($i = 0; $i < 20; $i++) {
-            $when = $this->randomDate();
+            $when = $dates[$i];
 
             if ($i >= 17) {
                 $take = StockTake::create(['warehouse_id' => $this->mainWarehouse->id, 'status' => StockTakeStatus::Cancelled, 'user_id' => $this->admin->id]);

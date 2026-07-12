@@ -22,13 +22,13 @@ class ActivityController
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $activities = Activity::query()
-            ->with(['causer', 'subject'])
-            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
-            ->latest('id') // id is monotonic — deterministic reverse-chronological
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (Activity $activity): ActivityData => ActivityData::from($activity));
+        $activities = $this->paginateList(
+            Activity::query()
+                ->with(['causer', 'subject'])
+                ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
+                ->latest('id'), // id is monotonic — deterministic reverse-chronological
+            $perPage,
+        )->through(fn (Activity $activity): ActivityData => ActivityData::from($activity));
 
         return Inertia::render('tenant/activity/index', [
             'activities' => $activities,

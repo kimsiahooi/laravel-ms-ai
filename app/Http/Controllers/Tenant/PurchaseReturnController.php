@@ -33,14 +33,17 @@ class PurchaseReturnController
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $returns = PurchaseReturn::query()
-            ->with(['supplier', 'items'])
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (PurchaseReturn $return): PurchaseReturnData => PurchaseReturnData::from($return));
+        $returns = $this->paginateList(
+            PurchaseReturn::query()
+                ->with(['supplier', 'items'])
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (PurchaseReturn $return): PurchaseReturnData => PurchaseReturnData::from($return));
 
         return Inertia::render('tenant/purchase-returns/index', [
             'returns' => $returns,
@@ -48,7 +51,7 @@ class PurchaseReturnController
             'rawMaterials' => OptionData::collect(RawMaterial::orderBy('name')->get(['id', 'name'])),
             'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
-                'search' => '',
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);

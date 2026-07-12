@@ -33,13 +33,14 @@ class StockTransferController
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $transfers = StockTransfer::query()
-            ->with(['fromWarehouse.location', 'toWarehouse.location', 'stockable', 'user'])
-            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (StockTransfer $transfer): StockTransferData => StockTransferData::from($transfer));
+        $transfers = $this->paginateList(
+            StockTransfer::query()
+                ->with(['fromWarehouse.location', 'toWarehouse.location', 'stockable', 'user'])
+                ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (StockTransfer $transfer): StockTransferData => StockTransferData::from($transfer));
 
         return Inertia::render('tenant/stock-transfers/index', [
             'transfers' => $transfers,

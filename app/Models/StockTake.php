@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\StockTakeStatus;
+use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,14 @@ use Illuminate\Support\Carbon;
 #[Fillable(['warehouse_id', 'status', 'user_id', 'counted_at', 'notes'])]
 class StockTake extends Model
 {
+    use Searchable;
     use SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $searchable = ['id', 'notes'];
+
+    /** @var array<string, array<int, string>> */
+    protected array $searchableRelations = ['warehouse' => ['name', 'code']];
 
     /**
      * @return array<string, string>

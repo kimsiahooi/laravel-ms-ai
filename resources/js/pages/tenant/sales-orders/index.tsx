@@ -294,6 +294,7 @@ export default function SalesOrdersIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['orders', 'filters']}
+                exportResource="sales-orders"
                 getRowId={(order) => String(order.id)}
                 title={salesOrderMeta.plural}
                 toolbar={

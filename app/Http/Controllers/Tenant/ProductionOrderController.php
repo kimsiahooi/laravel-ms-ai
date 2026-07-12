@@ -34,14 +34,17 @@ class ProductionOrderController
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $orders = ProductionOrder::query()
-            ->with(['product', 'items'])
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (ProductionOrder $order): ProductionOrderData => ProductionOrderData::from($order));
+        $orders = $this->paginateList(
+            ProductionOrder::query()
+                ->with(['product', 'items'])
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (ProductionOrder $order): ProductionOrderData => ProductionOrderData::from($order));
 
         // Only products with a BOM can be manufactured; ship each one's
         // exploded per-unit needs so the create dialog can preview consumption.
@@ -66,7 +69,7 @@ class ProductionOrderController
             ])->all(),
             'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
-                'search' => '',
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);

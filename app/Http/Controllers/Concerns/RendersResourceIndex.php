@@ -31,12 +31,10 @@ trait RendersResourceIndex
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $rows = $model::query()
-            ->search($search)
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through($toData);
+        $rows = $this->paginateList(
+            $model::query()->search($search)->latest()->latest('id'),
+            $perPage,
+        )->through($toData);
 
         return Inertia::render($view, [
             $key => $rows,

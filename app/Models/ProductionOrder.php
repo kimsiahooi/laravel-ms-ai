@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ProductionOrderStatus;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -39,7 +40,14 @@ use Illuminate\Support\Carbon;
 class ProductionOrder extends Model
 {
     use RecordsActivity;
+    use Searchable;
     use SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $searchable = ['id', 'notes', 'product_snapshot->name'];
+
+    /** @var array<string, array<int, string>> */
+    protected array $searchableRelations = ['product' => ['name']];
 
     /**
      * @return array<string, string>

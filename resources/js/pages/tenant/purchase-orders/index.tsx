@@ -296,6 +296,7 @@ export default function PurchaseOrdersIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['orders', 'filters']}
+                exportResource="purchase-orders"
                 getRowId={(order) => String(order.id)}
                 title={purchaseOrderMeta.plural}
                 toolbar={

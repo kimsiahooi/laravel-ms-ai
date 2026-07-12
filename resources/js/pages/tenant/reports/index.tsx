@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/date-range-picker';
 import { EmptyState } from '@/components/empty-state';
+import { ExportMenu } from '@/components/export-menu';
 import { InfoHint } from '@/components/info-hint';
 import { SignedQuantity } from '@/components/signed-quantity';
 import { StatCard } from '@/components/stat-card';
@@ -98,10 +99,16 @@ export default function ReportsIndex() {
                         each order's line amounts (quantity × price).
                     </p>
                 </div>
-                <DateRangePicker
-                    value={{ from: filters.from, to: filters.to }}
-                    onChange={applyRange}
-                />
+                <div className="flex items-center gap-2">
+                    <DateRangePicker
+                        value={{ from: filters.from, to: filters.to }}
+                        onChange={applyRange}
+                    />
+                    <ExportMenu
+                        resource="reports"
+                        params={{ from: filters.from, to: filters.to }}
+                    />
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

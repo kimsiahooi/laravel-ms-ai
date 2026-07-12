@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ReturnStatus;
+use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +34,14 @@ use Illuminate\Support\Carbon;
 ])]
 class PurchaseReturn extends Model
 {
+    use Searchable;
     use SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $searchable = ['id', 'notes'];
+
+    /** @var array<string, array<int, string>> */
+    protected array $searchableRelations = ['supplier' => ['name']];
 
     /**
      * @return array<string, string>

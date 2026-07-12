@@ -8,12 +8,19 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\ProductionOrder;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
+use App\Models\SalesOrder;
+use App\Models\SalesReturn;
 use App\Models\StockMovement;
+use App\Models\StockTake;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * Central config for the table exports: per resource, the (search-filtered) query
@@ -110,6 +117,80 @@ class ExportRegistry
                     ['heading' => 'To', 'value' => fn (StockTransfer $t) => $t->toWarehouse?->name],
                     ['heading' => 'Quantity', 'value' => fn (StockTransfer $t) => (float) $t->quantity],
                     ['heading' => 'By', 'value' => fn (StockTransfer $t) => $t->user?->name],
+                ],
+            ],
+            'purchase-orders' => [
+                'query' => fn (string $s) => PurchaseOrder::query()->with(['supplier', 'items'])->search($s)->latest()->latest('id'),
+                'columns' => [
+                    ['heading' => 'Order #', 'value' => fn (PurchaseOrder $o) => $o->id],
+                    ['heading' => 'Supplier', 'value' => fn (PurchaseOrder $o) => $o->supplier?->name],
+                    ['heading' => 'Status', 'value' => fn (PurchaseOrder $o) => $o->status->label()],
+                    ['heading' => 'Currency', 'value' => fn (PurchaseOrder $o) => $o->currency],
+                    ['heading' => 'Items', 'value' => fn (PurchaseOrder $o) => $o->items->count()],
+                    ['heading' => 'Total', 'value' => fn (PurchaseOrder $o) => (float) $o->items->sum(fn ($i) => (float) $i->quantity * (float) $i->unit_cost)],
+                    ['heading' => 'Created', 'value' => fn (PurchaseOrder $o) => $o->created_at?->format('Y-m-d')],
+                ],
+            ],
+            'sales-orders' => [
+                'query' => fn (string $s) => SalesOrder::query()->with(['customer', 'items'])->search($s)->latest()->latest('id'),
+                'columns' => [
+                    ['heading' => 'Order #', 'value' => fn (SalesOrder $o) => $o->id],
+                    ['heading' => 'Customer', 'value' => fn (SalesOrder $o) => $o->customer?->name],
+                    ['heading' => 'Status', 'value' => fn (SalesOrder $o) => $o->status->label()],
+                    ['heading' => 'Currency', 'value' => fn (SalesOrder $o) => $o->currency],
+                    ['heading' => 'Items', 'value' => fn (SalesOrder $o) => $o->items->count()],
+                    ['heading' => 'Total', 'value' => fn (SalesOrder $o) => (float) $o->items->sum(fn ($i) => (float) $i->quantity * (float) $i->unit_price)],
+                    ['heading' => 'Created', 'value' => fn (SalesOrder $o) => $o->created_at?->format('Y-m-d')],
+                ],
+            ],
+            'production-orders' => [
+                'query' => fn (string $s) => ProductionOrder::query()->with('product')->search($s)->latest()->latest('id'),
+                'columns' => [
+                    ['heading' => 'Order #', 'value' => fn (ProductionOrder $o) => $o->id],
+                    ['heading' => 'Product', 'value' => fn (ProductionOrder $o) => $o->product_snapshot['name'] ?? $o->product?->name],
+                    ['heading' => 'Quantity', 'value' => fn (ProductionOrder $o) => (float) $o->quantity],
+                    ['heading' => 'Status', 'value' => fn (ProductionOrder $o) => $o->status->label()],
+                    ['heading' => 'Created', 'value' => fn (ProductionOrder $o) => $o->created_at?->format('Y-m-d')],
+                ],
+            ],
+            'purchase-returns' => [
+                'query' => fn (string $s) => PurchaseReturn::query()->with(['supplier', 'items'])->search($s)->latest()->latest('id'),
+                'columns' => [
+                    ['heading' => 'Return #', 'value' => fn (PurchaseReturn $r) => $r->id],
+                    ['heading' => 'Supplier', 'value' => fn (PurchaseReturn $r) => $r->supplier?->name],
+                    ['heading' => 'Status', 'value' => fn (PurchaseReturn $r) => $r->status->label()],
+                    ['heading' => 'Items', 'value' => fn (PurchaseReturn $r) => $r->items->count()],
+                    ['heading' => 'Created', 'value' => fn (PurchaseReturn $r) => $r->created_at?->format('Y-m-d')],
+                ],
+            ],
+            'sales-returns' => [
+                'query' => fn (string $s) => SalesReturn::query()->with(['customer', 'items'])->search($s)->latest()->latest('id'),
+                'columns' => [
+                    ['heading' => 'Return #', 'value' => fn (SalesReturn $r) => $r->id],
+                    ['heading' => 'Customer', 'value' => fn (SalesReturn $r) => $r->customer?->name],
+                    ['heading' => 'Status', 'value' => fn (SalesReturn $r) => $r->status->label()],
+                    ['heading' => 'Items', 'value' => fn (SalesReturn $r) => $r->items->count()],
+                    ['heading' => 'Created', 'value' => fn (SalesReturn $r) => $r->created_at?->format('Y-m-d')],
+                ],
+            ],
+            'stock-takes' => [
+                'query' => fn (string $s) => StockTake::query()->with('warehouse')->search($s)->latest()->latest('id'),
+                'columns' => [
+                    ['heading' => 'Count #', 'value' => fn (StockTake $t) => $t->id],
+                    ['heading' => 'Warehouse', 'value' => fn (StockTake $t) => $t->warehouse?->name],
+                    ['heading' => 'Status', 'value' => fn (StockTake $t) => $t->status->label()],
+                    ['heading' => 'Counted at', 'value' => fn (StockTake $t) => $t->counted_at?->format('Y-m-d H:i')],
+                    ['heading' => 'Created', 'value' => fn (StockTake $t) => $t->created_at?->format('Y-m-d')],
+                ],
+            ],
+            'activity' => [
+                'query' => fn (string $s) => Activity::query()->with(['causer', 'subject'])->latest('id'),
+                'columns' => [
+                    ['heading' => 'When', 'value' => fn (Activity $a) => $a->created_at?->format('Y-m-d H:i')],
+                    ['heading' => 'Event', 'value' => fn (Activity $a) => $a->event],
+                    ['heading' => 'Description', 'value' => fn (Activity $a) => $a->description],
+                    ['heading' => 'Record', 'value' => fn (Activity $a) => $a->subject_type ? class_basename($a->subject_type) : null],
+                    ['heading' => 'By', 'value' => fn (Activity $a) => $a->causer?->name],
                 ],
             ],
         ];

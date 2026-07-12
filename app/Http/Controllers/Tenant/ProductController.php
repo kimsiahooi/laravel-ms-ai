@@ -37,13 +37,14 @@ class ProductController
 
         $perPage = $this->perPage($request);
 
-        $products = Product::query()
-            ->with(['category', 'supplier', 'bomItems.rawMaterial'])
-            ->search($search)
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (Product $product): ProductData => ProductData::from($product));
+        $products = $this->paginateList(
+            Product::query()
+                ->with(['category', 'supplier', 'bomItems.rawMaterial'])
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (Product $product): ProductData => ProductData::from($product));
 
         return Inertia::render('tenant/products/index', [
             'products' => $products,

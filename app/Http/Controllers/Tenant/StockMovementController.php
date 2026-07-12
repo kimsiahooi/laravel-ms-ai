@@ -34,13 +34,14 @@ class StockMovementController
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $movements = StockMovement::query()
-            ->with(['warehouse.location', 'stockable', 'user'])
-            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (StockMovement $movement): StockMovementData => StockMovementData::from($movement));
+        $movements = $this->paginateList(
+            StockMovement::query()
+                ->with(['warehouse.location', 'stockable', 'user'])
+                ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (StockMovement $movement): StockMovementData => StockMovementData::from($movement));
 
         return Inertia::render('tenant/stock-movements/index', [
             'movements' => $movements,

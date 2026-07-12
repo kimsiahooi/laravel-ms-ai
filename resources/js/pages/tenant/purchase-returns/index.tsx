@@ -266,6 +266,7 @@ export default function PurchaseReturnsIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['returns', 'filters']}
+                exportResource="purchase-returns"
                 getRowId={(ret) => String(ret.id)}
                 title="Purchase returns"
                 toolbar={

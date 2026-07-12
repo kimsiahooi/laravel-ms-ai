@@ -33,14 +33,17 @@ class SalesOrderController
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $orders = SalesOrder::query()
-            ->with(['customer', 'items'])
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (SalesOrder $order): SalesOrderData => SalesOrderData::from($order));
+        $orders = $this->paginateList(
+            SalesOrder::query()
+                ->with(['customer', 'items'])
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (SalesOrder $order): SalesOrderData => SalesOrderData::from($order));
 
         return Inertia::render('tenant/sales-orders/index', [
             'orders' => $orders,
@@ -48,7 +51,7 @@ class SalesOrderController
             'products' => OptionData::collect(Product::orderBy('name')->get(['id', 'name'])),
             'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
-                'search' => '',
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);

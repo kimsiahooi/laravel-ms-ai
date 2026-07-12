@@ -31,14 +31,17 @@ class PurchaseOrderController
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $orders = PurchaseOrder::query()
-            ->with(['supplier', 'items'])
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (PurchaseOrder $order): PurchaseOrderData => PurchaseOrderData::from($order));
+        $orders = $this->paginateList(
+            PurchaseOrder::query()
+                ->with(['supplier', 'items'])
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (PurchaseOrder $order): PurchaseOrderData => PurchaseOrderData::from($order));
 
         return Inertia::render('tenant/purchase-orders/index', [
             'orders' => $orders,
@@ -46,7 +49,7 @@ class PurchaseOrderController
             'rawMaterials' => OptionData::collect(RawMaterial::orderBy('name')->get(['id', 'name'])),
             'warehouses' => $this->stockWarehouseOptions(),
             'filters' => [
-                'search' => '',
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);

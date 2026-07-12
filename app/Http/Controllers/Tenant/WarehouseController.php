@@ -30,24 +30,25 @@ class WarehouseController
 
         $perPage = $this->perPage($request);
 
-        $warehouses = Warehouse::query()
-            ->with('location')
-            ->search($search)
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(function (Warehouse $warehouse): WarehouseData {
-                // Per-warehouse stock summary for the list badges, from the same
-                // union the detail page uses so the numbers reconcile. One small
-                // count query per listed warehouse (a page's worth).
-                $counts = $this->stockCounts($warehouse->id);
-                $data = WarehouseData::from($warehouse);
-                $data->items_in_stock = $counts['in_stock'];
-                $data->low_stock = $counts['low'];
-                $data->out_of_stock = $counts['out'];
+        $warehouses = $this->paginateList(
+            Warehouse::query()
+                ->with('location')
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(function (Warehouse $warehouse): WarehouseData {
+            // Per-warehouse stock summary for the list badges, from the same
+            // union the detail page uses so the numbers reconcile. One small
+            // count query per listed warehouse (a page's worth).
+            $counts = $this->stockCounts($warehouse->id);
+            $data = WarehouseData::from($warehouse);
+            $data->items_in_stock = $counts['in_stock'];
+            $data->low_stock = $counts['low'];
+            $data->out_of_stock = $counts['out'];
 
-                return $data;
-            });
+            return $data;
+        });
 
         return Inertia::render('tenant/warehouses/index', [
             'warehouses' => $warehouses,
@@ -82,6 +83,7 @@ class WarehouseController
             ->orderBy('stockable_type')  // deterministic tiebreaker — (type, id) is
             ->orderBy('stockable_id')    // unique across the two UNION legs
             ->paginate($perPage)
+            ->onEachSide(2)              // compact 2-sibling page window (matches paginateList)
             ->withQueryString()
             ->through(fn (object $row) => WarehouseItemData::fromRow($row));
 

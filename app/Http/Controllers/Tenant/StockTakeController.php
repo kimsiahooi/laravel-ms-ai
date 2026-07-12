@@ -14,7 +14,6 @@ use App\Http\Requests\Tenant\StockTakeRequest;
 use App\Models\StockTake;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,18 +31,14 @@ class StockTakeController
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $takes = StockTake::query()
-            ->with(['warehouse.location', 'items'])
-            ->when($search !== '', fn (Builder $query) => $query->whereHas(
-                'warehouse',
-                fn (Builder $warehouse) => $warehouse
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%"),
-            ))
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (StockTake $take): StockTakeData => StockTakeData::from($take));
+        $takes = $this->paginateList(
+            StockTake::query()
+                ->with(['warehouse.location', 'items'])
+                ->search($search)
+                ->latest()
+                ->latest('id'),
+            $perPage,
+        )->through(fn (StockTake $take): StockTakeData => StockTakeData::from($take));
 
         return Inertia::render('tenant/stock-takes/index', [
             'takes' => $takes,

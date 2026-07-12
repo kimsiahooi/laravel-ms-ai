@@ -190,6 +190,7 @@ export default function StockTakesIndex() {
                 filters={filters}
                 baseUrl={base}
                 only={['takes', 'filters']}
+                exportResource="stock-takes"
                 getRowId={(take) => String(take.id)}
                 title="Stock takes"
                 searchPlaceholder="Search by warehouse…"
