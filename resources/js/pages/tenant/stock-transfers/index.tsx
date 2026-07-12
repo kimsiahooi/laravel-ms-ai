@@ -146,6 +146,7 @@ export default function StockTransfersIndex() {
                 paginator={transfers}
                 filters={filters}
                 baseUrl={base}
+                exportResource="stock-transfers"
                 only={['transfers', 'filters']}
                 getRowId={(transfer) => String(transfer.id)}
                 title={stockTransferMeta.plural}

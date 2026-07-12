@@ -6,6 +6,7 @@ use App\Http\Controllers\Tenant\ActivityController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\ExportController;
 use App\Http\Controllers\Tenant\LocationController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
@@ -181,6 +182,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // Period-scoped reports (sales, purchases, production, movements, low stock).
             Route::get('reports', [ReportController::class, 'index'])
                 ->name('reports.index');
+
+            // CSV / Excel export for any registered list resource.
+            Route::get('export/{resource}', [ExportController::class, 'download'])
+                ->name('export');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

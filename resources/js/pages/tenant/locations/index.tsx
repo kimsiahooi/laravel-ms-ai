@@ -124,6 +124,7 @@ export default function LocationsIndex() {
                 paginator={locations}
                 filters={filters}
                 baseUrl={base}
+                exportResource="locations"
                 only={['locations', 'filters']}
                 getRowId={(location) => String(location.id)}
                 title={locationMeta.plural}

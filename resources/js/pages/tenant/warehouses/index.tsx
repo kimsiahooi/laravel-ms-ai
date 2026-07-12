@@ -186,6 +186,7 @@ export default function WarehousesIndex() {
                 paginator={warehouses}
                 filters={filters}
                 baseUrl={base}
+                exportResource="warehouses"
                 only={['warehouses', 'filters']}
                 getRowId={(warehouse) => String(warehouse.id)}
                 title={warehouseMeta.plural}

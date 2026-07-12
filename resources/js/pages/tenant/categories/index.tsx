@@ -107,6 +107,7 @@ export default function CategoriesIndex() {
                 paginator={categories}
                 filters={filters}
                 baseUrl={base}
+                exportResource="categories"
                 only={['categories', 'filters']}
                 getRowId={(category) => String(category.id)}
                 title={categoryMeta.plural}

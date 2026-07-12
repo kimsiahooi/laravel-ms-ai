@@ -125,6 +125,7 @@ export default function CustomersIndex() {
                 paginator={customers}
                 filters={filters}
                 baseUrl={base}
+                exportResource="customers"
                 only={['customers', 'filters']}
                 getRowId={(customer) => String(customer.id)}
                 title={customerMeta.plural}

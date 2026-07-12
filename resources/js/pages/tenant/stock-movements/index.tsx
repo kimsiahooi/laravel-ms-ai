@@ -176,6 +176,7 @@ export default function StockMovementsIndex() {
                 paginator={movements}
                 filters={filters}
                 baseUrl={base}
+                exportResource="stock-movements"
                 only={['movements', 'filters']}
                 getRowId={(movement) => String(movement.id)}
                 title={stockMovementMeta.plural}

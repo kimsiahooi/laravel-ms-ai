@@ -15,6 +15,7 @@ import {
     X,
 } from 'lucide-react';
 import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
+import { ExportMenu } from '@/components/export-menu';
 import { PaginationLink } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,8 @@ type DataTableProps<T> = {
     rowHref?: (row: T) => string;
     /** When set, each row gets a leading expand toggle revealing this content. */
     renderExpanded?: (row: T) => ReactNode;
+    /** ExportRegistry key; when set, a CSV/Excel export control is shown. */
+    exportResource?: string;
 };
 
 export function DataTable<T>({
@@ -94,6 +97,7 @@ export function DataTable<T>({
     emptyState,
     rowHref,
     renderExpanded,
+    exportResource,
 }: DataTableProps<T>) {
     const [search, setSearch] = useState(filters.search);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(
@@ -230,6 +234,12 @@ export function DataTable<T>({
                                 )
                             )}
                         </div>
+                        {exportResource && (
+                            <ExportMenu
+                                resource={exportResource}
+                                search={filters.search}
+                            />
+                        )}
                         {toolbar}
                     </div>
                 </div>

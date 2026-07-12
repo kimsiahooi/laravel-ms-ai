@@ -377,6 +377,7 @@ export default function ProductsIndex() {
                 paginator={products}
                 filters={filters}
                 baseUrl={base}
+                exportResource="products"
                 only={['products', 'filters']}
                 getRowId={(product) => String(product.id)}
                 title={productMeta.plural}

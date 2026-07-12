@@ -125,6 +125,7 @@ export default function SuppliersIndex() {
                 paginator={suppliers}
                 filters={filters}
                 baseUrl={base}
+                exportResource="suppliers"
                 only={['suppliers', 'filters']}
                 getRowId={(supplier) => String(supplier.id)}
                 title={supplierMeta.plural}

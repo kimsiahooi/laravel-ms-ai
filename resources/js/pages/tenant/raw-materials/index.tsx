@@ -117,6 +117,7 @@ export default function RawMaterialsIndex() {
                 paginator={rawMaterials}
                 filters={filters}
                 baseUrl={base}
+                exportResource="raw-materials"
                 only={['rawMaterials', 'filters']}
                 getRowId={(rawMaterial) => String(rawMaterial.id)}
                 title={rawMaterialMeta.plural}
