@@ -23,30 +23,28 @@ class ReportController
         $to = $request->date('to') ?? Carbon::now()->endOfDay();
         $range = [$from, $to];
 
-        $sales = $reports->salesTotals($range);
-        $purchases = $reports->purchaseTotals($range);
-        $production = $reports->productionTotals($range);
-
+        // Closures so an `only:` partial reload recomputes only the requested figures.
         return Inertia::render('tenant/reports/index', [
             'filters' => [
                 'from' => $from->toIso8601String(),
                 'to' => $to->toIso8601String(),
             ],
-            'sales' => [
-                'count' => $sales->count,
-                'quantity' => $sales->quantity,
-                'amount' => $sales->amount,
-            ],
-            'purchases' => [
-                'count' => $purchases->count,
-                'quantity' => $purchases->quantity,
-                'amount' => $purchases->amount,
-            ],
-            'production' => [
-                'count' => $production->count,
-                'quantity' => $production->quantity,
-            ],
-            'movements' => array_map(
+            'sales' => function () use ($reports, $range) {
+                $sales = $reports->salesTotals($range);
+
+                return ['count' => $sales->count, 'quantity' => $sales->quantity, 'amount' => $sales->amount];
+            },
+            'purchases' => function () use ($reports, $range) {
+                $purchases = $reports->purchaseTotals($range);
+
+                return ['count' => $purchases->count, 'quantity' => $purchases->quantity, 'amount' => $purchases->amount];
+            },
+            'production' => function () use ($reports, $range) {
+                $production = $reports->productionTotals($range);
+
+                return ['count' => $production->count, 'quantity' => $production->quantity];
+            },
+            'movements' => fn () => array_map(
                 fn (array $movement): array => [
                     'reason' => $movement['reason'],
                     'label' => $movement['label'],
@@ -55,7 +53,7 @@ class ReportController
                 ],
                 $reports->movementsByReason($range),
             ),
-            'lowStock' => $reports->lowStockRows(),
+            'lowStock' => fn () => $reports->lowStockRows(),
         ]);
     }
 }

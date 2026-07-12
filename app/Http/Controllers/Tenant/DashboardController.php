@@ -27,12 +27,11 @@ class DashboardController
         $to = $request->date('to') ?? Carbon::now()->endOfDay();
         $range = [$from, $to];
 
-        $sales = $reports->salesTotals($range);
-        $purchases = $reports->purchaseTotals($range);
-        $production = $reports->productionTotals($range);
-
+        // Every heavy prop is a closure, so an `only:` partial reload (the date-range
+        // filter refetches just filters/kpis/series/movements) never recomputes the
+        // props it didn't ask for — e.g. the organization/member count is skipped.
         return Inertia::render('tenant/dashboard', [
-            'organization' => [
+            'organization' => fn () => [
                 'name' => $tenant->name,
                 'slug' => $tenant->getKey(),
                 'logo' => $tenant->logo,
@@ -42,14 +41,20 @@ class DashboardController
                 'from' => $from->toIso8601String(),
                 'to' => $to->toIso8601String(),
             ],
-            'kpis' => [
-                'sales' => ['count' => $sales->count, 'amount' => $sales->amount],
-                'purchases' => ['count' => $purchases->count, 'amount' => $purchases->amount],
-                'production' => ['count' => $production->count, 'quantity' => $production->quantity],
-                'low_stock' => $reports->lowStockCount(),
-            ],
-            'series' => $reports->dailySalesPurchases($from, $to),
-            'movements' => array_map(
+            'kpis' => function () use ($reports, $range) {
+                $sales = $reports->salesTotals($range);
+                $purchases = $reports->purchaseTotals($range);
+                $production = $reports->productionTotals($range);
+
+                return [
+                    'sales' => ['count' => $sales->count, 'amount' => $sales->amount],
+                    'purchases' => ['count' => $purchases->count, 'amount' => $purchases->amount],
+                    'production' => ['count' => $production->count, 'quantity' => $production->quantity],
+                    'low_stock' => $reports->lowStockCount(),
+                ];
+            },
+            'series' => fn () => $reports->dailySalesPurchases($from, $to),
+            'movements' => fn () => array_map(
                 fn (array $movement): array => [
                     'reason' => $movement['reason'],
                     'label' => $movement['label'],
