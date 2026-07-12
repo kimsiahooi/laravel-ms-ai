@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     ArrowLeftRight,
     Factory,
@@ -6,10 +6,7 @@ import {
     TrendingUp,
     TriangleAlert,
 } from 'lucide-react';
-import {
-    DateRangePicker,
-    type DateRangeValue,
-} from '@/components/date-range-picker';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +19,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useDateRangeFilter } from '@/hooks/use-date-range-filter';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
@@ -94,14 +92,16 @@ export default function ReportsIndex() {
         tenant,
     } = usePageProps<PageProps>();
     const base = reportsRoutes.index.url({ tenant: tenant.slug });
-
-    const applyRange = (range: DateRangeValue) => {
-        router.get(
-            base,
-            { from: range.from, to: range.to },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    };
+    // Scope the reload to the period-dependent props (the closures the controller now
+    // exposes) instead of refetching every prop on the page — the B4 over-fetch fix.
+    const applyRange = useDateRangeFilter(base, [
+        'filters',
+        'sales',
+        'purchases',
+        'production',
+        'movements',
+        'lowStock',
+    ]);
 
     return (
         <TenantLayout

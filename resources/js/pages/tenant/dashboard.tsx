@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Factory, ShoppingCart, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
@@ -11,10 +11,7 @@ import {
     YAxis,
 } from 'recharts';
 import { ChartCard } from '@/components/chart-card';
-import {
-    DateRangePicker,
-    type DateRangeValue,
-} from '@/components/date-range-picker';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { StatCard } from '@/components/stat-card';
 import {
     type ChartConfig,
@@ -24,6 +21,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from '@/components/ui/chart';
+import { useDateRangeFilter } from '@/hooks/use-date-range-filter';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatCompact, formatQuantity } from '@/lib/format';
@@ -88,19 +86,12 @@ export default function TenantDashboard() {
     }, []);
 
     const base = dashboard.url({ tenant: tenant.slug });
-
-    const applyRange = (range: DateRangeValue) => {
-        router.get(
-            base,
-            { from: range.from, to: range.to },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-                only: ['filters', 'kpis', 'series', 'movements'],
-            },
-        );
-    };
+    const applyRange = useDateRangeFilter(base, [
+        'filters',
+        'kpis',
+        'series',
+        'movements',
+    ]);
 
     const hasTrend = series.some((d) => d.sales > 0 || d.purchases > 0);
 
