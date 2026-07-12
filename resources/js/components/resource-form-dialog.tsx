@@ -1,6 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
+import { ConfirmDiscardDialog } from '@/components/confirm-discard-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -41,6 +42,10 @@ type ResourceFormDialogProps<T extends { id: number }> = {
  * Inertia <Form> (action/method/key derived from `editing`), and the Cancel /
  * submit footer. Callers supply only the fields as children. Pair with
  * `useResourceDialog`.
+ *
+ * Dismissing (X / Esc / outside-click / Cancel) while the form has unsaved edits
+ * prompts a "Discard changes?" confirm. A successful save closes through the
+ * parent's onOpenChange directly, so it never triggers the prompt.
  */
 export function ResourceFormDialog<T extends { id: number }>({
     open,
@@ -54,64 +59,98 @@ export function ResourceFormDialog<T extends { id: number }>({
     children,
 }: ResourceFormDialogProps<T>) {
     const isEdit = editing !== null;
+    // Latest form state, captured from the <Form> render bag so the Dialog's
+    // close handler (outside the Form) can read it.
+    const dirtyRef = useRef(false);
+    const processingRef = useRef(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+
+    const requestClose = (next: boolean) => {
+        if (next) {
+            onOpenChange(true);
+            return;
+        }
+        if (dirtyRef.current && !processingRef.current) {
+            setConfirmOpen(true); // block the close and ask
+            return;
+        }
+        onOpenChange(false);
+    };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={contentClassName}>
-                <DialogHeader>
-                    <DialogTitle>
-                        {isEdit ? `Edit ${entityLabel}` : `New ${entityLabel}`}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {isEdit
-                            ? (description?.edit ??
-                              `Update this ${entityLabel}.`)
-                            : (description?.create ??
-                              `Add a new ${entityLabel}.`)}
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Dialog open={open} onOpenChange={requestClose}>
+                <DialogContent className={contentClassName}>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {isEdit
+                                ? `Edit ${entityLabel}`
+                                : `New ${entityLabel}`}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {isEdit
+                                ? (description?.edit ??
+                                  `Update this ${entityLabel}.`)
+                                : (description?.create ??
+                                  `Add a new ${entityLabel}.`)}
+                        </DialogDescription>
+                    </DialogHeader>
 
-                <Form
-                    key={editing ? editing.id : 'new'}
-                    action={editing ? `${baseUrl}/${editing.id}` : baseUrl}
-                    method={isEdit ? 'put' : 'post'}
-                    disableWhileProcessing
-                    onSuccess={(page) => {
-                        onOpenChange(false);
-                        onSuccess?.(page);
-                    }}
-                    className="space-y-4"
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            {children({ processing, errors })}
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        disabled={processing}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={processing}>
-                                    {processing ? (
-                                        <>
-                                            <LoaderCircle className="size-4 animate-spin" />
-                                            Saving…
-                                        </>
-                                    ) : isEdit ? (
-                                        'Save changes'
-                                    ) : (
-                                        `Create ${entityLabel}`
-                                    )}
-                                </Button>
-                            </DialogFooter>
-                        </>
-                    )}
-                </Form>
-            </DialogContent>
-        </Dialog>
+                    <Form
+                        key={editing ? editing.id : 'new'}
+                        action={editing ? `${baseUrl}/${editing.id}` : baseUrl}
+                        method={isEdit ? 'put' : 'post'}
+                        disableWhileProcessing
+                        onSuccess={(page) => {
+                            onOpenChange(false);
+                            onSuccess?.(page);
+                        }}
+                        className="space-y-4"
+                    >
+                        {({ processing, errors, isDirty }) => {
+                            dirtyRef.current = isDirty;
+                            processingRef.current = processing;
+                            return (
+                                <>
+                                    {children({ processing, errors })}
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                disabled={processing}
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </DialogClose>
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                        >
+                                            {processing ? (
+                                                <>
+                                                    <LoaderCircle className="size-4 animate-spin" />
+                                                    Saving…
+                                                </>
+                                            ) : isEdit ? (
+                                                'Save changes'
+                                            ) : (
+                                                `Create ${entityLabel}`
+                                            )}
+                                        </Button>
+                                    </DialogFooter>
+                                </>
+                            );
+                        }}
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmDiscardDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                onDiscard={() => onOpenChange(false)}
+            />
+        </>
     );
 }

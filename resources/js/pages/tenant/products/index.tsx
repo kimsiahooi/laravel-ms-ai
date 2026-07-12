@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
+import { ConfirmDiscardDialog } from '@/components/confirm-discard-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
@@ -165,6 +166,13 @@ export default function ProductsIndex() {
     }>({ items: [] });
     const bomErrors = bomForm.errors as Record<string, string>;
     const bomKey = useRef(0);
+    // Serialized snapshot of the BOM as opened, to detect unsaved edits on close.
+    const bomSnapshotRef = useRef('');
+    const [bomConfirmOpen, setBomConfirmOpen] = useState(false);
+    const bomLinesKey = (lines: BomLine[]) =>
+        JSON.stringify(
+            lines.map((line) => [line.rawMaterialId, line.quantity]),
+        );
 
     const blankBomLine = (): BomLine => ({
         key: bomKey.current++,
@@ -175,15 +183,16 @@ export default function ProductsIndex() {
     const openBom = (product: Product) => {
         bomForm.clearErrors();
         setBomProduct(product);
-        setBomLines(
+        const seeded =
             product.bom.length > 0
                 ? product.bom.map((item) => ({
                       key: bomKey.current++,
                       rawMaterialId: String(item.raw_material_id),
                       quantity: String(item.quantity),
                   }))
-                : [blankBomLine()],
-        );
+                : [blankBomLine()];
+        setBomLines(seeded);
+        bomSnapshotRef.current = bomLinesKey(seeded);
     };
 
     const closeBom = () => {
@@ -706,7 +715,13 @@ export default function ProductsIndex() {
             <Dialog
                 open={bomProduct !== null}
                 onOpenChange={(next) => {
-                    if (!next) {
+                    if (next) return;
+                    if (
+                        bomLinesKey(bomLines) !== bomSnapshotRef.current &&
+                        !bomForm.processing
+                    ) {
+                        setBomConfirmOpen(true);
+                    } else {
                         closeBom();
                     }
                 }}
@@ -886,6 +901,12 @@ export default function ProductsIndex() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDiscardDialog
+                open={bomConfirmOpen}
+                onOpenChange={setBomConfirmOpen}
+                onDiscard={closeBom}
+            />
         </TenantLayout>
     );
 }
