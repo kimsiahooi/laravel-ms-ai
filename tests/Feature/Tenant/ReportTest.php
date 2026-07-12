@@ -53,3 +53,22 @@ it('totals fulfilled sales within the selected period, excluding out-of-range', 
             ->where('sales.amount', 20)
         );
 });
+
+it('scopes to an explicit offset-carrying date range from the query', function () {
+    $this->tenant->run(function () {
+        $product = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'pcs']);
+        seedFulfilledSale($product->id, 3, 10, Carbon::parse('2026-07-07T10:00:00+08:00')); // in July
+        seedFulfilledSale($product->id, 9, 10, Carbon::parse('2026-06-05T10:00:00+08:00')); // out of range
+    });
+
+    loginAsAcmeUser();
+
+    // Params exactly as the DateRangePicker emits (`%2B` is the encoded `+` of +08:00).
+    $this->get('/acme/reports?from=2026-07-01T00:00:00%2B08:00&to=2026-07-31T23:59:59%2B08:00')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/reports/index')
+            ->where('sales.count', 1)
+            ->where('sales.amount', 30)
+        );
+});
