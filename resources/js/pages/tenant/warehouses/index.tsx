@@ -10,6 +10,7 @@ import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -108,6 +109,33 @@ export default function WarehousesIndex() {
                 ) : (
                     '—'
                 ),
+            meta: { className: 'hidden md:table-cell' },
+        },
+        {
+            id: 'stock',
+            header: 'Items in stock',
+            meta: { className: 'text-right' },
+            cell: ({ row }) => {
+                const w = row.original;
+                return (
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                        <span className="tabular-nums">{w.items_in_stock}</span>
+                        {w.low_stock > 0 && (
+                            <Badge
+                                variant="secondary"
+                                className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
+                            >
+                                {w.low_stock} low
+                            </Badge>
+                        )}
+                        {w.out_of_stock > 0 && (
+                            <Badge variant="destructive">
+                                {w.out_of_stock} out of stock
+                            </Badge>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             accessorKey: 'address',

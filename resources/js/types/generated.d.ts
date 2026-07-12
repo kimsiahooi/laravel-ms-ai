@@ -150,6 +150,9 @@ name: string,
 code: string | null,
 address: string | null,
 created_at: string,
+items_in_stock: number,
+low_stock: number,
+out_of_stock: number,
 };
 export type WarehouseItemData = {
 stockable_type: string,

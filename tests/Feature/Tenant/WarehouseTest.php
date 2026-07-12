@@ -2,7 +2,9 @@
 
 use App\Actions\ProvisionTenant;
 use App\Models\Location;
+use App\Models\Product;
 use App\Models\Warehouse;
+use App\Models\WarehouseReorderLevel;
 use App\Models\WarehouseStock;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -49,6 +51,32 @@ it('lists a tenant’s warehouses, paginated', function () {
             ->has('warehouses.data', 2)
             ->where('warehouses.total', 2)
             ->where('filters.per_page', 10)
+        );
+});
+
+it('summarises each warehouse’s stock on the list (in stock, low, out)', function () {
+    $this->tenant->run(function () {
+        $loc = Location::create(['name' => 'KL HQ']);
+        $wh = Warehouse::create(['location_id' => $loc->id, 'name' => 'Main']);
+
+        $a = Product::create(['name' => 'A', 'sku' => 'A-1', 'unit' => 'ea']); // in stock, no reorder
+        $b = Product::create(['name' => 'B', 'sku' => 'B-1', 'unit' => 'ea']); // in stock + below reorder → low
+        $c = Product::create(['name' => 'C', 'sku' => 'C-1', 'unit' => 'ea']); // reorder set, no stock → out
+
+        WarehouseStock::create(['warehouse_id' => $wh->id, 'stockable_type' => 'product', 'stockable_id' => $a->id, 'quantity' => 10]);
+        WarehouseStock::create(['warehouse_id' => $wh->id, 'stockable_type' => 'product', 'stockable_id' => $b->id, 'quantity' => 3]);
+        WarehouseReorderLevel::create(['warehouse_id' => $wh->id, 'stockable_type' => 'product', 'stockable_id' => $b->id, 'min_stock' => 5]);
+        WarehouseReorderLevel::create(['warehouse_id' => $wh->id, 'stockable_type' => 'product', 'stockable_id' => $c->id, 'min_stock' => 5]);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/warehouses')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('warehouses.data.0.items_in_stock', 2)
+            ->where('warehouses.data.0.low_stock', 1)
+            ->where('warehouses.data.0.out_of_stock', 1)
         );
 });
 

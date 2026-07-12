@@ -25,6 +25,12 @@ class WarehouseData extends Data
         public ?string $code,
         public ?string $address,
         public string $created_at,
+        /** Items with on-hand > 0 at this warehouse (0 unless the list sets it). */
+        public int $items_in_stock = 0,
+        /** Items at/below their reorder level but not out (amber). */
+        public int $low_stock = 0,
+        /** Items with a reorder level set but nothing on hand (red). */
+        public int $out_of_stock = 0,
     ) {}
 
     public static function fromWarehouse(Warehouse $warehouse): self
