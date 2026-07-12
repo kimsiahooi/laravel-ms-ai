@@ -27,7 +27,7 @@ export default function ProductionOrderShow() {
 
             <PrintDocument
                 org={tenant.name}
-                docType="Work Order"
+                docType="Production Order"
                 number={`Work Order #${order.id}`}
                 statusLabel={order.status_label}
                 statusVariant={statusVariant(order.status)}

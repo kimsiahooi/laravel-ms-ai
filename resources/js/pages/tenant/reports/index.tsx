@@ -11,6 +11,7 @@ import {
     type DateRangeValue,
 } from '@/components/date-range-picker';
 import { EmptyState } from '@/components/empty-state';
+import { InfoHint } from '@/components/info-hint';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -120,8 +121,8 @@ export default function ReportsIndex() {
                         Reports
                     </h1>
                     <p className="text-muted-foreground text-sm">
-                        A summary of activity over a period. Amounts are
-                        order-line totals.
+                        A summary of activity over a period. Totals come from
+                        each order's line amounts (quantity × price).
                     </p>
                 </div>
                 <DateRangePicker
@@ -173,7 +174,12 @@ export default function ReportsIndex() {
                                             Count
                                         </TableHead>
                                         <TableHead className="text-right">
-                                            Net qty
+                                            Net change
+                                            <InfoHint>
+                                                How much stock went up or down
+                                                in total over this period (in
+                                                minus out).
+                                            </InfoHint>
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -231,9 +237,17 @@ export default function ReportsIndex() {
                                         <TableHead>Item</TableHead>
                                         <TableHead className="text-right">
                                             On hand
+                                            <InfoHint>
+                                                The amount you have in stock
+                                                right now.
+                                            </InfoHint>
                                         </TableHead>
                                         <TableHead className="text-right">
                                             Reorder at
+                                            <InfoHint>
+                                                When stock drops to this level,
+                                                it's time to buy or make more.
+                                            </InfoHint>
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>

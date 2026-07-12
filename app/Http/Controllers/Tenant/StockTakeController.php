@@ -123,7 +123,7 @@ class StockTakeController
 
         $action->handle($stockTake, $validated['items'] ?? [], $request->user());
 
-        $this->toast('Stock take posted.');
+        $this->toast('Stock count applied.');
 
         return redirect()->route('tenant.stock-takes.show', [
             'tenant' => tenant('id'),

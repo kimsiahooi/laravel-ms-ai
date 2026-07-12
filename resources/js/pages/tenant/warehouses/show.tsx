@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import { InfoHint } from '@/components/info-hint';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -196,7 +197,14 @@ export default function WarehouseShow() {
         },
         {
             accessorKey: 'on_hand',
-            header: 'On hand',
+            header: () => (
+                <>
+                    On hand
+                    <InfoHint>
+                        The amount you have in this warehouse right now.
+                    </InfoHint>
+                </>
+            ),
             cell: ({ row }) => (
                 <span className="tabular-nums">
                     {formatQuantity(row.original.on_hand)}
@@ -205,7 +213,15 @@ export default function WarehouseShow() {
         },
         {
             id: 'min_here',
-            header: 'Reorder level',
+            header: () => (
+                <>
+                    Reorder level
+                    <InfoHint>
+                        When on hand drops to this level, it's time to restock.
+                        Type to change it.
+                    </InfoHint>
+                </>
+            ),
             meta: { className: 'text-right' },
             cell: ({ row }) => (
                 <MinStockCell

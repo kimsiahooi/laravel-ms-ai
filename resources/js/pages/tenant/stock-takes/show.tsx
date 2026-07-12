@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Ban, ClipboardCheck, LoaderCircle } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
+import { InfoHint } from '@/components/info-hint';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -142,13 +143,21 @@ export default function StockTakeShow() {
                                 <TableRow>
                                     <TableHead>Item</TableHead>
                                     <TableHead className="text-right">
-                                        System
+                                        Expected
+                                        <InfoHint>
+                                            What the system thinks you have.
+                                        </InfoHint>
                                     </TableHead>
                                     <TableHead className="text-right">
                                         Counted
                                     </TableHead>
                                     <TableHead className="text-right">
-                                        Variance
+                                        Difference
+                                        <InfoHint>
+                                            Counted minus expected. Applying the
+                                            count corrects your stock by this
+                                            amount.
+                                        </InfoHint>
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -232,7 +241,7 @@ export default function StockTakeShow() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">
-                    Total variance:{' '}
+                    Total difference:{' '}
                     <span
                         className={cn(
                             'font-medium tabular-nums',
@@ -266,12 +275,12 @@ export default function StockTakeShow() {
                             {postForm.processing ? (
                                 <>
                                     <LoaderCircle className="size-4 animate-spin" />
-                                    Posting…
+                                    Applying…
                                 </>
                             ) : (
                                 <>
                                     <ClipboardCheck className="size-4" />
-                                    Post stock take
+                                    Apply count
                                 </>
                             )}
                         </Button>

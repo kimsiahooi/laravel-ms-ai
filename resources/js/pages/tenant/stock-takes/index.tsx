@@ -109,7 +109,7 @@ export default function StockTakesIndex() {
         },
         {
             accessorKey: 'total_variance',
-            header: 'Variance',
+            header: 'Difference',
             cell: ({ row }) => {
                 const v = row.original.total_variance;
                 return (
@@ -198,7 +198,7 @@ export default function StockTakesIndex() {
                     Stock takes
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Count what's physically in a warehouse, then post the
+                    Count what's physically in a warehouse, then apply the
                     differences to correct your stock.
                 </p>
             </div>
@@ -310,7 +310,7 @@ export default function StockTakesIndex() {
                 description={
                     <>
                         Remove stock take #{del.deleting?.id}? Its record is
-                        removed; any posted adjustments stay.
+                        removed; any stock corrections already applied stay.
                     </>
                 }
             />
