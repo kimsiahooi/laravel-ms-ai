@@ -41,6 +41,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import productsRoutes from '@/routes/tenant/products';
 import type { TenantPageProps } from '@/types';
@@ -380,6 +381,60 @@ export default function ProductsIndex() {
                 getRowId={(product) => String(product.id)}
                 title={productMeta.plural}
                 searchPlaceholder="Search name, SKU or barcode…"
+                renderExpanded={(product) => (
+                    <div className="px-4 py-3">
+                        {product.bom.length > 0 ? (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="font-medium text-sm">
+                                        Bill of materials
+                                        <span className="ml-1 font-normal text-muted-foreground">
+                                            · to make one unit
+                                        </span>
+                                    </p>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openBom(product)}
+                                    >
+                                        <Pencil className="size-4" />
+                                        Edit
+                                    </Button>
+                                </div>
+                                <ul className="divide-y rounded-md border bg-background">
+                                    {product.bom.map((line) => (
+                                        <li
+                                            key={line.id}
+                                            className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm"
+                                        >
+                                            <span className="text-foreground">
+                                                {line.name}
+                                            </span>
+                                            <span className="text-muted-foreground tabular-nums">
+                                                {formatQuantity(line.quantity)}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-muted-foreground text-sm">
+                                    No BOM yet — set the raw materials it takes
+                                    to make this product.
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openBom(product)}
+                                >
+                                    <ListTree className="size-4" />
+                                    Set BOM
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />

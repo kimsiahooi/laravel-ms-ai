@@ -14,7 +14,7 @@ import {
     SearchX,
     X,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 import { PaginationLink } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -77,6 +77,8 @@ type DataTableProps<T> = {
     toolbar?: ReactNode;
     emptyState: ReactNode;
     rowHref?: (row: T) => string;
+    /** When set, each row gets a leading expand toggle revealing this content. */
+    renderExpanded?: (row: T) => ReactNode;
 };
 
 export function DataTable<T>({
@@ -91,8 +93,12 @@ export function DataTable<T>({
     toolbar,
     emptyState,
     rowHref,
+    renderExpanded,
 }: DataTableProps<T>) {
     const [search, setSearch] = useState(filters.search);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(
+        () => new Set(),
+    );
     const [loading, setLoading] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
 
@@ -167,7 +173,19 @@ export function DataTable<T>({
         rowCount: paginator.total, // informational only — pagination is server-driven via paginator.links
     });
 
-    const columnCount = table.getAllLeafColumns().length;
+    const hasExpand = !!renderExpanded;
+    const columnCount = table.getAllLeafColumns().length + (hasExpand ? 1 : 0);
+
+    const toggleRow = (id: string) =>
+        setExpandedRows((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
 
     // First-class empty state (no rows and no active search).
     if (paginator.total === 0 && filters.search === '') {
@@ -233,6 +251,13 @@ export function DataTable<T>({
                         <TableHeader>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
+                                    {hasExpand && (
+                                        <TableHead className="w-10">
+                                            <span className="sr-only">
+                                                Expand
+                                            </span>
+                                        </TableHead>
+                                    )}
                                     {headerGroup.headers.map((header) => (
                                         <TableHead
                                             key={header.id}
@@ -274,65 +299,123 @@ export function DataTable<T>({
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-clickable={
-                                            rowHref ? '' : undefined
-                                        }
-                                        className={
-                                            rowHref
-                                                ? 'cursor-pointer'
-                                                : undefined
-                                        }
-                                        onClick={
-                                            rowHref
-                                                ? (event) => {
-                                                      if (
-                                                          window
-                                                              .getSelection()
-                                                              ?.toString()
-                                                      )
-                                                          return;
-                                                      if (
-                                                          event.button !== 0 ||
-                                                          event.metaKey ||
-                                                          event.ctrlKey ||
-                                                          event.shiftKey ||
-                                                          event.altKey
-                                                      )
-                                                          return;
-                                                      if (
-                                                          (
-                                                              event.target as HTMLElement
-                                                          ).closest(
-                                                              'a,button,input,[role="menuitem"],[data-slot^="dropdown-menu"]',
-                                                          )
-                                                      )
-                                                          return;
-                                                      router.visit(
-                                                          rowHref(row.original),
-                                                      );
-                                                  }
-                                                : undefined
-                                        }
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell
-                                                key={cell.id}
+                                table.getRowModel().rows.map((row) => {
+                                    const isExpanded = expandedRows.has(row.id);
+
+                                    return (
+                                        <Fragment key={row.id}>
+                                            <TableRow
+                                                data-clickable={
+                                                    rowHref ? '' : undefined
+                                                }
                                                 className={
-                                                    cell.column.columnDef.meta
-                                                        ?.className
+                                                    rowHref
+                                                        ? 'cursor-pointer'
+                                                        : undefined
+                                                }
+                                                onClick={
+                                                    rowHref
+                                                        ? (event) => {
+                                                              if (
+                                                                  window
+                                                                      .getSelection()
+                                                                      ?.toString()
+                                                              )
+                                                                  return;
+                                                              if (
+                                                                  event.button !==
+                                                                      0 ||
+                                                                  event.metaKey ||
+                                                                  event.ctrlKey ||
+                                                                  event.shiftKey ||
+                                                                  event.altKey
+                                                              )
+                                                                  return;
+                                                              if (
+                                                                  (
+                                                                      event.target as HTMLElement
+                                                                  ).closest(
+                                                                      'a,button,input,[role="menuitem"],[data-slot^="dropdown-menu"]',
+                                                                  )
+                                                              )
+                                                                  return;
+                                                              router.visit(
+                                                                  rowHref(
+                                                                      row.original,
+                                                                  ),
+                                                              );
+                                                          }
+                                                        : undefined
                                                 }
                                             >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
+                                                {hasExpand && (
+                                                    <TableCell className="w-10 align-middle">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(
+                                                                event,
+                                                            ) => {
+                                                                event.stopPropagation();
+                                                                toggleRow(
+                                                                    row.id,
+                                                                );
+                                                            }}
+                                                            aria-expanded={
+                                                                isExpanded
+                                                            }
+                                                            aria-label={
+                                                                isExpanded
+                                                                    ? 'Collapse row'
+                                                                    : 'Expand row'
+                                                            }
+                                                            className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                        >
+                                                            <ChevronRight
+                                                                className={cn(
+                                                                    'size-4 transition-transform',
+                                                                    isExpanded &&
+                                                                        'rotate-90',
+                                                                )}
+                                                            />
+                                                        </button>
+                                                    </TableCell>
                                                 )}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
+                                                {row
+                                                    .getVisibleCells()
+                                                    .map((cell) => (
+                                                        <TableCell
+                                                            key={cell.id}
+                                                            className={
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .meta
+                                                                    ?.className
+                                                            }
+                                                        >
+                                                            {flexRender(
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .cell,
+                                                                cell.getContext(),
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
+                                            </TableRow>
+                                            {hasExpand && isExpanded && (
+                                                <TableRow className="hover:bg-transparent">
+                                                    <TableCell
+                                                        colSpan={columnCount}
+                                                        className="bg-muted/30 p-0"
+                                                    >
+                                                        {renderExpanded?.(
+                                                            row.original,
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </Fragment>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>
