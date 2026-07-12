@@ -12,6 +12,7 @@ import {
     MapPin,
     Package,
     Receipt,
+    RotateCcw,
     ShoppingCart,
     Truck,
     Undo2,
@@ -40,6 +41,7 @@ import purchaseOrders from '@/routes/tenant/purchase-orders';
 import purchaseReturns from '@/routes/tenant/purchase-returns';
 import rawMaterials from '@/routes/tenant/raw-materials';
 import salesOrders from '@/routes/tenant/sales-orders';
+import salesReturns from '@/routes/tenant/sales-returns';
 import stockMovements from '@/routes/tenant/stock-movements';
 import stockTakes from '@/routes/tenant/stock-takes';
 import stockTransfers from '@/routes/tenant/stock-transfers';
@@ -125,6 +127,11 @@ export function TenantSidebar() {
             title: 'Sales orders',
             href: salesOrders.index.url({ tenant: slug }),
             icon: Receipt,
+        },
+        {
+            title: 'Sales returns',
+            href: salesReturns.index.url({ tenant: slug }),
+            icon: RotateCcw,
         },
         {
             title: 'Production orders',

@@ -141,6 +141,23 @@ name: string,
 quantity: number,
 unit_price: number,
 };
+export type SalesReturnData = {
+id: number,
+customer: string | null,
+status: string,
+status_label: string,
+item_count: number,
+total_quantity: number,
+completed_at: string | null,
+created_at: string,
+items: App.Data.SalesReturnItemData[],
+};
+export type SalesReturnItemData = {
+id: number,
+product_id: number | null,
+name: string,
+quantity: number,
+};
 export type StockMovementData = {
 id: number,
 warehouse: string,

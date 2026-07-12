@@ -14,6 +14,7 @@ use App\Http\Controllers\Tenant\PurchaseOrderController;
 use App\Http\Controllers\Tenant\PurchaseReturnController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SalesOrderController;
+use App\Http\Controllers\Tenant\SalesReturnController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\StockLookupController;
 use App\Http\Controllers\Tenant\StockMovementController;
@@ -146,6 +147,15 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('sales-orders.fulfill');
             Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
                 ->name('sales-orders.cancel');
+
+            // Sales returns — take products back from a customer (stock IN).
+            Route::resource('sales-returns', SalesReturnController::class)
+                ->parameters(['sales-returns' => 'salesReturn'])
+                ->only(['index', 'show', 'store', 'update', 'destroy']);
+            Route::post('sales-returns/{salesReturn}/complete', [SalesReturnController::class, 'complete'])
+                ->name('sales-returns.complete');
+            Route::post('sales-returns/{salesReturn}/cancel', [SalesReturnController::class, 'cancel'])
+                ->name('sales-returns.cancel');
 
             // Manufacturing — make a product by consuming its BOM.
             Route::resource('production-orders', ProductionOrderController::class)
