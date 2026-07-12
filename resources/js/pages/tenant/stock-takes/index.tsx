@@ -13,6 +13,7 @@ import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
+import { SignedQuantity } from '@/components/signed-quantity';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,9 +28,8 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity, timeAgo } from '@/lib/format';
+import { timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
-import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/tenant';
 import stockTakesRoutes from '@/routes/tenant/stock-takes';
 import type { TenantPageProps } from '@/types';
@@ -108,21 +108,9 @@ export default function StockTakesIndex() {
         {
             accessorKey: 'total_variance',
             header: 'Difference',
-            cell: ({ row }) => {
-                const v = row.original.total_variance;
-                return (
-                    <span
-                        className={cn(
-                            'tabular-nums',
-                            v < 0 && 'text-destructive',
-                            v > 0 && 'text-emerald-600 dark:text-emerald-400',
-                        )}
-                    >
-                        {v > 0 ? '+' : ''}
-                        {formatQuantity(v)}
-                    </span>
-                );
-            },
+            cell: ({ row }) => (
+                <SignedQuantity value={row.original.total_variance} />
+            ),
             meta: { className: 'text-right' },
         },
         {

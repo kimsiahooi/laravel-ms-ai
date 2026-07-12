@@ -3,6 +3,7 @@ import { ArrowLeft, Ban, ClipboardCheck, LoaderCircle } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
+import { SignedQuantity } from '@/components/signed-quantity';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -242,17 +243,10 @@ export default function StockTakeShow() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">
                     Total difference:{' '}
-                    <span
-                        className={cn(
-                            'font-medium tabular-nums',
-                            totalVariance < 0 && 'text-destructive',
-                            totalVariance > 0 &&
-                                'text-emerald-600 dark:text-emerald-400',
-                        )}
-                    >
-                        {totalVariance > 0 ? '+' : ''}
-                        {formatQuantity(totalVariance)}
-                    </span>
+                    <SignedQuantity
+                        value={totalVariance}
+                        className="font-medium"
+                    />
                 </p>
                 {isDraft && (
                     <div className="flex gap-2">

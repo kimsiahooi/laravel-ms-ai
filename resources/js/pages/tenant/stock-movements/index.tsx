@@ -9,6 +9,7 @@ import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { OnHandHint } from '@/components/on-hand-hint';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
+import { SignedQuantity } from '@/components/signed-quantity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,9 +19,8 @@ import { useOnHand } from '@/hooks/use-on-hand';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity, timeAgo } from '@/lib/format';
+import { timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
-import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/tenant';
 import stockMovementsRoutes from '@/routes/tenant/stock-movements';
 import type { TenantPageProps } from '@/types';
@@ -115,22 +115,12 @@ export default function StockMovementsIndex() {
         {
             accessorKey: 'quantity',
             header: 'Quantity',
-            cell: ({ row }) => {
-                const q = row.original.quantity;
-                return (
-                    <span
-                        className={cn(
-                            'font-medium tabular-nums',
-                            q < 0
-                                ? 'text-destructive'
-                                : 'text-emerald-600 dark:text-emerald-400',
-                        )}
-                    >
-                        {q > 0 ? '+' : ''}
-                        {formatQuantity(q)}
-                    </span>
-                );
-            },
+            cell: ({ row }) => (
+                <SignedQuantity
+                    value={row.original.quantity}
+                    className="font-medium"
+                />
+            ),
             meta: { className: 'text-right' },
         },
         {

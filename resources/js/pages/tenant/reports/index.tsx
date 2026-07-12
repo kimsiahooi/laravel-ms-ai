@@ -9,6 +9,7 @@ import {
 import { DateRangePicker } from '@/components/date-range-picker';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
+import { SignedQuantity } from '@/components/signed-quantity';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -164,21 +165,13 @@ export default function ReportsIndex() {
                                             <TableCell className="text-right text-muted-foreground tabular-nums">
                                                 {movement.count}
                                             </TableCell>
-                                            <TableCell
-                                                className={cn(
-                                                    'text-right font-medium tabular-nums',
-                                                    movement.net_quantity < 0 &&
-                                                        'text-destructive',
-                                                    movement.net_quantity > 0 &&
-                                                        'text-emerald-600 dark:text-emerald-400',
-                                                )}
-                                            >
-                                                {movement.net_quantity > 0
-                                                    ? '+'
-                                                    : ''}
-                                                {formatQuantity(
-                                                    movement.net_quantity,
-                                                )}
+                                            <TableCell className="text-right">
+                                                <SignedQuantity
+                                                    value={
+                                                        movement.net_quantity
+                                                    }
+                                                    className="font-medium"
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     ))}

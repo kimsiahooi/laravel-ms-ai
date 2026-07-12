@@ -36,3 +36,16 @@ export const STOCK_STATUS_TEXT: Record<StockStatusKey, string> = {
     low: 'text-amber-600 dark:text-amber-400',
     out: 'text-destructive',
 };
+
+/** Positive (in) text colour — the same emerald used across the stock screens. */
+export const POSITIVE_TEXT = 'text-emerald-600 dark:text-emerald-400';
+
+/**
+ * Text colour for a signed quantity: `destructive` when negative (out),
+ * {@link POSITIVE_TEXT} when positive (in), and neutral (inherit) at zero.
+ */
+export function signedQuantityClass(value: number): string {
+    if (value < 0) return 'text-destructive';
+    if (value > 0) return POSITIVE_TEXT;
+    return '';
+}
