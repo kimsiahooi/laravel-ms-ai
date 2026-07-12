@@ -1,6 +1,5 @@
 import { Head } from '@inertiajs/react';
 import { Factory, ShoppingCart, TrendingUp, TriangleAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import {
     Area,
     AreaChart,
@@ -22,6 +21,7 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import { useDateRangeFilter } from '@/hooks/use-date-range-filter';
+import { firstName, useTimeOfDayGreeting } from '@/hooks/use-greeting';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatCompact, formatQuantity } from '@/lib/format';
@@ -70,20 +70,8 @@ export default function TenantDashboard() {
     const { auth, tenant, organization, filters, kpis, series, movements } =
         usePageProps<PageProps>();
 
-    const [greeting, setGreeting] = useState('Welcome back');
-    const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'there';
-
-    // Time-of-day greeting computed after mount to avoid an SSR/timezone mismatch.
-    useEffect(() => {
-        const hour = new Date().getHours();
-        setGreeting(
-            hour < 12
-                ? 'Good morning'
-                : hour < 18
-                  ? 'Good afternoon'
-                  : 'Good evening',
-        );
-    }, []);
+    const greeting = useTimeOfDayGreeting();
+    const greeterName = firstName(auth.user?.name, 'there');
 
     const base = dashboard.url({ tenant: tenant.slug });
     const applyRange = useDateRangeFilter(base, [
@@ -108,8 +96,8 @@ export default function TenantDashboard() {
                         className="text-muted-foreground text-sm"
                         suppressHydrationWarning
                     >
-                        {greeting}, {firstName}. Here's how {organization.name}{' '}
-                        is doing this period.
+                        {greeting}, {greeterName}. Here's how{' '}
+                        {organization.name} is doing this period.
                     </p>
                 </div>
                 <DateRangePicker

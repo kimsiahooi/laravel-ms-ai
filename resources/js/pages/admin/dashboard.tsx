@@ -6,7 +6,6 @@ import {
     CalendarRange,
     Clock,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartCard } from '@/components/chart-card';
 import { StatCard } from '@/components/stat-card';
@@ -17,6 +16,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from '@/components/ui/chart';
+import { firstName, useTimeOfDayGreeting } from '@/hooks/use-greeting';
 import { usePageProps } from '@/hooks/use-page-props';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { timeAgo } from '@/lib/format';
@@ -43,22 +43,9 @@ const signupsConfig = {
 
 export default function AdminDashboard() {
     const { auth, stats, signups } = usePageProps<PageProps>();
-    const [greeting, setGreeting] = useState('Welcome back');
+    const greeting = useTimeOfDayGreeting();
+    const greeterName = firstName(auth.user?.name, 'Admin');
     const hasSignups = signups.some((d) => d.count > 0);
-
-    const firstName = auth.user?.name?.trim().split(/\s+/)[0] || 'Admin';
-
-    // Time-of-day greeting computed after mount to avoid SSR/timezone mismatch.
-    useEffect(() => {
-        const hour = new Date().getHours();
-        setGreeting(
-            hour < 12
-                ? 'Good morning'
-                : hour < 18
-                  ? 'Good afternoon'
-                  : 'Good evening',
-        );
-    }, []);
 
     return (
         <CentralAdminLayout>
@@ -73,7 +60,7 @@ export default function AdminDashboard() {
                         className="text-muted-foreground text-sm"
                         suppressHydrationWarning
                     >
-                        {greeting}, {firstName}. Here's an overview of every
+                        {greeting}, {greeterName}. Here's an overview of every
                         tenant workspace.
                     </p>
                 </div>

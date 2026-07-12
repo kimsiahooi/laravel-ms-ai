@@ -9,6 +9,7 @@ import {
 import { DateRangePicker } from '@/components/date-range-picker';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
+import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -51,35 +52,6 @@ type PageProps = TenantPageProps & {
     movements: Movement[];
     lowStock: LowStock[];
 };
-
-function StatCard({
-    icon: Icon,
-    label,
-    value,
-    hint,
-}: {
-    icon: typeof ShoppingCart;
-    label: string;
-    value: string;
-    hint: string;
-}) {
-    return (
-        <Card>
-            <CardContent className="flex items-start gap-3 p-5">
-                <span className="grid size-9 shrink-0 place-items-center rounded-md bg-secondary text-muted-foreground">
-                    <Icon className="size-4" />
-                </span>
-                <div className="min-w-0">
-                    <p className="truncate font-semibold text-2xl tabular-nums">
-                        {value}
-                    </p>
-                    <p className="text-muted-foreground text-sm">{label}</p>
-                    <p className="text-muted-foreground text-xs">{hint}</p>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 
 export default function ReportsIndex() {
     const {
@@ -136,19 +108,19 @@ export default function ReportsIndex() {
                     icon={TrendingUp}
                     label="Sales"
                     value={formatQuantity(sales.amount)}
-                    hint={`${sales.count} orders · ${formatQuantity(sales.quantity)} sold`}
+                    sub={`${sales.count} orders · ${formatQuantity(sales.quantity)} sold`}
                 />
                 <StatCard
                     icon={ShoppingCart}
                     label="Purchases"
                     value={formatQuantity(purchases.amount)}
-                    hint={`${purchases.count} received · ${formatQuantity(purchases.quantity)} in`}
+                    sub={`${purchases.count} received · ${formatQuantity(purchases.quantity)} in`}
                 />
                 <StatCard
                     icon={Factory}
                     label="Production"
                     value={formatQuantity(production.quantity)}
-                    hint={`${production.count} builds completed`}
+                    sub={`${production.count} builds completed`}
                 />
             </div>
 
