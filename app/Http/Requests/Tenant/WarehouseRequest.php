@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use App\Models\Warehouse;
+use App\Support\ActiveExists;
 use Illuminate\Validation\Rule;
 
 class WarehouseRequest extends TenantFormRequest
@@ -20,7 +21,7 @@ class WarehouseRequest extends TenantFormRequest
         return [
             'location_id' => [
                 'required',
-                Rule::exists('locations', 'id')->whereNull('deleted_at'),
+                ActiveExists::of('locations'),
             ],
             'name' => ['required', 'string', 'max:255'],
             'code' => [

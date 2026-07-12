@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use App\Models\Product;
+use App\Support\ActiveExists;
 use Illuminate\Validation\Rule;
 
 class ProductRequest extends TenantFormRequest
@@ -27,11 +28,11 @@ class ProductRequest extends TenantFormRequest
             'description' => ['nullable', 'string', 'max:2000'],
             'category_id' => [
                 'nullable',
-                Rule::exists('categories', 'id')->whereNull('deleted_at'),
+                ActiveExists::of('categories'),
             ],
             'supplier_id' => [
                 'nullable',
-                Rule::exists('suppliers', 'id')->whereNull('deleted_at'),
+                ActiveExists::of('suppliers'),
             ],
             'unit' => ['required', 'string', 'max:20'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

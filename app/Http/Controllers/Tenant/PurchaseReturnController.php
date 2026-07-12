@@ -17,10 +17,10 @@ use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Support\ActiveExists;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -112,7 +112,7 @@ class PurchaseReturnController
     public function complete(Request $request, PurchaseReturn $purchaseReturn, CompletePurchaseReturn $action): RedirectResponse
     {
         $validated = $request->validate([
-            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->whereNull('deleted_at')],
+            'warehouse_id' => ['required', ActiveExists::of('warehouses')],
         ]);
 
         try {

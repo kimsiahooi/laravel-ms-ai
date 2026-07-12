@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
+use App\Support\ActiveExists;
 use Illuminate\Validation\Rule;
 
 class WarehouseReorderLevelRequest extends TenantFormRequest
@@ -24,7 +25,7 @@ class WarehouseReorderLevelRequest extends TenantFormRequest
             'stockable_type' => ['required', 'in:product,raw_material'],
             'stockable_id' => [
                 'required', 'integer',
-                Rule::exists($table, 'id')->whereNull('deleted_at'),
+                ActiveExists::of($table),
             ],
             'min_stock' => ['required', 'numeric', 'min:0'],
         ];

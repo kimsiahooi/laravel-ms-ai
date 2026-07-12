@@ -6,6 +6,7 @@ namespace App\Http\Requests\Tenant;
 
 use App\Models\Product;
 use App\Models\RawMaterial;
+use App\Support\ActiveExists;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class StockMovementRequest extends TenantFormRequest
         return [
             'warehouse_id' => [
                 'required',
-                Rule::exists('warehouses', 'id')->whereNull('deleted_at'),
+                ActiveExists::of('warehouses'),
             ],
             // The merged item-picker value, e.g. "product:5" or "raw_material:3".
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],

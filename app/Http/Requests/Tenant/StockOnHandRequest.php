@@ -6,6 +6,7 @@ namespace App\Http\Requests\Tenant;
 
 use App\Models\Product;
 use App\Models\RawMaterial;
+use App\Support\ActiveExists;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Validation\Rule;
 
@@ -23,7 +24,7 @@ class StockOnHandRequest extends TenantFormRequest
         return [
             'warehouse_id' => [
                 'required',
-                Rule::exists('warehouses', 'id')->whereNull('deleted_at'),
+                ActiveExists::of('warehouses'),
             ],
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],
         ];

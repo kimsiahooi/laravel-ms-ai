@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
-use Illuminate\Validation\Rule;
+use App\Support\ActiveExists;
 
 /** Create/update a purchase return with its line items. */
 class PurchaseReturnRequest extends TenantFormRequest
@@ -15,10 +15,10 @@ class PurchaseReturnRequest extends TenantFormRequest
     public function rules(): array
     {
         return [
-            'supplier_id' => ['nullable', Rule::exists('suppliers', 'id')->whereNull('deleted_at')],
+            'supplier_id' => ['nullable', ActiveExists::of('suppliers')],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.raw_material_id' => ['required', Rule::exists('raw_materials', 'id')->whereNull('deleted_at')],
+            'items.*.raw_material_id' => ['required', ActiveExists::of('raw_materials')],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
         ];
     }

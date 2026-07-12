@@ -16,10 +16,10 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\SalesReturn;
 use App\Models\Warehouse;
+use App\Support\ActiveExists;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -110,7 +110,7 @@ class SalesReturnController
     public function complete(Request $request, SalesReturn $salesReturn, CompleteSalesReturn $action): RedirectResponse
     {
         $validated = $request->validate([
-            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->whereNull('deleted_at')],
+            'warehouse_id' => ['required', ActiveExists::of('warehouses')],
         ]);
 
         $action->handle(

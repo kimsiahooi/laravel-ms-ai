@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
-use Illuminate\Validation\Rule;
+use App\Support\ActiveExists;
 
 class BomRequest extends TenantFormRequest
 {
@@ -19,7 +19,7 @@ class BomRequest extends TenantFormRequest
             'items.*.raw_material_id' => [
                 'required',
                 'distinct',
-                Rule::exists('raw_materials', 'id')->whereNull('deleted_at'),
+                ActiveExists::of('raw_materials'),
             ],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
         ];
