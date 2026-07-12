@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Exceptions\BlockedByDependentsException;
+use App\Models\Concerns\RecordsActivity;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['location_id', 'name', 'code', 'address'])]
 class Warehouse extends Model
 {
+    use RecordsActivity;
     use Searchable;
     use SoftDeletes;
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Tenant\ActivityController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\DashboardController;
@@ -141,6 +142,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // and never reach Laravel; an extension-less path avoids that.
             Route::get('products/{product}/image', ProductImageController::class)
                 ->name('products.image');
+
+            // Traceability — a read-only history of catalog/order changes.
+            Route::get('activity', [ActivityController::class, 'index'])
+                ->name('activity.index');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

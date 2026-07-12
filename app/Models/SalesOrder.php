@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\SalesOrderStatus;
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -36,6 +37,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['customer_id', 'status', 'currency', 'notes', 'user_id', 'fulfilled_at', 'fulfilled_warehouse_id'])]
 class SalesOrder extends Model
 {
+    use RecordsActivity;
     use SoftDeletes;
 
     /**

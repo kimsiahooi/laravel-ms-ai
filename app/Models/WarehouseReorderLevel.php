@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 #[Fillable(['warehouse_id', 'stockable_type', 'stockable_id', 'min_stock'])]
 class WarehouseReorderLevel extends Model
 {
+    use RecordsActivity;
+
     /**
      * @return array<string, string>
      */

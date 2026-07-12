@@ -53,11 +53,19 @@ Build **product-grade UI, not plain black-and-white forms.** Full policy:
   (`layouts/central-admin-layout.tsx`, `layouts/tenant-layout.tsx`); auth pages use
   the split-screen brand-panel + form-card pattern (`pages/*/login.tsx`).
 - **a11y + responsive + SSR:** bind labels, `focus-visible` rings, `aria-label` on
-  icon buttons; no horizontal body scroll, hide non-essential columns on small
-  screens; compute `Date`/`window`-derived content post-mount or use
-  `suppressHydrationWarning`.
+  icon buttons; **no horizontal body scroll at any width** (verify 375/768/1024) —
+  sidebar is a drawer below `lg`, toolbars stack on mobile, hide non-essential
+  columns on small screens, cap wide popovers with `max-w-[calc(100vw-1rem)]`
+  (see `docs/RESPONSIVE.md`); compute `Date`/`window`-derived content post-mount
+  or use `suppressHydrationWarning`.
 - **Honest data only** — no invented metrics, fake charts, or actions without an
   endpoint.
+- **Plain language** — every user-facing string (page/field descriptions, hints,
+  empty states, dialogs, toasts) is written for the person running the business,
+  not the developer. No DB/dev jargon (on-hand, ledger, snapshot, reorder point,
+  ISO code, morph…); keep domain terms users know (SKU, warehouse, Bill of
+  materials). See `docs/COPY-STYLE.md` (jargon→plain glossary + the "would a
+  non-technical person understand this?" test).
 
 Mirror the reference implementations: `pages/admin/dashboard.tsx` (stats +
 searchable table + create Sheet + empty states), `pages/{admin,tenant}/login.tsx`,
@@ -74,7 +82,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4
+- php - 8.5
 - inertiajs/inertia-laravel (INERTIA_LARAVEL) - v3
 - laravel/fortify (FORTIFY) - v1
 - laravel/framework (LARAVEL) - v13

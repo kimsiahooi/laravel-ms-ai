@@ -1,5 +1,19 @@
 declare namespace App {
 namespace Data {
+export type ActivityChangeData = {
+field: string,
+old: string | null,
+new: string | null,
+};
+export type ActivityData = {
+id: number,
+event: string | null,
+subject_type: string,
+subject: string,
+causer: string | null,
+changes: App.Data.ActivityChangeData[],
+created_at: string,
+};
 export type BomItemData = {
 id: number,
 raw_material_id: number,

@@ -6,6 +6,7 @@ import {
     Contact,
     Factory,
     FolderTree,
+    History,
     LayoutGrid,
     MapPin,
     Package,
@@ -27,6 +28,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/tenant';
+import activity from '@/routes/tenant/activity';
 import categories from '@/routes/tenant/categories';
 import customers from '@/routes/tenant/customers';
 import locations from '@/routes/tenant/locations';
@@ -114,6 +116,11 @@ export function TenantSidebar() {
             title: 'Production orders',
             href: productionOrders.index.url({ tenant: slug }),
             icon: Factory,
+        },
+        {
+            title: 'Activity',
+            href: activity.index.url({ tenant: slug }),
+            icon: History,
         },
     ];
 

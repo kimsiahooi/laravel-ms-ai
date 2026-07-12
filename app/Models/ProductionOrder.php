@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ProductionOrderStatus;
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['product_id', 'product_snapshot', 'quantity', 'status', 'notes', 'user_id', 'completed_at', 'completed_warehouse_id'])]
 class ProductionOrder extends Model
 {
+    use RecordsActivity;
     use SoftDeletes;
 
     /**
