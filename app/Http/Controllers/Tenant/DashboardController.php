@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Enums\StockMovementReason;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -92,7 +93,7 @@ class DashboardController
      *
      * @return array<int, array<string, mixed>>
      */
-    private function dailySeries(Carbon $from, Carbon $to): array
+    private function dailySeries(CarbonInterface $from, CarbonInterface $to): array
     {
         $range = [$from, $to];
 
@@ -127,7 +128,9 @@ class DashboardController
                 'sales' => (float) ($salesByDay[$key] ?? 0),
                 'purchases' => (float) ($purchasesByDay[$key] ?? 0),
             ];
-            $cursor->addDay();
+            // Reassign (not in-place) so this advances whether the app's date class
+            // is mutable Carbon or CarbonImmutable (Date::use(CarbonImmutable::class)).
+            $cursor = $cursor->addDay();
             $guard++;
         }
 
@@ -135,7 +138,7 @@ class DashboardController
     }
 
     /**
-     * @param  array{0: Carbon, 1: Carbon}  $range
+     * @param  array{0: CarbonInterface, 1: CarbonInterface}  $range
      * @return array<int, array<string, mixed>>
      */
     private function movementsByReason(array $range): array

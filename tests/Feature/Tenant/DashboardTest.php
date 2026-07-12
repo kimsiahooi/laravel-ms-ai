@@ -77,3 +77,28 @@ it('totals fulfilled sales within the default (this-week) period, excluding out-
             ->where('kpis.sales.amount', 20)
         );
 });
+
+it('applies an offset-carrying date-range filter without erroring (CarbonImmutable)', function () {
+    $this->tenant->run(function () {
+        $product = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'pcs']);
+        // Jul 7, comfortably inside the range below regardless of the DB timezone.
+        makeDashboardSale($product->id, 2, 10, Carbon::parse('2026-07-07T10:00:00+08:00'));
+    });
+
+    loginAsAcmeUser();
+
+    // Params shaped exactly like the DateRangePicker emits (offset-carrying ISO). The
+    // app runs Date::use(CarbonImmutable::class), so `$request->date()` returns a
+    // CarbonImmutable — before the fix this hit the `Illuminate\Support\Carbon` hint on
+    // dailySeries() and threw a TypeError (500). `%2B` is the encoded `+` of "+08:00".
+    $this->get('/acme/dashboard?from=2026-07-06T00:00:00%2B08:00&to=2026-07-08T23:59:59%2B08:00')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/dashboard')
+            ->where('kpis.sales.count', 1)
+            ->where('kpis.sales.amount', 20)
+            // Jul 6, 7, 8 inclusive = 3 points — not the 366 identical rows the
+            // immutable-mutation no-op (`$cursor->addDay();`) would have produced.
+            ->has('series', 3)
+        );
+});
