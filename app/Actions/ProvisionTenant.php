@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ReservedSlugs;
+use Database\Seeders\DemoTenantSeeder;
 use Illuminate\Validation\ValidationException;
 
 class ProvisionTenant
@@ -14,7 +15,9 @@ class ProvisionTenant
     /**
      * Create a tenant (the TenantCreated pipeline creates + migrates its database
      * synchronously), then seed the first tenant user inside the tenant database.
-     * Reserved slugs are rejected before any database work.
+     * Reserved slugs are rejected before any database work. When $seedDemoData is
+     * true, a Malaysia/Singapore sample dataset is seeded after the admin user
+     * (opt-in from the admin panel; off by default so tests stay clean).
      */
     public function handle(
         string $name,
@@ -22,6 +25,7 @@ class ProvisionTenant
         string $adminName,
         string $adminEmail,
         string $adminPassword,
+        bool $seedDemoData = false,
     ): Tenant {
         if (in_array($slug, ReservedSlugs::LIST, true)) {
             throw ValidationException::withMessages([
@@ -39,12 +43,16 @@ class ProvisionTenant
         // run() switches the default connection to the tenant DB, executes the
         // closure, then reverts. User::create writes to the tenant users table;
         // the password is hashed by the model's 'hashed' cast (do not pre-hash).
-        $tenant->run(function () use ($adminName, $adminEmail, $adminPassword): void {
+        $tenant->run(function () use ($adminName, $adminEmail, $adminPassword, $seedDemoData): void {
             User::create([
                 'name' => $adminName,
                 'email' => $adminEmail,
                 'password' => $adminPassword,
             ]);
+
+            if ($seedDemoData) {
+                app(DemoTenantSeeder::class)->run();
+            }
         });
 
         return $tenant;

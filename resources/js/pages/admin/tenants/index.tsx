@@ -40,6 +40,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
     Tooltip,
     TooltipContent,
@@ -89,6 +90,7 @@ export default function AdminTenantsIndex() {
     const [slug, setSlug] = useState('');
     const [slugTouched, setSlugTouched] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [seedDemo, setSeedDemo] = useState(true);
     const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
     const [deleting, setDeleting] = useState<Tenant | null>(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
@@ -153,6 +155,7 @@ export default function AdminTenantsIndex() {
         setSlug('');
         setSlugTouched(false);
         setShowPassword(false);
+        setSeedDemo(true);
     };
 
     const columns: ColumnDef<Tenant>[] = [
@@ -683,6 +686,32 @@ export default function AdminTenantsIndex() {
                                                 message={errors.admin_password}
                                             />
                                         </div>
+                                    </div>
+
+                                    <Separator />
+
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="seed_demo_data">
+                                                Fill with sample data
+                                            </Label>
+                                            <p className="text-muted-foreground text-xs">
+                                                Add example products, orders and
+                                                stock so they can explore.
+                                                Everything can be deleted later.
+                                            </p>
+                                        </div>
+                                        {/* Radix Switch isn't a form field, so mirror it to a hidden input. */}
+                                        <input
+                                            type="hidden"
+                                            name="seed_demo_data"
+                                            value={seedDemo ? '1' : '0'}
+                                        />
+                                        <Switch
+                                            id="seed_demo_data"
+                                            checked={seedDemo}
+                                            onCheckedChange={setSeedDemo}
+                                        />
                                     </div>
                                 </div>
 

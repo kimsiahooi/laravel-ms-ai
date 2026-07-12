@@ -61,6 +61,7 @@ class TenantController
             adminName: $data['admin_name'],
             adminEmail: $data['admin_email'],
             adminPassword: $data['admin_password'],
+            seedDemoData: $request->boolean('seed_demo_data'),
         );
 
         $this->toast("Tenant \"{$tenant->name}\" created — login at /{$tenant->getKey()}/login.");

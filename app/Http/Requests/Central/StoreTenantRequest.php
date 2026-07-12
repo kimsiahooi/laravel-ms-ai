@@ -37,6 +37,8 @@ class StoreTenantRequest extends FormRequest
             'admin_name' => ['required', 'string', 'max:255'],
             'admin_email' => ['required', 'string', 'email', 'max:255'],
             'admin_password' => ['required', 'string', 'min:8'],
+            // Optional; when true, seed a sample dataset into the new tenant.
+            'seed_demo_data' => ['boolean'],
         ];
     }
 
