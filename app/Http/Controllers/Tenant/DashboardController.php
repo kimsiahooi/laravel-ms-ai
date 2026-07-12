@@ -62,7 +62,7 @@ class DashboardController
             })
             ->whereNull('w.deleted_at')
             ->where('rl.min_stock', '>', 0)
-            ->whereRaw('COALESCE(ws.quantity, 0) < rl.min_stock')
+            ->whereRaw('COALESCE(ws.quantity, 0) <= rl.min_stock')
             ->count();
 
         return Inertia::render('tenant/dashboard', [

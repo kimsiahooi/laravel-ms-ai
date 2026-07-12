@@ -1,3 +1,11 @@
+// A FIXED locale for number formatting. These strings are rendered during SSR (Node)
+// and again on the client (browser); an unpinned `undefined` locale resolves
+// differently across the two runtimes, producing "12,500" vs "12.500" and a React
+// hydration mismatch (#418). Pinning to en-US (comma-group, dot-decimal — the grouping
+// MY/SG users expect) makes the output identical on both sides. Dates keep the viewer's
+// locale intentionally (they render client-side, past hydration, or via timeAgo).
+const NUMBER_LOCALE = 'en-US';
+
 const RELATIVE_TIME = new Intl.RelativeTimeFormat(undefined, {
     numeric: 'auto',
 });
@@ -38,9 +46,17 @@ export function timeAgo(iso: string): string {
 
 /** Format a stock quantity for display: digit grouping + up to 4 decimals. */
 export function formatQuantity(value: number | string): string {
-    return Number(value).toLocaleString(undefined, {
+    return Number(value).toLocaleString(NUMBER_LOCALE, {
         maximumFractionDigits: 4,
     });
+}
+
+/** Compact number for tight axis ticks / chips — e.g. 1200 → "1.2K". */
+export function formatCompact(value: number): string {
+    return new Intl.NumberFormat(NUMBER_LOCALE, {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(value);
 }
 
 export function absoluteDate(iso: string): string {
@@ -72,7 +88,7 @@ export function formatDate(iso: string): string {
 /** Currency-formatted amount, falling back to "CODE 0.00" for unknown codes. */
 export function formatMoney(amount: number, currency: string): string {
     try {
-        return new Intl.NumberFormat(undefined, {
+        return new Intl.NumberFormat(NUMBER_LOCALE, {
             style: 'currency',
             currency,
         }).format(amount);

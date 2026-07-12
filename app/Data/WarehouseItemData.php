@@ -27,7 +27,7 @@ class WarehouseItemData extends Data
         public string $unit,
         public float $on_hand,         // quantity in THIS warehouse (0 if none)
         public float $min_stock,       // THIS warehouse's threshold (0 if unset)
-        public bool $needs_reorder,    // min_stock > 0 && on_hand < min_stock
+        public bool $needs_reorder,    // min_stock > 0 && on_hand <= min_stock
     ) {}
 
     public static function fromRow(object $row): self
@@ -44,7 +44,9 @@ class WarehouseItemData extends Data
             unit: $row->unit,
             on_hand: $onHand,
             min_stock: $min,
-            needs_reorder: $min > 0 && $onHand < $min,
+            // At OR below the reorder level = time to restock (matches the app copy
+            // "when on hand drops to this level…" and the TS stockStatus() boundary).
+            needs_reorder: $min > 0 && $onHand <= $min,
         );
     }
 }

@@ -145,7 +145,7 @@ class WarehouseController
         $counts = DB::query()->fromSub($this->warehouseItemsUnion($whId), 'items')
             ->selectRaw('
                 SUM(CASE WHEN on_hand > 0 THEN 1 ELSE 0 END) as in_stock,
-                SUM(CASE WHEN min_stock > 0 AND on_hand > 0 AND on_hand < min_stock THEN 1 ELSE 0 END) as low_count,
+                SUM(CASE WHEN min_stock > 0 AND on_hand > 0 AND on_hand <= min_stock THEN 1 ELSE 0 END) as low_count,
                 SUM(CASE WHEN min_stock > 0 AND on_hand = 0 THEN 1 ELSE 0 END) as out_count
             ')
             ->first();

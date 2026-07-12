@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/chart';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
+import { formatCompact, formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import type { TenantBrand, User } from '@/types';
 
@@ -67,13 +67,6 @@ const trendConfig = {
 const movementsConfig = {
     net: { label: 'Net change', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
-
-// Short axis ticks so large totals don't crowd the plot (1200 → "1.2K").
-const compact = (value: number): string =>
-    new Intl.NumberFormat(undefined, {
-        notation: 'compact',
-        maximumFractionDigits: 1,
-    }).format(value);
 
 export default function TenantDashboard() {
     const { auth, tenant, organization, filters, kpis, series, movements } =
@@ -244,7 +237,7 @@ export default function TenantDashboard() {
                                 axisLine={false}
                                 width={44}
                                 fontSize={11}
-                                tickFormatter={compact}
+                                tickFormatter={formatCompact}
                             />
                             <ChartTooltip
                                 cursor={false}
@@ -300,7 +293,7 @@ export default function TenantDashboard() {
                                 tickLine={false}
                                 axisLine={false}
                                 fontSize={11}
-                                tickFormatter={compact}
+                                tickFormatter={formatCompact}
                             />
                             <YAxis
                                 type="category"

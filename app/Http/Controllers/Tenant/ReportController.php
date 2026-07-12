@@ -104,7 +104,7 @@ class ReportController
             })
             ->whereNull('w.deleted_at')
             ->where('rl.min_stock', '>', 0)
-            ->whereRaw('COALESCE(ws.quantity, 0) < rl.min_stock')
+            ->whereRaw('COALESCE(ws.quantity, 0) <= rl.min_stock')
             ->selectRaw('w.name as wh_name, loc.name as loc_name, rl.stockable_type, rl.stockable_id, COALESCE(ws.quantity, 0) as on_hand, rl.min_stock as reorder_level')
             ->orderBy('on_hand')
             ->get();

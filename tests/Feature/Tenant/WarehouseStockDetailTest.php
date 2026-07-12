@@ -67,6 +67,33 @@ it('shows this warehouse\'s in-stock and alerting items only, on-hand desc', fun
         );
 });
 
+it('flags an item exactly at its reorder level as needs_reorder (boundary is <=)', function () {
+    $wh = test()->tenant->run(function () {
+        $stock = app(StockService::class);
+        $loc = Location::create(['name' => 'KL HQ']);
+        $wh = Warehouse::create(['location_id' => $loc->id, 'name' => 'Main']);
+        $bolt = Product::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea']);
+        // On hand EXACTLY equals the reorder level.
+        $stock->record($wh, $bolt, 10, StockMovementReason::Adjustment);
+        WarehouseReorderLevel::create(['warehouse_id' => $wh->id, 'stockable_type' => 'product', 'stockable_id' => $bolt->id, 'min_stock' => 10]);
+
+        return $wh;
+    });
+    loginAsAcmeUser();
+
+    // At on_hand == min_stock the server and the UI (stock.ts stockStatus) must agree:
+    // it's low / needs reorder. Before the fix the server used strict `<` and returned
+    // needs_reorder=false while the UI badge said "Low" — the drift bug.
+    $this->get("/acme/warehouses/{$wh->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('items.data.0.item', 'Bolt')
+            ->where('items.data.0.on_hand', fn ($v) => (float) $v === 10.0)
+            ->where('items.data.0.needs_reorder', true)
+            ->where('summary.needs_reorder', 1)
+            ->where('summary.in_stock', 1)
+        );
+});
+
 it('lists all catalog items (incl. unstocked) under ?view=all', function () {
     [$wh, $id] = seedWarehouseDetail();
     loginAsAcmeUser();
