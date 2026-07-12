@@ -46,9 +46,9 @@ Plain ≠ dumbed-down. Terms a shop/factory operator genuinely uses are fine and
 often clearer than a paraphrase:
 
 - **SKU, unit, currency, supplier, customer, warehouse, stock, purchase/sales order**
-- **Recipe** — a product's raw materials + how much of each. Use "recipe"
-  everywhere; **never** "BOM" / "bill of materials". *(Standardized 2026-07-12 —
-  this reverses an earlier "keep BOM" preference.)*
+- **BOM (bill of materials)** — a recognised manufacturing term; use "BOM"
+  everywhere for a product's raw materials + quantities. *(Kept as domain
+  vocabulary — the earlier "switch to recipe" change was reversed.)*
 
 The rule is: ban **developer/database** vocabulary; keep **domain** vocabulary the
 user knows.

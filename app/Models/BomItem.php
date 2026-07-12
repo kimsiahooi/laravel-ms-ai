@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * One line of a product's recipe: `quantity` of a raw material needed
+ * One line of a product's BOM: `quantity` of a raw material needed
  * to make one unit of the product. Lives on the default (tenant) connection.
  *
  * @property int $id
@@ -23,9 +23,9 @@ use Illuminate\Support\Carbon;
  * @property-read RawMaterial $rawMaterial
  */
 #[Fillable(['product_id', 'raw_material_id', 'quantity'])]
-class RecipeItem extends Model
+class BomItem extends Model
 {
-    protected $table = 'recipe_items';
+    protected $table = 'bom_items';
 
     /**
      * @return array<string, string>

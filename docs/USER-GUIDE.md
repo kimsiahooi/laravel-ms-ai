@@ -39,7 +39,7 @@ This is the list of everything your business deals in. Set these up first.
 - **Raw materials** — the ingredients or parts you buy in and use to make
   things.
 - **Products** — the finished things you sell. A product can also have a
-  **recipe** (see below) that lists the raw materials needed to make one.
+  **BOM** (see below) that lists the raw materials needed to make one.
 
 ---
 
@@ -82,19 +82,19 @@ letting stock go negative. Each order has its own printable invoice.
 ### Production orders
 
 Making products yourself. You pick a product and how many to build, and the app
-copies its **recipe** onto the order. When you mark the order **done**, it uses
+copies its **BOM** onto the order. When you mark the order **done**, it uses
 up the raw materials and adds the finished products to stock — all in one step.
 If a material is short, nothing happens and the order stays open. Each order has
 its own printable work sheet.
 
 ---
 
-## Recipes
+## BOM (bill of materials)
 
-A product's **recipe** is the list of raw materials, and how much of each, it
+A product's **BOM** (bill of materials) is the list of raw materials, and how much of each, it
 takes to make one unit. You set it from the **Products** screen using the
-"Recipe" action. Production orders copy the recipe at the moment
-they're created, so changing a recipe later never disturbs orders you've
+"BOM" action. Production orders copy the BOM at the moment
+they're created, so changing a BOM later never disturbs orders you've
 already started.
 
 ---
@@ -106,7 +106,7 @@ already started.
 | **Stock / on hand** | How much of something you physically have right now. |
 | **Raw material** | Something you buy in to make products from. |
 | **Product** | A finished thing you sell. |
-| **Recipe** | The list of materials needed to make one product. |
+| **BOM (bill of materials)** | The list of materials needed to make one product. |
 | **Warehouse** | A building or site that holds stock. |
 | **Location** | A specific spot inside a warehouse. |
 | **Purchase order** | A request to buy materials from a supplier. |

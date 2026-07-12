@@ -81,9 +81,9 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::resource('products', ProductController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
-            // A product's recipe.
-            Route::put('products/{product}/recipe', [ProductController::class, 'updateRecipe'])
-                ->name('products.recipe');
+            // A product's BOM.
+            Route::put('products/{product}/bom', [ProductController::class, 'updateBom'])
+                ->name('products.bom');
             // Location (site) is the top of the inventory hierarchy — register it
             // first; warehouses live under a location.
             Route::resource('locations', LocationController::class)
@@ -121,7 +121,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
                 ->name('sales-orders.cancel');
 
-            // Manufacturing — make a product by consuming its recipe.
+            // Manufacturing — make a product by consuming its BOM.
             Route::resource('production-orders', ProductionOrderController::class)
                 ->parameters(['production-orders' => 'productionOrder'])
                 ->only(['index', 'show', 'store', 'destroy']);

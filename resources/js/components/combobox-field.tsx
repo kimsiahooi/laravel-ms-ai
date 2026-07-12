@@ -20,7 +20,7 @@ type ComboboxFieldProps = {
 /**
  * A labelled Combobox form field with wired-up error display — the reusable
  * shape for nullable foreign-key pickers (category, supplier, and future
- * order/recipe pickers).
+ * order/BOM pickers).
  */
 export function ComboboxField({
     id,

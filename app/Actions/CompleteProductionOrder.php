@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Complete a pending production order at a warehouse: atomically post a
- * production_consume OUT for every exploded recipe line, then a production_output IN
+ * production_consume OUT for every exploded BOM line, then a production_output IN
  * for the finished product, then mark it completed. If the warehouse is short on
  * any material, StockService throws and the whole completion rolls back — no
  * stock moves and the order stays pending.

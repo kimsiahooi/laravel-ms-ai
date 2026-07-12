@@ -55,9 +55,9 @@ type PageProps = TenantPageProps & {
     rawMaterials: Option[];
 };
 
-// One recipe line in the recipe editor. `key` is a stable client id so React keeps
+// One BOM line in the BOM editor. `key` is a stable client id so React keeps
 // input focus across add/remove; the empty string means "not yet chosen".
-type RecipeLine = { key: number; rawMaterialId: string; quantity: string };
+type BomLine = { key: number; rawMaterialId: string; quantity: string };
 
 export default function ProductsIndex() {
     const { products, filters, categories, suppliers, rawMaterials, tenant } =
@@ -154,71 +154,68 @@ export default function ProductsIndex() {
     });
     const del = useDelete<Product>({ baseUrl: base });
 
-    // Recipe editor. `recipeProduct` doubles as the open/closed flag; its
-    // recipe is edited as a repeater, keyed by a client-side counter so focus and
+    // BOM editor. `bomProduct` doubles as the open/closed flag; its
+    // BOM is edited as a repeater, keyed by a client-side counter so focus and
     // order survive add/remove.
-    const [recipeProduct, setRecipeProduct] = useState<Product | null>(null);
-    const [recipeLines, setRecipeLines] = useState<RecipeLine[]>([]);
-    const [recipeErrors, setRecipeErrors] = useState<Record<string, string>>(
-        {},
-    );
-    const [recipeSaving, setRecipeSaving] = useState(false);
-    const recipeKey = useRef(0);
+    const [bomProduct, setBomProduct] = useState<Product | null>(null);
+    const [bomLines, setBomLines] = useState<BomLine[]>([]);
+    const [bomErrors, setBomErrors] = useState<Record<string, string>>({});
+    const [bomSaving, setBomSaving] = useState(false);
+    const bomKey = useRef(0);
 
-    const blankRecipeLine = (): RecipeLine => ({
-        key: recipeKey.current++,
+    const blankBomLine = (): BomLine => ({
+        key: bomKey.current++,
         rawMaterialId: '',
         quantity: '1',
     });
 
-    const openRecipe = (product: Product) => {
-        setRecipeErrors({});
-        setRecipeProduct(product);
-        setRecipeLines(
-            product.recipe.length > 0
-                ? product.recipe.map((item) => ({
-                      key: recipeKey.current++,
+    const openBom = (product: Product) => {
+        setBomErrors({});
+        setBomProduct(product);
+        setBomLines(
+            product.bom.length > 0
+                ? product.bom.map((item) => ({
+                      key: bomKey.current++,
                       rawMaterialId: String(item.raw_material_id),
                       quantity: String(item.quantity),
                   }))
-                : [blankRecipeLine()],
+                : [blankBomLine()],
         );
     };
 
-    const closeRecipe = () => {
-        setRecipeProduct(null);
-        setRecipeErrors({});
+    const closeBom = () => {
+        setBomProduct(null);
+        setBomErrors({});
     };
 
-    const addRecipeLine = () =>
-        setRecipeLines((prev) => [...prev, blankRecipeLine()]);
-    const removeRecipeLine = (key: number) =>
-        setRecipeLines((prev) => prev.filter((line) => line.key !== key));
-    const updateRecipeLine = (key: number, patch: Partial<RecipeLine>) =>
-        setRecipeLines((prev) =>
+    const addBomLine = () => setBomLines((prev) => [...prev, blankBomLine()]);
+    const removeBomLine = (key: number) =>
+        setBomLines((prev) => prev.filter((line) => line.key !== key));
+    const updateBomLine = (key: number, patch: Partial<BomLine>) =>
+        setBomLines((prev) =>
             prev.map((line) =>
                 line.key === key ? { ...line, ...patch } : line,
             ),
         );
 
-    // Raw materials already chosen in the recipe. Each material can be picked
+    // Raw materials already chosen in the BOM. Each material can be picked
     // only once: other rows filter it out, and the "Add material" button hides
-    // once every material is already in the recipe.
+    // once every material is already in the BOM.
     const usedRawMaterialIds = new Set(
-        recipeLines
+        bomLines
             .filter((line) => line.rawMaterialId !== '')
             .map((line) => line.rawMaterialId),
     );
     const allRawMaterialsUsed =
         usedRawMaterialIds.size >= rawMaterialOptions.length;
 
-    const saveRecipe = () => {
-        if (!recipeProduct) {
+    const saveBom = () => {
+        if (!bomProduct) {
             return;
         }
         // Drop rows the user left without a raw material; the backend still
         // validates quantity + duplicates on what remains.
-        const items = recipeLines
+        const items = bomLines
             .filter((line) => line.rawMaterialId !== '')
             .map((line) => ({
                 raw_material_id: Number(line.rawMaterialId),
@@ -226,18 +223,18 @@ export default function ProductsIndex() {
             }));
 
         router.put(
-            productsRoutes.recipe.url({
+            productsRoutes.bom.url({
                 tenant: tenant.slug,
-                product: recipeProduct.id,
+                product: bomProduct.id,
             }),
             { items },
             {
                 preserveScroll: true,
-                onStart: () => setRecipeSaving(true),
-                onFinish: () => setRecipeSaving(false),
-                onSuccess: closeRecipe,
+                onStart: () => setBomSaving(true),
+                onFinish: () => setBomSaving(false),
+                onSuccess: closeBom,
                 onError: (errors) =>
-                    setRecipeErrors(errors as Record<string, string>),
+                    setBomErrors(errors as Record<string, string>),
             },
         );
     };
@@ -336,10 +333,10 @@ export default function ProductsIndex() {
                             Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onSelect={() => openRecipe(row.original)}
+                            onSelect={() => openBom(row.original)}
                         >
                             <ListTree className="size-4" />
-                            Recipe
+                            BOM
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             variant="destructive"
@@ -652,20 +649,20 @@ export default function ProductsIndex() {
             />
 
             <Dialog
-                open={recipeProduct !== null}
+                open={bomProduct !== null}
                 onOpenChange={(next) => {
                     if (!next) {
-                        closeRecipe();
+                        closeBom();
                     }
                 }}
             >
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Recipe</DialogTitle>
+                        <DialogTitle>BOM</DialogTitle>
                         <DialogDescription>
                             The raw materials and how much of each it takes to
-                            make one “{recipeProduct?.name}”. New production
-                            orders save a copy of this recipe.
+                            make one “{bomProduct?.name}”. New production orders
+                            save a copy of this BOM.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -679,16 +676,16 @@ export default function ProductsIndex() {
                         className="-mr-2 space-y-4 overflow-y-auto pr-2"
                         style={{ maxHeight: 'min(60vh, calc(90vh - 13rem))' }}
                     >
-                        {recipeErrors.items ? (
+                        {bomErrors.items ? (
                             <p className="text-destructive text-sm">
-                                {recipeErrors.items}
+                                {bomErrors.items}
                             </p>
                         ) : null}
 
                         {rawMaterialOptions.length === 0 ? (
                             <p className="rounded-md border border-dashed p-4 text-center text-muted-foreground text-sm">
                                 Add raw materials first — there are none to
-                                build a recipe from yet.
+                                build a BOM from yet.
                             </p>
                         ) : (
                             <>
@@ -698,7 +695,7 @@ export default function ProductsIndex() {
                                         // map each visible row to its submitted index
                                         // to line server errors up with the right row.
                                         let submitted = -1;
-                                        return recipeLines.map((line) => {
+                                        return bomLines.map((line) => {
                                             const idx =
                                                 line.rawMaterialId !== ''
                                                     ? ++submitted
@@ -709,7 +706,7 @@ export default function ProductsIndex() {
                                                     className="grid grid-cols-[1fr_auto_auto] items-end gap-2"
                                                 >
                                                     <ComboboxField
-                                                        id={`recipe-${line.key}`}
+                                                        id={`bom-${line.key}`}
                                                         label="Raw material"
                                                         options={rawMaterialOptions.filter(
                                                             (o) =>
@@ -723,7 +720,7 @@ export default function ProductsIndex() {
                                                             line.rawMaterialId
                                                         }
                                                         onChange={(value) =>
-                                                            updateRecipeLine(
+                                                            updateBomLine(
                                                                 line.key,
                                                                 {
                                                                     rawMaterialId:
@@ -733,7 +730,7 @@ export default function ProductsIndex() {
                                                         }
                                                         error={
                                                             idx >= 0
-                                                                ? recipeErrors[
+                                                                ? bomErrors[
                                                                       `items.${idx}.raw_material_id`
                                                                   ]
                                                                 : undefined
@@ -744,13 +741,13 @@ export default function ProductsIndex() {
                                                     />
                                                     <div className="w-28 space-y-2">
                                                         <Label
-                                                            htmlFor={`recipe-qty-${line.key}`}
+                                                            htmlFor={`bom-qty-${line.key}`}
                                                             className="text-muted-foreground text-xs"
                                                         >
                                                             Quantity per unit
                                                         </Label>
                                                         <Input
-                                                            id={`recipe-qty-${line.key}`}
+                                                            id={`bom-qty-${line.key}`}
                                                             type="number"
                                                             min={0}
                                                             step="any"
@@ -758,7 +755,7 @@ export default function ProductsIndex() {
                                                                 line.quantity
                                                             }
                                                             onChange={(event) =>
-                                                                updateRecipeLine(
+                                                                updateBomLine(
                                                                     line.key,
                                                                     {
                                                                         quantity:
@@ -770,7 +767,7 @@ export default function ProductsIndex() {
                                                             }
                                                             aria-invalid={
                                                                 idx >= 0 &&
-                                                                !!recipeErrors[
+                                                                !!bomErrors[
                                                                     `items.${idx}.quantity`
                                                                 ]
                                                             }
@@ -782,12 +779,12 @@ export default function ProductsIndex() {
                                                         size="icon"
                                                         className="size-9 text-muted-foreground"
                                                         onClick={() =>
-                                                            removeRecipeLine(
+                                                            removeBomLine(
                                                                 line.key,
                                                             )
                                                         }
                                                         disabled={
-                                                            recipeLines.length ===
+                                                            bomLines.length ===
                                                             1
                                                         }
                                                         aria-label="Remove material"
@@ -805,7 +802,7 @@ export default function ProductsIndex() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={addRecipeLine}
+                                        onClick={addBomLine}
                                     >
                                         <Plus className="size-4" />
                                         Add material
@@ -823,12 +820,12 @@ export default function ProductsIndex() {
                         </DialogClose>
                         <Button
                             type="button"
-                            onClick={saveRecipe}
+                            onClick={saveBom}
                             disabled={
-                                recipeSaving || rawMaterialOptions.length === 0
+                                bomSaving || rawMaterialOptions.length === 0
                             }
                         >
-                            {recipeSaving ? 'Saving…' : 'Save recipe'}
+                            {bomSaving ? 'Saving…' : 'Save BOM'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

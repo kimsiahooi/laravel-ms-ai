@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\BomItem;
 use App\Models\Product;
-use App\Models\RecipeItem;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -19,7 +19,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 class ProductData extends Data
 {
     /**
-     * @param  array<int, RecipeItemData>  $recipe
+     * @param  array<int, BomItemData>  $bom
      */
     public function __construct(
         public int $id,
@@ -34,8 +34,8 @@ class ProductData extends Data
         public ?string $supplier,
         public string $unit,
         public string $created_at,
-        #[DataCollectionOf(RecipeItemData::class)]
-        public array $recipe,
+        #[DataCollectionOf(BomItemData::class)]
+        public array $bom,
     ) {}
 
     public static function fromProduct(Product $product): self
@@ -53,8 +53,8 @@ class ProductData extends Data
             supplier: $product->supplier?->name,
             unit: $product->unit,
             created_at: $product->created_at->toISOString(),
-            recipe: $product->relationLoaded('recipeItems')
-                ? $product->recipeItems->map(fn (RecipeItem $item): RecipeItemData => RecipeItemData::from($item))->all()
+            bom: $product->relationLoaded('bomItems')
+                ? $product->bomItems->map(fn (BomItem $item): BomItemData => BomItemData::from($item))->all()
                 : [],
         );
     }

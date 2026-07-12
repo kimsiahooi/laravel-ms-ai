@@ -1,5 +1,11 @@
 declare namespace App {
 namespace Data {
+export type BomItemData = {
+id: number,
+raw_material_id: number,
+name: string,
+quantity: number,
+};
 export type CategoryData = {
 id: number,
 name: string,
@@ -39,7 +45,7 @@ category: string | null,
 supplier: string | null,
 unit: string,
 created_at: string,
-recipe: App.Data.RecipeItemData[],
+bom: App.Data.BomItemData[],
 };
 export type ProductionOrderData = {
 id: number,
@@ -84,12 +90,6 @@ name: string,
 sku: string,
 unit: string,
 created_at: string,
-};
-export type RecipeItemData = {
-id: number,
-raw_material_id: number,
-name: string,
-quantity: number,
 };
 export type SalesOrderData = {
 id: number,

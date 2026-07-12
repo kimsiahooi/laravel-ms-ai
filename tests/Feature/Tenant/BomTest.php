@@ -16,7 +16,7 @@ beforeEach(function () {
  *
  * @return array{product: int, steel: int, bolt: int}
  */
-function seedRecipeFixture(): array
+function seedBomFixture(): array
 {
     return test()->tenant->run(fn () => [
         'product' => Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea'])->id,
@@ -25,69 +25,69 @@ function seedRecipeFixture(): array
     ]);
 }
 
-it('redirects a guest saving a recipe to the tenant login', function () {
-    ['product' => $product] = seedRecipeFixture();
+it('redirects a guest saving a BOM to the tenant login', function () {
+    ['product' => $product] = seedBomFixture();
 
-    $this->put("/acme/products/{$product}/recipe", ['items' => []])
+    $this->put("/acme/products/{$product}/bom", ['items' => []])
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
-it('sets a product recipe', function () {
-    ['product' => $product, 'steel' => $steel, 'bolt' => $bolt] = seedRecipeFixture();
+it('sets a product BOM', function () {
+    ['product' => $product, 'steel' => $steel, 'bolt' => $bolt] = seedBomFixture();
 
     loginAsAcmeUser();
 
     $this->from('/acme/products')
-        ->put("/acme/products/{$product}/recipe", [
+        ->put("/acme/products/{$product}/bom", [
             'items' => [
                 ['raw_material_id' => $steel, 'quantity' => 2],
                 ['raw_material_id' => $bolt, 'quantity' => 4],
             ],
         ])
         ->assertRedirect('/acme/products')
-        ->assertToast('Recipe saved.');
+        ->assertToast('BOM saved.');
 
     $this->tenant->run(function () use ($product, $steel) {
-        $recipe = Product::find($product)->recipeItems;
-        expect($recipe)->toHaveCount(2)
-            ->and((float) $recipe->firstWhere('raw_material_id', $steel)->quantity)->toBe(2.0);
+        $bom = Product::find($product)->bomItems;
+        expect($bom)->toHaveCount(2)
+            ->and((float) $bom->firstWhere('raw_material_id', $steel)->quantity)->toBe(2.0);
     });
 });
 
-it('replaces the recipe on re-save and clears it with an empty array', function () {
-    ['product' => $product, 'steel' => $steel, 'bolt' => $bolt] = seedRecipeFixture();
+it('replaces the BOM on re-save and clears it with an empty array', function () {
+    ['product' => $product, 'steel' => $steel, 'bolt' => $bolt] = seedBomFixture();
 
     loginAsAcmeUser();
 
-    $this->put("/acme/products/{$product}/recipe", [
+    $this->put("/acme/products/{$product}/bom", [
         'items' => [['raw_material_id' => $steel, 'quantity' => 2]],
     ]);
 
     // Re-save with a different single line.
-    $this->put("/acme/products/{$product}/recipe", [
+    $this->put("/acme/products/{$product}/bom", [
         'items' => [['raw_material_id' => $bolt, 'quantity' => 5]],
     ])->assertSessionHasNoErrors();
 
     $this->tenant->run(function () use ($product, $bolt) {
-        $recipe = Product::find($product)->recipeItems;
-        expect($recipe)->toHaveCount(1)
-            ->and($recipe->first()->raw_material_id)->toBe($bolt);
+        $bom = Product::find($product)->bomItems;
+        expect($bom)->toHaveCount(1)
+            ->and($bom->first()->raw_material_id)->toBe($bolt);
     });
 
-    // Empty items clears the recipe.
-    $this->put("/acme/products/{$product}/recipe", ['items' => []])
+    // Empty items clears the BOM.
+    $this->put("/acme/products/{$product}/bom", ['items' => []])
         ->assertSessionHasNoErrors();
 
-    $this->tenant->run(fn () => expect(Product::find($product)->recipeItems)->toHaveCount(0));
+    $this->tenant->run(fn () => expect(Product::find($product)->bomItems)->toHaveCount(0));
 });
 
-it('rejects duplicate raw materials in a recipe', function () {
-    ['product' => $product, 'steel' => $steel] = seedRecipeFixture();
+it('rejects duplicate raw materials in a BOM', function () {
+    ['product' => $product, 'steel' => $steel] = seedBomFixture();
 
     loginAsAcmeUser();
 
     $this->from('/acme/products')
-        ->put("/acme/products/{$product}/recipe", [
+        ->put("/acme/products/{$product}/bom", [
             'items' => [
                 ['raw_material_id' => $steel, 'quantity' => 2],
                 ['raw_material_id' => $steel, 'quantity' => 3],
@@ -97,25 +97,25 @@ it('rejects duplicate raw materials in a recipe', function () {
         ->assertInvalid('items.1.raw_material_id');
 });
 
-it('rejects a non-positive recipe quantity', function () {
-    ['product' => $product, 'steel' => $steel] = seedRecipeFixture();
+it('rejects a non-positive BOM quantity', function () {
+    ['product' => $product, 'steel' => $steel] = seedBomFixture();
 
     loginAsAcmeUser();
 
     $this->from('/acme/products')
-        ->put("/acme/products/{$product}/recipe", [
+        ->put("/acme/products/{$product}/bom", [
             'items' => [['raw_material_id' => $steel, 'quantity' => 0]],
         ])
         ->assertRedirect('/acme/products')
         ->assertInvalid('items.0.quantity');
 });
 
-it('includes each product recipe in the products index', function () {
-    ['product' => $product, 'steel' => $steel] = seedRecipeFixture();
+it('includes each product BOM in the products index', function () {
+    ['product' => $product, 'steel' => $steel] = seedBomFixture();
 
     loginAsAcmeUser();
 
-    $this->put("/acme/products/{$product}/recipe", [
+    $this->put("/acme/products/{$product}/bom", [
         'items' => [['raw_material_id' => $steel, 'quantity' => 2]],
     ]);
 
@@ -123,7 +123,7 @@ it('includes each product recipe in the products index', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/products/index')
-            ->has('products.data.0.recipe', 1)
-            ->where('products.data.0.recipe.0.name', 'Steel')
+            ->has('products.data.0.bom', 1)
+            ->where('products.data.0.bom.0.name', 'Steel')
         );
 });

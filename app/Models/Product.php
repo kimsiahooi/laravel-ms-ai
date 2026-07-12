@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $unit
  * @property string|null $image
  * @property-read string|null $image_url
- * @property-read Collection<int, RecipeItem> $recipeItems
+ * @property-read Collection<int, BomItem> $bomItems
  */
 #[Fillable([
     'name', 'sku', 'barcode', 'description',
@@ -65,13 +65,13 @@ class Product extends Model
     }
 
     /**
-     * The product's recipe (raw materials + per-unit quantity).
+     * The product's BOM (raw materials + per-unit quantity).
      *
-     * @return HasMany<RecipeItem, $this>
+     * @return HasMany<BomItem, $this>
      */
-    public function recipeItems(): HasMany
+    public function bomItems(): HasMany
     {
-        return $this->hasMany(RecipeItem::class);
+        return $this->hasMany(BomItem::class);
     }
 
     /**

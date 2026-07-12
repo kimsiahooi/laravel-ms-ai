@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Data;
 
-use App\Models\RecipeItem;
+use App\Models\BomItem;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
-/** One recipe line: a raw material + per-unit quantity for a product. */
+/** One BOM line: a raw material + per-unit quantity for a product. */
 #[TypeScript]
-class RecipeItemData extends Data
+class BomItemData extends Data
 {
     public function __construct(
         public int $id,
@@ -19,7 +19,7 @@ class RecipeItemData extends Data
         public float $quantity,
     ) {}
 
-    public static function fromRecipeItem(RecipeItem $item): self
+    public static function fromBomItem(BomItem $item): self
     {
         return new self(
             id: $item->id,

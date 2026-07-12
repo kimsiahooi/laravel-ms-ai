@@ -27,7 +27,7 @@ via **sonner**. Formatting/lint is **Biome** (see `docs/CODING-STANDARDS.md`).
 6. **Plain language.** Every word the user reads is written for the person running
    the business, not the developer — no database/dev jargon (on-hand, ledger,
    snapshot, reorder point, ISO code, morph…). Keep the domain terms your users
-   actually use (SKU, warehouse, recipe). Full glossary + the "would a
+   actually use (SKU, warehouse, BOM). Full glossary + the "would a
    non-technical person understand this?" test: [`COPY-STYLE.md`](COPY-STYLE.md).
 
 ---

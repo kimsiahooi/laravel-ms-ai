@@ -6,9 +6,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// The exploded recipe for one production order. Snapshotted at creation
-// so editing a product's recipe never mutates existing orders: `quantity_per_unit`
-// is the per-unit need copied from the recipe, `quantity_required` is that times the
+// The exploded BOM for one production order. Snapshotted at creation
+// so editing a product's BOM never mutates existing orders: `quantity_per_unit`
+// is the per-unit need copied from the BOM, `quantity_required` is that times the
 // order quantity (what "Complete" consumes). `raw_material_snapshot` captures
 // name/sku/unit at write time.
 return new class extends Migration

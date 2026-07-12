@@ -40,17 +40,17 @@ type ProductionOrder = App.Data.ProductionOrderData;
 type Option = App.Data.OptionData;
 
 /** One raw-material need per built unit, for the create-dialog consumption preview. */
-type RecipePreviewLine = { name: string; quantity: number };
+type BomPreviewLine = { name: string; quantity: number };
 
 type PageProps = TenantPageProps & {
     orders: Paginator<ProductionOrder>;
     products: Option[];
-    productRecipes: Record<string, RecipePreviewLine[]>;
+    productBoms: Record<string, BomPreviewLine[]>;
     warehouses: Option[];
 };
 
 export default function ProductionOrdersIndex() {
-    const { orders, filters, products, productRecipes, warehouses, tenant } =
+    const { orders, filters, products, productBoms, warehouses, tenant } =
         usePageProps<PageProps>();
     const base = productionRoutes.index.url({ tenant: tenant.slug });
 
@@ -82,7 +82,7 @@ export default function ProductionOrdersIndex() {
     });
 
     // Live "what this build consumes" preview: each material's per-unit need × qty.
-    const previewRecipe = productId ? (productRecipes[productId] ?? []) : [];
+    const previewBom = productId ? (productBoms[productId] ?? []) : [];
     const buildQty = Number(quantity) || 0;
 
     const submitComplete = () => {
@@ -250,9 +250,8 @@ export default function ProductionOrdersIndex() {
                     {productionOrderMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Make products from their recipe. Marking an order done uses
-                    up the raw materials and adds the finished products to
-                    stock.
+                    Make products from their BOM. Marking an order done uses up
+                    the raw materials and adds the finished products to stock.
                 </p>
             </div>
 
@@ -280,7 +279,7 @@ export default function ProductionOrdersIndex() {
                         title={`No ${productionOrderMeta.plural.toLowerCase()} yet`}
                         description={
                             products.length === 0
-                                ? 'Give a product a recipe first, then you can build it here.'
+                                ? 'Give a product a BOM first, then you can build it here.'
                                 : 'Create your first production order to start manufacturing.'
                         }
                         action={
@@ -303,7 +302,7 @@ export default function ProductionOrdersIndex() {
                 baseUrl={base}
                 contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
                 description={{
-                    create: "Pick a product and how many to build. The recipe is saved with the order, so changing it later won't affect this one.",
+                    create: "Pick a product and how many to build. The BOM is saved with the order, so changing it later won't affect this one.",
                     edit: 'Update this production order.',
                 }}
             >
@@ -331,7 +330,7 @@ export default function ProductionOrdersIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="quantity"
-                                    hint="How many finished units to build. The raw materials needed come from the product's recipe, multiplied by this number."
+                                    hint="How many finished units to build. The raw materials needed come from the product's BOM, multiplied by this number."
                                 >
                                     Quantity
                                 </FieldLabel>
@@ -351,13 +350,13 @@ export default function ProductionOrdersIndex() {
                             </div>
                         </div>
 
-                        {previewRecipe.length > 0 ? (
+                        {previewBom.length > 0 ? (
                             <div className="space-y-2 rounded-md border bg-muted/40 p-3">
                                 <p className="font-medium text-sm">
                                     Materials consumed on completion
                                 </p>
                                 <ul className="space-y-1 text-sm">
-                                    {previewRecipe.map((line) => (
+                                    {previewBom.map((line) => (
                                         <li
                                             key={line.name}
                                             className="flex items-center justify-between gap-2"

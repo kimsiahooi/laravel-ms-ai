@@ -6,7 +6,7 @@ namespace App\Http\Requests\Tenant;
 
 use Illuminate\Validation\Rule;
 
-class RecipeRequest extends TenantFormRequest
+class BomRequest extends TenantFormRequest
 {
     /**
      * @return array<string, array<int, mixed>>
@@ -14,7 +14,7 @@ class RecipeRequest extends TenantFormRequest
     public function rules(): array
     {
         return [
-            // A product may legitimately have an empty recipe, so `items` is present but can be [].
+            // A product may legitimately have an empty BOM, so `items` is present but can be [].
             'items' => ['present', 'array'],
             'items.*.raw_material_id' => [
                 'required',
