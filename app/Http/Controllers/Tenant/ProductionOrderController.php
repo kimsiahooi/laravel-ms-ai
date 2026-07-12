@@ -16,6 +16,7 @@ use App\Http\Requests\Tenant\ProductionOrderRequest;
 use App\Models\BomItem;
 use App\Models\Product;
 use App\Models\ProductionOrder;
+use App\Models\RawMaterial;
 use App\Models\Warehouse;
 use App\Support\ActiveExists;
 use Illuminate\Http\RedirectResponse;
@@ -109,11 +110,7 @@ class ProductionOrderController
             foreach ($product->bomItems as $item) {
                 $order->items()->create([
                     'raw_material_id' => $item->raw_material_id,
-                    'raw_material_snapshot' => [
-                        'name' => $item->rawMaterial?->name ?? '',
-                        'sku' => $item->rawMaterial?->sku ?? '',
-                        'unit' => $item->rawMaterial?->unit ?? '',
-                    ],
+                    'raw_material_snapshot' => RawMaterial::snapshotOf($item->rawMaterial),
                     'quantity_per_unit' => $item->quantity,
                     'quantity_required' => (float) $item->quantity * $quantity,
                 ]);

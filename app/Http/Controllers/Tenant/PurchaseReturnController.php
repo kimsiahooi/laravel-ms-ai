@@ -155,11 +155,7 @@ class PurchaseReturnController
 
             $return->items()->create([
                 'raw_material_id' => $rawMaterial?->id,
-                'raw_material_snapshot' => [
-                    'name' => $rawMaterial?->name ?? '',
-                    'sku' => $rawMaterial?->sku ?? '',
-                    'unit' => $rawMaterial?->unit ?? '',
-                ],
+                'raw_material_snapshot' => RawMaterial::snapshotOf($rawMaterial),
                 'quantity' => $item['quantity'],
             ]);
         }

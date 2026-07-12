@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSnapshot;
 use App\Models\Concerns\RecordsActivity;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['name', 'sku', 'unit'])]
 class RawMaterial extends Model
 {
+    use HasSnapshot;
     use RecordsActivity;
     use Searchable;
     use SoftDeletes;

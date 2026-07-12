@@ -157,11 +157,7 @@ class SalesOrderController
 
             $order->items()->create([
                 'product_id' => $product?->id,
-                'product_snapshot' => [
-                    'name' => $product?->name ?? '',
-                    'sku' => $product?->sku ?? '',
-                    'unit' => $product?->unit ?? '',
-                ],
+                'product_snapshot' => Product::snapshotOf($product),
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
             ]);
