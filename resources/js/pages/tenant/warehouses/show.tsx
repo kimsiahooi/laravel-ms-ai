@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     LoaderCircle,
@@ -44,8 +44,8 @@ type PageProps = TenantPageProps & {
 
 // Inline, per-row reorder-level editor. Controlled over local state (seeded from
 // the row) so an uncommitted keystroke shows and a dropped refresh doesn't blank
-// it. Commits on Enter/blur; spinner is driven by onStart/onFinish (router.put is
-// single-flight, so a rapid second commit fires only onCancel/onFinish).
+// it. Commits on Enter/blur via a per-cell Inertia useForm; the spinner is driven
+// by the form's `processing` flag, and an async visit keeps row saves independent.
 function MinStockCell({
     row,
     warehouseId,
@@ -56,27 +56,28 @@ function MinStockCell({
     tenantSlug: string;
 }) {
     const [value, setValue] = useState(String(row.min_stock));
-    const [saving, setSaving] = useState(false);
+    const form = useForm({
+        stockable_type: row.stockable_type,
+        stockable_id: row.stockable_id,
+        min_stock: row.min_stock,
+    });
 
     const commit = () => {
         if (value === String(row.min_stock)) return;
-        router.put(
+        form.transform((data) => ({
+            ...data,
+            min_stock: value === '' ? 0 : Number(value),
+        }));
+        form.put(
             warehousesRoutes.reorderLevels.update.url({
                 tenant: tenantSlug,
                 warehouse: warehouseId,
             }),
             {
-                stockable_type: row.stockable_type,
-                stockable_id: row.stockable_id,
-                min_stock: value === '' ? 0 : Number(value),
-            },
-            {
                 async: true,
                 preserveScroll: true,
                 preserveState: true,
                 only: ['items', 'summary'],
-                onStart: () => setSaving(true),
-                onFinish: () => setSaving(false),
                 onError: () => {
                     setValue(String(row.min_stock));
                     toast.error('Could not update the reorder level.');
@@ -87,7 +88,7 @@ function MinStockCell({
 
     return (
         <div className="flex items-center justify-end gap-1.5">
-            {saving && (
+            {form.processing && (
                 <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
             )}
             <Input
@@ -95,7 +96,7 @@ function MinStockCell({
                 min={0}
                 inputMode="decimal"
                 value={value}
-                disabled={saving}
+                disabled={form.processing}
                 aria-label={`Reorder level for ${row.item}`}
                 onChange={(e) => setValue(e.target.value)}
                 onBlur={commit}

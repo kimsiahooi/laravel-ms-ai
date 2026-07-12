@@ -1,6 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Ban, Factory, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
+import {
+    Ban,
+    Factory,
+    LoaderCircle,
+    MoreHorizontal,
+    Plus,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
@@ -68,10 +75,9 @@ export default function ProductionOrdersIndex() {
     const [notes, setNotes] = useState('');
 
     const [completing, setCompleting] = useState<ProductionOrder | null>(null);
-    const [completeWarehouseId, setCompleteWarehouseId] = useState('');
-    const [completeProcessing, setCompleteProcessing] = useState(false);
-    const [completeError, setCompleteError] = useState<string | null>(null);
     const [cancelling, setCancelling] = useState<ProductionOrder | null>(null);
+    const completeForm = useForm({ warehouse_id: '' });
+    const cancelForm = useForm({});
 
     const dialog = useResourceDialog<ProductionOrder>({
         onCreate: () => {
@@ -87,36 +93,25 @@ export default function ProductionOrdersIndex() {
 
     const submitComplete = () => {
         if (!completing) return;
-        router.post(
+        completeForm.post(
             productionRoutes.complete.url({
                 tenant: tenant.slug,
                 productionOrder: completing.id,
             }),
-            { warehouse_id: completeWarehouseId },
             {
                 preserveScroll: true,
-                onStart: () => {
-                    setCompleteProcessing(true);
-                    setCompleteError(null);
-                },
-                onFinish: () => setCompleteProcessing(false),
                 onSuccess: () => setCompleting(null),
-                onError: (errors) =>
-                    setCompleteError(
-                        errors.warehouse_id ?? 'Could not complete the order.',
-                    ),
             },
         );
     };
 
     const submitCancel = () => {
         if (!cancelling) return;
-        router.post(
+        cancelForm.post(
             productionRoutes.cancel.url({
                 tenant: tenant.slug,
                 productionOrder: cancelling.id,
             }),
-            {},
             { preserveScroll: true, onSuccess: () => setCancelling(null) },
         );
     };
@@ -197,8 +192,8 @@ export default function ProductionOrdersIndex() {
                                 <>
                                     <DropdownMenuItem
                                         onSelect={() => {
-                                            setCompleteWarehouseId('');
-                                            setCompleteError(null);
+                                            completeForm.reset();
+                                            completeForm.clearErrors();
                                             setCompleting(order);
                                         }}
                                     >
@@ -427,9 +422,11 @@ export default function ProductionOrdersIndex() {
                         label="Warehouse"
                         hint="Where the finished units are added and the materials are consumed."
                         options={warehouseOptions}
-                        value={completeWarehouseId}
-                        onChange={setCompleteWarehouseId}
-                        error={completeError ?? undefined}
+                        value={completeForm.data.warehouse_id}
+                        onChange={(value) =>
+                            completeForm.setData('warehouse_id', value)
+                        }
+                        error={completeForm.errors.warehouse_id}
                         placeholder="Select warehouse"
                         searchPlaceholder="Search warehouses…"
                         emptyText="No warehouses found."
@@ -438,7 +435,7 @@ export default function ProductionOrdersIndex() {
                         <DialogClose asChild>
                             <Button
                                 variant="ghost"
-                                disabled={completeProcessing}
+                                disabled={completeForm.processing}
                             >
                                 Cancel
                             </Button>
@@ -446,11 +443,21 @@ export default function ProductionOrdersIndex() {
                         <Button
                             onClick={submitComplete}
                             disabled={
-                                completeProcessing || !completeWarehouseId
+                                completeForm.processing ||
+                                !completeForm.data.warehouse_id
                             }
                         >
-                            <Factory className="size-4" />
-                            Complete build
+                            {completeForm.processing ? (
+                                <>
+                                    <LoaderCircle className="size-4 animate-spin" />
+                                    Completing…
+                                </>
+                            ) : (
+                                <>
+                                    <Factory className="size-4" />
+                                    Complete build
+                                </>
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -473,9 +480,18 @@ export default function ProductionOrdersIndex() {
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="ghost">Keep order</Button>
+                            <Button
+                                variant="ghost"
+                                disabled={cancelForm.processing}
+                            >
+                                Keep order
+                            </Button>
                         </DialogClose>
-                        <Button variant="destructive" onClick={submitCancel}>
+                        <Button
+                            variant="destructive"
+                            onClick={submitCancel}
+                            disabled={cancelForm.processing}
+                        >
                             <Ban className="size-4" />
                             Cancel order
                         </Button>

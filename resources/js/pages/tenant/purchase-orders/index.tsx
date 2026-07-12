@@ -1,7 +1,8 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     Ban,
+    LoaderCircle,
     MoreHorizontal,
     PackageCheck,
     Pencil,
@@ -85,9 +86,9 @@ export default function PurchaseOrdersIndex() {
     const lineKey = useRef(0);
 
     const [receiving, setReceiving] = useState<PurchaseOrder | null>(null);
-    const [receiveWarehouseId, setReceiveWarehouseId] = useState('');
-    const [receiveProcessing, setReceiveProcessing] = useState(false);
     const [cancelling, setCancelling] = useState<PurchaseOrder | null>(null);
+    const receiveForm = useForm({ warehouse_id: '' });
+    const cancelForm = useForm({});
 
     const newLine = (): Line => ({
         key: lineKey.current++,
@@ -137,16 +138,13 @@ export default function PurchaseOrdersIndex() {
 
     const submitReceive = () => {
         if (!receiving) return;
-        router.post(
+        receiveForm.post(
             poRoutes.receive.url({
                 tenant: tenant.slug,
                 purchaseOrder: receiving.id,
             }),
-            { warehouse_id: receiveWarehouseId },
             {
                 preserveScroll: true,
-                onStart: () => setReceiveProcessing(true),
-                onFinish: () => setReceiveProcessing(false),
                 onSuccess: () => setReceiving(null),
             },
         );
@@ -154,12 +152,11 @@ export default function PurchaseOrdersIndex() {
 
     const submitCancel = () => {
         if (!cancelling) return;
-        router.post(
+        cancelForm.post(
             poRoutes.cancel.url({
                 tenant: tenant.slug,
                 purchaseOrder: cancelling.id,
             }),
-            {},
             { preserveScroll: true, onSuccess: () => setCancelling(null) },
         );
     };
@@ -248,7 +245,8 @@ export default function PurchaseOrdersIndex() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onSelect={() => {
-                                            setReceiveWarehouseId('');
+                                            receiveForm.reset();
+                                            receiveForm.clearErrors();
                                             setReceiving(order);
                                         }}
                                     >
@@ -550,8 +548,11 @@ export default function PurchaseOrdersIndex() {
                         label="Receive into"
                         hint="The warehouse where received stock will be added."
                         options={warehouseOptions}
-                        value={receiveWarehouseId}
-                        onChange={setReceiveWarehouseId}
+                        value={receiveForm.data.warehouse_id}
+                        onChange={(value) =>
+                            receiveForm.setData('warehouse_id', value)
+                        }
+                        error={receiveForm.errors.warehouse_id}
                         placeholder="Select warehouse"
                         searchPlaceholder="Search warehouses…"
                         emptyText="No warehouses found."
@@ -560,16 +561,26 @@ export default function PurchaseOrdersIndex() {
                         <DialogClose asChild>
                             <Button
                                 variant="ghost"
-                                disabled={receiveProcessing}
+                                disabled={receiveForm.processing}
                             >
                                 Cancel
                             </Button>
                         </DialogClose>
                         <Button
                             onClick={submitReceive}
-                            disabled={receiveProcessing || !receiveWarehouseId}
+                            disabled={
+                                receiveForm.processing ||
+                                !receiveForm.data.warehouse_id
+                            }
                         >
-                            Receive
+                            {receiveForm.processing ? (
+                                <>
+                                    <LoaderCircle className="size-4 animate-spin" />
+                                    Receiving…
+                                </>
+                            ) : (
+                                'Receive'
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -592,9 +603,18 @@ export default function PurchaseOrdersIndex() {
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="ghost">Keep order</Button>
+                            <Button
+                                variant="ghost"
+                                disabled={cancelForm.processing}
+                            >
+                                Keep order
+                            </Button>
                         </DialogClose>
-                        <Button variant="destructive" onClick={submitCancel}>
+                        <Button
+                            variant="destructive"
+                            onClick={submitCancel}
+                            disabled={cancelForm.processing}
+                        >
                             <Ban className="size-4" />
                             Cancel order
                         </Button>

@@ -1,7 +1,8 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     Ban,
+    LoaderCircle,
     MoreHorizontal,
     PackageCheck,
     Pencil,
@@ -85,10 +86,9 @@ export default function SalesOrdersIndex() {
     const lineKey = useRef(0);
 
     const [fulfilling, setFulfilling] = useState<SalesOrder | null>(null);
-    const [fulfillWarehouseId, setFulfillWarehouseId] = useState('');
-    const [fulfillProcessing, setFulfillProcessing] = useState(false);
-    const [fulfillError, setFulfillError] = useState<string | null>(null);
     const [cancelling, setCancelling] = useState<SalesOrder | null>(null);
+    const fulfillForm = useForm({ warehouse_id: '' });
+    const cancelForm = useForm({});
 
     const newLine = (): Line => ({
         key: lineKey.current++,
@@ -136,36 +136,25 @@ export default function SalesOrdersIndex() {
 
     const submitFulfill = () => {
         if (!fulfilling) return;
-        router.post(
+        fulfillForm.post(
             soRoutes.fulfill.url({
                 tenant: tenant.slug,
                 salesOrder: fulfilling.id,
             }),
-            { warehouse_id: fulfillWarehouseId },
             {
                 preserveScroll: true,
-                onStart: () => {
-                    setFulfillProcessing(true);
-                    setFulfillError(null);
-                },
-                onFinish: () => setFulfillProcessing(false),
                 onSuccess: () => setFulfilling(null),
-                onError: (errors) =>
-                    setFulfillError(
-                        errors.warehouse_id ?? 'Could not fulfill the order.',
-                    ),
             },
         );
     };
 
     const submitCancel = () => {
         if (!cancelling) return;
-        router.post(
+        cancelForm.post(
             soRoutes.cancel.url({
                 tenant: tenant.slug,
                 salesOrder: cancelling.id,
             }),
-            {},
             { preserveScroll: true, onSuccess: () => setCancelling(null) },
         );
     };
@@ -254,8 +243,8 @@ export default function SalesOrdersIndex() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onSelect={() => {
-                                            setFulfillWarehouseId('');
-                                            setFulfillError(null);
+                                            fulfillForm.reset();
+                                            fulfillForm.clearErrors();
                                             setFulfilling(order);
                                         }}
                                     >
@@ -557,9 +546,11 @@ export default function SalesOrdersIndex() {
                         label="Fulfill from"
                         hint="Stock will be deducted from this warehouse."
                         options={warehouseOptions}
-                        value={fulfillWarehouseId}
-                        onChange={setFulfillWarehouseId}
-                        error={fulfillError ?? undefined}
+                        value={fulfillForm.data.warehouse_id}
+                        onChange={(value) =>
+                            fulfillForm.setData('warehouse_id', value)
+                        }
+                        error={fulfillForm.errors.warehouse_id}
                         placeholder="Select warehouse"
                         searchPlaceholder="Search warehouses…"
                         emptyText="No warehouses found."
@@ -568,16 +559,26 @@ export default function SalesOrdersIndex() {
                         <DialogClose asChild>
                             <Button
                                 variant="ghost"
-                                disabled={fulfillProcessing}
+                                disabled={fulfillForm.processing}
                             >
                                 Cancel
                             </Button>
                         </DialogClose>
                         <Button
                             onClick={submitFulfill}
-                            disabled={fulfillProcessing || !fulfillWarehouseId}
+                            disabled={
+                                fulfillForm.processing ||
+                                !fulfillForm.data.warehouse_id
+                            }
                         >
-                            Fulfill
+                            {fulfillForm.processing ? (
+                                <>
+                                    <LoaderCircle className="size-4 animate-spin" />
+                                    Fulfilling…
+                                </>
+                            ) : (
+                                'Fulfill'
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -600,9 +601,18 @@ export default function SalesOrdersIndex() {
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="ghost">Keep order</Button>
+                            <Button
+                                variant="ghost"
+                                disabled={cancelForm.processing}
+                            >
+                                Keep order
+                            </Button>
                         </DialogClose>
-                        <Button variant="destructive" onClick={submitCancel}>
+                        <Button
+                            variant="destructive"
+                            onClick={submitCancel}
+                            disabled={cancelForm.processing}
+                        >
                             <Ban className="size-4" />
                             Cancel order
                         </Button>

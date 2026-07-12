@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     ImageIcon,
@@ -159,8 +159,10 @@ export default function ProductsIndex() {
     // order survive add/remove.
     const [bomProduct, setBomProduct] = useState<Product | null>(null);
     const [bomLines, setBomLines] = useState<BomLine[]>([]);
-    const [bomErrors, setBomErrors] = useState<Record<string, string>>({});
-    const [bomSaving, setBomSaving] = useState(false);
+    const bomForm = useForm<{
+        items: { raw_material_id: number; quantity: string }[];
+    }>({ items: [] });
+    const bomErrors = bomForm.errors as Record<string, string>;
     const bomKey = useRef(0);
 
     const blankBomLine = (): BomLine => ({
@@ -170,7 +172,7 @@ export default function ProductsIndex() {
     });
 
     const openBom = (product: Product) => {
-        setBomErrors({});
+        bomForm.clearErrors();
         setBomProduct(product);
         setBomLines(
             product.bom.length > 0
@@ -185,7 +187,7 @@ export default function ProductsIndex() {
 
     const closeBom = () => {
         setBomProduct(null);
-        setBomErrors({});
+        bomForm.clearErrors();
     };
 
     const addBomLine = () => setBomLines((prev) => [...prev, blankBomLine()]);
@@ -215,26 +217,23 @@ export default function ProductsIndex() {
         }
         // Drop rows the user left without a raw material; the backend still
         // validates quantity + duplicates on what remains.
-        const items = bomLines
-            .filter((line) => line.rawMaterialId !== '')
-            .map((line) => ({
-                raw_material_id: Number(line.rawMaterialId),
-                quantity: line.quantity,
-            }));
+        bomForm.transform(() => ({
+            items: bomLines
+                .filter((line) => line.rawMaterialId !== '')
+                .map((line) => ({
+                    raw_material_id: Number(line.rawMaterialId),
+                    quantity: line.quantity,
+                })),
+        }));
 
-        router.put(
+        bomForm.put(
             productsRoutes.bom.url({
                 tenant: tenant.slug,
                 product: bomProduct.id,
             }),
-            { items },
             {
                 preserveScroll: true,
-                onStart: () => setBomSaving(true),
-                onFinish: () => setBomSaving(false),
                 onSuccess: closeBom,
-                onError: (errors) =>
-                    setBomErrors(errors as Record<string, string>),
             },
         );
     };
@@ -822,10 +821,11 @@ export default function ProductsIndex() {
                             type="button"
                             onClick={saveBom}
                             disabled={
-                                bomSaving || rawMaterialOptions.length === 0
+                                bomForm.processing ||
+                                rawMaterialOptions.length === 0
                             }
                         >
-                            {bomSaving ? 'Saving…' : 'Save BOM'}
+                            {bomForm.processing ? 'Saving…' : 'Save BOM'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
