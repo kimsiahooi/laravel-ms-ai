@@ -29,3 +29,7 @@ yarn-error.log
 /.vscode
 /.zed
 laradumps.yaml
+.env.e2e
+test-results
+playwright-report
+playwright/.cache
