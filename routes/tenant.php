@@ -11,6 +11,7 @@ use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProductionOrderController;
 use App\Http\Controllers\Tenant\PurchaseOrderController;
+use App\Http\Controllers\Tenant\PurchaseReturnController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SessionController;
@@ -128,6 +129,15 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('purchase-orders.receive');
             Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
                 ->name('purchase-orders.cancel');
+
+            // Purchase returns — send received raw materials back (stock OUT).
+            Route::resource('purchase-returns', PurchaseReturnController::class)
+                ->parameters(['purchase-returns' => 'purchaseReturn'])
+                ->only(['index', 'show', 'store', 'update', 'destroy']);
+            Route::post('purchase-returns/{purchaseReturn}/complete', [PurchaseReturnController::class, 'complete'])
+                ->name('purchase-returns.complete');
+            Route::post('purchase-returns/{purchaseReturn}/cancel', [PurchaseReturnController::class, 'cancel'])
+                ->name('purchase-returns.cancel');
 
             Route::resource('sales-orders', SalesOrderController::class)
                 ->parameters(['sales-orders' => 'salesOrder'])

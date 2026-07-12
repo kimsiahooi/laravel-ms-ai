@@ -98,6 +98,23 @@ name: string,
 quantity: number,
 unit_cost: number,
 };
+export type PurchaseReturnData = {
+id: number,
+supplier: string | null,
+status: string,
+status_label: string,
+item_count: number,
+total_quantity: number,
+completed_at: string | null,
+created_at: string,
+items: App.Data.PurchaseReturnItemData[],
+};
+export type PurchaseReturnItemData = {
+id: number,
+raw_material_id: number | null,
+name: string,
+quantity: number,
+};
 export type RawMaterialData = {
 id: number,
 name: string,

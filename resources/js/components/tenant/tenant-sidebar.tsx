@@ -14,6 +14,7 @@ import {
     Receipt,
     ShoppingCart,
     Truck,
+    Undo2,
     Warehouse,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
@@ -36,6 +37,7 @@ import locations from '@/routes/tenant/locations';
 import productionOrders from '@/routes/tenant/production-orders';
 import products from '@/routes/tenant/products';
 import purchaseOrders from '@/routes/tenant/purchase-orders';
+import purchaseReturns from '@/routes/tenant/purchase-returns';
 import rawMaterials from '@/routes/tenant/raw-materials';
 import salesOrders from '@/routes/tenant/sales-orders';
 import stockMovements from '@/routes/tenant/stock-movements';
@@ -113,6 +115,11 @@ export function TenantSidebar() {
             title: 'Purchase orders',
             href: purchaseOrders.index.url({ tenant: slug }),
             icon: ShoppingCart,
+        },
+        {
+            title: 'Purchase returns',
+            href: purchaseReturns.index.url({ tenant: slug }),
+            icon: Undo2,
         },
         {
             title: 'Sales orders',
