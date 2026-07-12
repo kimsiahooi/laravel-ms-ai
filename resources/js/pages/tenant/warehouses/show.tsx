@@ -204,7 +204,7 @@ export default function WarehouseShow() {
         },
         {
             id: 'min_here',
-            header: 'Min here',
+            header: 'Reorder level',
             meta: { className: 'text-right' },
             cell: ({ row }) => (
                 <MinStockCell
@@ -275,7 +275,7 @@ export default function WarehouseShow() {
                 { title: warehouse.name, href: base },
             ]}
         >
-            <Head title={`${warehouse.name} — stock`} />
+            <Head title={`${warehouse.name} — Stock`} />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex flex-col gap-1">
@@ -307,7 +307,7 @@ export default function WarehouseShow() {
                                 { query: { from: warehouse.id } },
                             )}
                         >
-                            Transfer
+                            Transfer stock
                         </Link>
                     </Button>
                 </div>
@@ -395,7 +395,7 @@ export default function WarehouseShow() {
                 getRowId={(item) =>
                     `${item.stockable_type}:${item.stockable_id}`
                 }
-                title={`${warehouse.name} stock`}
+                title={`${warehouse.name} — Stock`}
                 searchPlaceholder="Search item or SKU…"
                 emptyState={emptyState}
             />

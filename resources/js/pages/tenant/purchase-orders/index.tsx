@@ -167,7 +167,7 @@ export default function PurchaseOrdersIndex() {
     const columns: ColumnDef<PurchaseOrder>[] = [
         {
             accessorKey: 'id',
-            header: 'PO #',
+            header: 'Order #',
             cell: ({ row }) => (
                 <Link
                     href={poRoutes.show.url({
@@ -203,7 +203,7 @@ export default function PurchaseOrdersIndex() {
         },
         {
             accessorKey: 'item_count',
-            header: 'Lines',
+            header: 'Items',
             cell: ({ row }) => row.original.item_count,
             meta: {
                 className:
@@ -232,7 +232,7 @@ export default function PurchaseOrdersIndex() {
                                 variant="ghost"
                                 size="icon"
                                 className="size-8"
-                                aria-label={`Actions for PO #${order.id}`}
+                                aria-label={`Actions for order #${order.id}`}
                             >
                                 <MoreHorizontal className="size-4" />
                             </Button>
@@ -432,16 +432,16 @@ export default function PurchaseOrdersIndex() {
                                                     `items.${index}.raw_material_id`
                                                 ]
                                             }
-                                            placeholder="Select"
-                                            searchPlaceholder="Search…"
-                                            emptyText="None found."
+                                            placeholder="Select material"
+                                            searchPlaceholder="Search materials…"
+                                            emptyText="No raw materials found."
                                         />
                                         <div className="w-24 space-y-2">
                                             <Label
                                                 htmlFor={`qty-${line.key}`}
                                                 className="text-muted-foreground text-xs"
                                             >
-                                                Qty
+                                                Quantity
                                             </Label>
                                             <Input
                                                 id={`qty-${line.key}`}
@@ -537,15 +537,18 @@ export default function PurchaseOrdersIndex() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Receive PO #{receiving?.id}</DialogTitle>
+                        <DialogTitle>
+                            Receive purchase order #{receiving?.id}
+                        </DialogTitle>
                         <DialogDescription>
-                            Post each line into a warehouse as a stock receipt.
+                            Each line will be added to your inventory at the
+                            selected warehouse.
                         </DialogDescription>
                     </DialogHeader>
                     <ComboboxField
                         id="receive-warehouse"
                         label="Receive into"
-                        hint="The warehouse received stock is added to."
+                        hint="The warehouse where received stock will be added."
                         options={warehouseOptions}
                         value={receiveWarehouseId}
                         onChange={setReceiveWarehouseId}
@@ -583,7 +586,7 @@ export default function PurchaseOrdersIndex() {
                     <DialogHeader>
                         <DialogTitle>Cancel purchase order</DialogTitle>
                         <DialogDescription>
-                            Cancel PO #{cancelling?.id}? It can no longer be
+                            Cancel order #{cancelling?.id}? It can no longer be
                             received or edited.
                         </DialogDescription>
                     </DialogHeader>

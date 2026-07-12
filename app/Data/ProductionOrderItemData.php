@@ -8,7 +8,7 @@ use App\Models\ProductionOrderItem;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
-/** One exploded BOM line of a production order, for the table + detail view. */
+/** One exploded recipe line of a production order, for the table + detail view. */
 #[TypeScript]
 class ProductionOrderItemData extends Data
 {

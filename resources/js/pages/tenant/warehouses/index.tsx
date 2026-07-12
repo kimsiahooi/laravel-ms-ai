@@ -99,7 +99,7 @@ export default function WarehousesIndex() {
         },
         {
             accessorKey: 'code',
-            header: 'Code',
+            header: 'Warehouse code',
             cell: ({ row }) =>
                 row.original.code ? (
                     <span className="font-mono text-muted-foreground text-xs">
@@ -240,7 +240,7 @@ export default function WarehousesIndex() {
                             error={errors.location_id}
                             placeholder="Select location"
                             searchPlaceholder="Search locations…"
-                            emptyText="No locations."
+                            emptyText="No locations found."
                         />
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>

@@ -14,7 +14,7 @@ class ProductionOrderRequest extends TenantFormRequest
     public function rules(): array
     {
         return [
-            // The line items are the product's exploded BOM, snapshotted server-side
+            // The line items are the product's exploded recipe, snapshotted server-side
             // at creation — the client only picks the product and how many to make.
             'product_id' => [
                 'required',

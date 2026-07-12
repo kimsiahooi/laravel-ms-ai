@@ -19,7 +19,7 @@ beforeEach(function () {
 });
 
 /**
- * A product with a two-line BOM (2× Steel + 4× Bolt per unit) and a warehouse.
+ * A product with a two-line recipe (2× Steel + 4× Bolt per unit) and a warehouse.
  *
  * @return array{widget: int, steel: int, bolt: int, warehouse: int}
  */
@@ -30,8 +30,8 @@ function seedProductionFixture(): array
         $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'ea']);
         $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg']);
         $bolt = RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea']);
-        $widget->bomItems()->create(['raw_material_id' => $steel->id, 'quantity' => 2]);
-        $widget->bomItems()->create(['raw_material_id' => $bolt->id, 'quantity' => 4]);
+        $widget->recipeItems()->create(['raw_material_id' => $steel->id, 'quantity' => 2]);
+        $widget->recipeItems()->create(['raw_material_id' => $bolt->id, 'quantity' => 4]);
 
         return [
             'widget' => $widget->id,
@@ -42,27 +42,27 @@ function seedProductionFixture(): array
     });
 }
 
-/** Create a pending production order for $qty of $widgetId, exploding its BOM. */
+/** Create a pending production order for $qty of $widgetId, exploding its recipe. */
 function makePendingMo(int $widgetId, float $qty = 3): int
 {
     return test()->tenant->run(function () use ($widgetId, $qty) {
-        $product = Product::with('bomItems.rawMaterial')->find($widgetId);
+        $product = Product::with('recipeItems.rawMaterial')->find($widgetId);
         $order = ProductionOrder::create([
             'product_id' => $product->id,
             'product_snapshot' => ['name' => $product->name, 'sku' => $product->sku, 'unit' => $product->unit],
             'quantity' => $qty,
             'status' => 'pending',
         ]);
-        foreach ($product->bomItems as $bom) {
+        foreach ($product->recipeItems as $item) {
             $order->items()->create([
-                'raw_material_id' => $bom->raw_material_id,
+                'raw_material_id' => $item->raw_material_id,
                 'raw_material_snapshot' => [
-                    'name' => $bom->rawMaterial->name,
-                    'sku' => $bom->rawMaterial->sku,
-                    'unit' => $bom->rawMaterial->unit,
+                    'name' => $item->rawMaterial->name,
+                    'sku' => $item->rawMaterial->sku,
+                    'unit' => $item->rawMaterial->unit,
                 ],
-                'quantity_per_unit' => $bom->quantity,
-                'quantity_required' => (float) $bom->quantity * $qty,
+                'quantity_per_unit' => $item->quantity,
+                'quantity_required' => (float) $item->quantity * $qty,
             ]);
         }
 
@@ -103,7 +103,7 @@ it('shows a printable work order document', function () {
         );
 });
 
-it('creates a production order, exploding the BOM into snapshotted items', function () {
+it('creates a production order, exploding the recipe into snapshotted items', function () {
     ['widget' => $widget, 'steel' => $steel, 'bolt' => $bolt] = seedProductionFixture();
 
     loginAsAcmeUser();
@@ -123,7 +123,7 @@ it('creates a production order, exploding the BOM into snapshotted items', funct
             ->and((float) $order->quantity)->toBe(3.0)
             ->and($order->items)->toHaveCount(2);
 
-        // quantity_required = per-unit BOM quantity × order quantity.
+        // quantity_required = per-unit recipe quantity × order quantity.
         $steelLine = $order->items->firstWhere('raw_material_id', $steel);
         $boltLine = $order->items->firstWhere('raw_material_id', $bolt);
         expect((float) $steelLine->quantity_required)->toBe(6.0)  // 2 × 3
@@ -132,7 +132,7 @@ it('creates a production order, exploding the BOM into snapshotted items', funct
     });
 });
 
-it('rejects creating a production order for a product with no BOM', function () {
+it('rejects creating a production order for a product with no recipe', function () {
     ['warehouse' => $warehouse] = seedProductionFixture();
 
     $plain = test()->tenant->run(
@@ -246,7 +246,7 @@ it('lists production orders with picker options', function () {
             ->has('orders.data', 1)
             ->has('orders.data.0.items', 2)
             ->has('products', 1)
-            ->has('productBoms')
+            ->has('productRecipes')
             ->has('warehouses', 1)
         );
 });

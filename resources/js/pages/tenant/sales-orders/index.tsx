@@ -173,7 +173,7 @@ export default function SalesOrdersIndex() {
     const columns: ColumnDef<SalesOrder>[] = [
         {
             accessorKey: 'id',
-            header: 'SO #',
+            header: 'Order #',
             cell: ({ row }) => (
                 <Link
                     href={soRoutes.show.url({
@@ -209,7 +209,7 @@ export default function SalesOrdersIndex() {
         },
         {
             accessorKey: 'item_count',
-            header: 'Lines',
+            header: 'Items',
             cell: ({ row }) => row.original.item_count,
             meta: {
                 className:
@@ -238,7 +238,7 @@ export default function SalesOrdersIndex() {
                                 variant="ghost"
                                 size="icon"
                                 className="size-8"
-                                aria-label={`Actions for SO #${order.id}`}
+                                aria-label={`Actions for order #${order.id}`}
                             >
                                 <MoreHorizontal className="size-4" />
                             </Button>
@@ -439,16 +439,16 @@ export default function SalesOrdersIndex() {
                                                     `items.${index}.product_id`
                                                 ]
                                             }
-                                            placeholder="Select"
-                                            searchPlaceholder="Search…"
-                                            emptyText="None found."
+                                            placeholder="Select product"
+                                            searchPlaceholder="Search products…"
+                                            emptyText="No products found."
                                         />
                                         <div className="w-24 space-y-2">
                                             <Label
                                                 htmlFor={`qty-${line.key}`}
                                                 className="text-muted-foreground text-xs"
                                             >
-                                                Qty
+                                                Quantity
                                             </Label>
                                             <Input
                                                 id={`qty-${line.key}`}
@@ -544,16 +544,18 @@ export default function SalesOrdersIndex() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Fulfill SO #{fulfilling?.id}</DialogTitle>
+                        <DialogTitle>
+                            Fulfill sales order #{fulfilling?.id}
+                        </DialogTitle>
                         <DialogDescription>
-                            Ship each line from a warehouse as a stock
-                            fulfillment.
+                            Choose the warehouse to ship this order's items
+                            from.
                         </DialogDescription>
                     </DialogHeader>
                     <ComboboxField
                         id="fulfill-warehouse"
                         label="Fulfill from"
-                        hint="The warehouse stock is deducted from."
+                        hint="Stock will be deducted from this warehouse."
                         options={warehouseOptions}
                         value={fulfillWarehouseId}
                         onChange={setFulfillWarehouseId}
@@ -592,7 +594,7 @@ export default function SalesOrdersIndex() {
                     <DialogHeader>
                         <DialogTitle>Cancel sales order</DialogTitle>
                         <DialogDescription>
-                            Cancel SO #{cancelling?.id}? It can no longer be
+                            Cancel order #{cancelling?.id}? It can no longer be
                             fulfilled or edited.
                         </DialogDescription>
                     </DialogHeader>

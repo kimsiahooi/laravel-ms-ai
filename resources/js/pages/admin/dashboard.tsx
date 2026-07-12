@@ -62,7 +62,7 @@ export default function AdminDashboard() {
 
     return (
         <CentralAdminLayout>
-            <Head title="Admin" />
+            <Head title="Dashboard" />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-1">
@@ -90,19 +90,19 @@ export default function AdminDashboard() {
                     icon={Building2}
                     label="Total tenants"
                     value={stats.total}
-                    sub="workspaces provisioned"
+                    sub="workspaces created"
                 />
                 <StatCard
                     icon={CalendarPlus}
                     label="Added today"
                     value={stats.added_today}
-                    sub="provisioned today (UTC)"
+                    sub="Added today (UTC)"
                 />
                 <StatCard
                     icon={CalendarRange}
                     label="Last 7 days"
                     value={stats.last_7_days}
-                    sub="newly provisioned"
+                    sub="newly added"
                 />
                 <StatCard
                     icon={Clock}
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
 
             <ChartCard
                 title="Tenant signups"
-                description="New workspaces per day · last 30 days"
+                description="New workspaces added each day, last 30 days"
                 isEmpty={!hasSignups}
                 emptyText="No signups in the last 30 days."
             >

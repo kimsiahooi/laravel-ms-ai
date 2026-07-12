@@ -104,13 +104,13 @@ export default function StockTransfersIndex() {
         },
         {
             accessorKey: 'quantity',
-            header: 'Qty',
+            header: 'Quantity',
             cell: ({ row }) => formatQuantity(row.original.quantity),
             meta: { className: 'text-right tabular-nums' },
         },
         {
             accessorKey: 'user',
-            header: 'By',
+            header: 'Performed by',
             cell: ({ row }) => row.original.user ?? '—',
             meta: { className: 'hidden text-muted-foreground lg:table-cell' },
         },
@@ -210,7 +210,7 @@ export default function StockTransfersIndex() {
                         <ComboboxField
                             id="from_warehouse"
                             label="From warehouse"
-                            hint="The warehouse stock is moved out of."
+                            hint="The warehouse you're moving stock from."
                             options={warehouseOptions}
                             value={fromWarehouseId}
                             onChange={setFromWarehouseId}
@@ -223,7 +223,7 @@ export default function StockTransfersIndex() {
                         <ComboboxField
                             id="to_warehouse"
                             label="To warehouse"
-                            hint="The warehouse stock is moved into."
+                            hint="The warehouse you're moving stock to."
                             options={warehouseOptions}
                             value={toWarehouseId}
                             onChange={setToWarehouseId}

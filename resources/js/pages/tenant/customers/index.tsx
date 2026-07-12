@@ -303,7 +303,7 @@ export default function CustomersIndex() {
                 description={
                     <>
                         Remove “{del.deleting?.name}” from your customers? This
-                        removes the record from your directory.
+                        will delete their contact details.
                     </>
                 }
             />

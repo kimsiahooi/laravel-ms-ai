@@ -43,7 +43,7 @@ export default function SalesOrderShow() {
                     ...(order.fulfilled_at
                         ? [
                               {
-                                  label: 'Fulfilled',
+                                  label: 'Fulfilled date',
                                   value: (
                                       <span suppressHydrationWarning>
                                           {formatDate(order.fulfilled_at)}
@@ -56,7 +56,7 @@ export default function SalesOrderShow() {
                 ]}
             >
                 <PrintItemsTable
-                    head={['Product', 'Qty', 'Unit price', 'Line total']}
+                    head={['Product', 'Quantity', 'Unit price', 'Line total']}
                     rows={order.items.map((item) => ({
                         key: item.id,
                         cells: [

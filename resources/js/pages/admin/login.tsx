@@ -30,7 +30,7 @@ const HIGHLIGHTS = [
     {
         icon: Building2,
         title: 'Tenant provisioning',
-        description: 'Spin up isolated workspaces in one step.',
+        description: 'Create isolated workspaces in one step.',
     },
     {
         icon: Database,
@@ -39,7 +39,7 @@ const HIGHLIGHTS = [
     },
     {
         icon: ShieldCheck,
-        title: 'Central authority',
+        title: 'Centralized control',
         description: 'Manage the whole platform from one console.',
     },
 ];
@@ -85,7 +85,7 @@ export default function AdminLogin() {
                             Restricted console
                         </span>
                         <h2 className="text-balance font-semibold text-2xl tracking-tight">
-                            Operate every tenant from a single control plane.
+                            Operate every tenant from a single dashboard.
                         </h2>
                         <p className="max-w-sm text-sm text-zinc-400">
                             Sign in with your super&#8209;admin credentials to

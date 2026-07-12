@@ -23,12 +23,12 @@ export default function ProductionOrderShow() {
         <PrintLayout
             backHref={productionRoutes.index.url({ tenant: tenant.slug })}
         >
-            <Head title={`MO #${order.id}`} />
+            <Head title={`Work Order #${order.id}`} />
 
             <PrintDocument
                 org={tenant.name}
                 docType="Work Order"
-                number={`MO #${order.id}`}
+                number={`Work Order #${order.id}`}
                 statusLabel={order.status_label}
                 statusVariant={statusVariant(order.status)}
                 party={{
@@ -58,7 +58,7 @@ export default function ProductionOrderShow() {
                           ]
                         : []),
                     {
-                        label: 'Build qty',
+                        label: 'Build quantity',
                         value: formatQuantity(order.quantity),
                     },
                 ]}

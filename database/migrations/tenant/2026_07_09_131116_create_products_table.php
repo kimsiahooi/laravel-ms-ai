@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 // Per-tenant catalog: products. The anchor entity later phases reference
-// (sales order items, BOM, production). Only `sku` is unique; `barcode` is
+// (sales order items, recipe, production). Only `sku` is unique; `barcode` is
 // optional and not unique. category_id/supplier_id are nullOnDelete (fires on
 // a real force-delete of the parent, not a soft delete).
 return new class extends Migration

@@ -177,7 +177,7 @@ export default function AdminTenantsIndex() {
         },
         {
             accessorKey: 'slug',
-            header: 'Slug',
+            header: 'Address',
             meta: { className: 'hidden sm:table-cell' },
             cell: ({ row }) => {
                 const copied = copiedSlug === row.original.slug;
@@ -190,10 +190,10 @@ export default function AdminTenantsIndex() {
                                 handleCopy(
                                     row.original.slug,
                                     row.original.slug,
-                                    'Slug copied',
+                                    'Address copied',
                                 )
                             }
-                            title="Copy slug"
+                            title="Copy address"
                             className="cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                             <Badge
@@ -213,10 +213,10 @@ export default function AdminTenantsIndex() {
                                         handleCopy(
                                             row.original.slug,
                                             row.original.slug,
-                                            'Slug copied',
+                                            'Address copied',
                                         )
                                     }
-                                    aria-label="Copy slug"
+                                    aria-label="Copy address"
                                 >
                                     {copied ? (
                                         <Check className="size-3.5" />
@@ -226,7 +226,7 @@ export default function AdminTenantsIndex() {
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                {copied ? 'Copied' : 'Copy slug'}
+                                {copied ? 'Copied' : 'Copy address'}
                             </TooltipContent>
                         </Tooltip>
                     </div>
@@ -269,7 +269,7 @@ export default function AdminTenantsIndex() {
                                 rel="noopener noreferrer"
                             >
                                 <ExternalLink className="size-3.5" />
-                                Open
+                                Open workspace
                             </a>
                         </Button>
                         <DropdownMenu>
@@ -311,12 +311,12 @@ export default function AdminTenantsIndex() {
                                         handleCopy(
                                             tenant.slug,
                                             tenant.slug,
-                                            'Slug copied',
+                                            'Address copied',
                                         )
                                     }
                                 >
                                     <Copy className="size-4" />
-                                    Copy slug
+                                    Copy address
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -355,7 +355,7 @@ export default function AdminTenantsIndex() {
                         Tenants
                     </h1>
                     <p className="text-muted-foreground text-sm">
-                        Provision, search, and manage every tenant workspace.
+                        Set up, search, and manage every tenant workspace.
                     </p>
                 </div>
                 <Button asChild variant="outline">
@@ -374,7 +374,7 @@ export default function AdminTenantsIndex() {
                 only={['tenants', 'filters']}
                 getRowId={(tenant) => tenant.slug}
                 title="Tenants"
-                searchPlaceholder="Search name or slug…"
+                searchPlaceholder="Search by name or address…"
                 toolbar={
                     <Button onClick={() => setOpen(true)} className="shrink-0">
                         <Plus className="size-4" />
@@ -385,7 +385,7 @@ export default function AdminTenantsIndex() {
                     <EmptyState
                         icon={Building2}
                         title="No tenants yet"
-                        description="Provision your first workspace to get started. Each tenant gets an isolated database and its own login URL."
+                        description="Set up your first workspace to get started. Each tenant gets a private, isolated workspace with its own login link."
                         action={
                             <Button onClick={() => setOpen(true)}>
                                 <Plus className="size-4" />
@@ -433,7 +433,7 @@ export default function AdminTenantsIndex() {
                         <div className="space-y-1">
                             <DialogTitle>Create a tenant</DialogTitle>
                             <DialogDescription>
-                                Provision an isolated workspace and seed its
+                                Set up an isolated workspace and create its
                                 first admin user.
                             </DialogDescription>
                         </div>
@@ -733,9 +733,9 @@ export default function AdminTenantsIndex() {
                         <DialogTitle>Delete tenant</DialogTitle>
                         <DialogDescription>
                             Move “{deleting?.name}” to the archive? Its
-                            workspace (/{deleting?.slug}) becomes inaccessible,
-                            but its data and database are kept — you can restore
-                            it from Archived.
+                            workspace (/{deleting?.slug}) will become
+                            inaccessible, but its data is kept — you can restore
+                            it later from Archived.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

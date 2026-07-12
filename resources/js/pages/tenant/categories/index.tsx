@@ -212,7 +212,8 @@ export default function CategoriesIndex() {
                 description={
                     <>
                         Remove “{del.deleting?.name}” from your catalog?
-                        Products keep their data but lose this category.
+                        Products keep their data but will no longer be linked to
+                        this category.
                     </>
                 }
             />

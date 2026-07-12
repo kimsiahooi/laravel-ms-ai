@@ -67,7 +67,7 @@ export function ResourceFormDialog<T extends { id: number }>({
                             ? (description?.edit ??
                               `Update this ${entityLabel}.`)
                             : (description?.create ??
-                              `Add a ${entityLabel} to your catalog.`)}
+                              `Add a new ${entityLabel}.`)}
                     </DialogDescription>
                 </DialogHeader>
 

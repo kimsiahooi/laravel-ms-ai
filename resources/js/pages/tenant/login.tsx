@@ -36,8 +36,9 @@ const HIGHLIGHTS = [
     },
     {
         icon: Database,
-        title: 'Isolated data',
-        description: 'This workspace has its own dedicated database.',
+        title: 'Private data',
+        description:
+            'Your data is kept completely separate from other organizations on this platform.',
     },
     {
         icon: Users,
@@ -141,7 +142,8 @@ export default function TenantLogin() {
                                 Sign in to {tenant.name}
                             </CardTitle>
                             <CardDescription>
-                                Enter your credentials to access this workspace.
+                                Enter your email and password to access this
+                                workspace.
                             </CardDescription>
                         </CardHeader>
 

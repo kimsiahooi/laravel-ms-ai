@@ -40,17 +40,17 @@ type ProductionOrder = App.Data.ProductionOrderData;
 type Option = App.Data.OptionData;
 
 /** One raw-material need per built unit, for the create-dialog consumption preview. */
-type BomPreviewLine = { name: string; quantity: number };
+type RecipePreviewLine = { name: string; quantity: number };
 
 type PageProps = TenantPageProps & {
     orders: Paginator<ProductionOrder>;
     products: Option[];
-    productBoms: Record<string, BomPreviewLine[]>;
+    productRecipes: Record<string, RecipePreviewLine[]>;
     warehouses: Option[];
 };
 
 export default function ProductionOrdersIndex() {
-    const { orders, filters, products, productBoms, warehouses, tenant } =
+    const { orders, filters, products, productRecipes, warehouses, tenant } =
         usePageProps<PageProps>();
     const base = productionRoutes.index.url({ tenant: tenant.slug });
 
@@ -82,7 +82,7 @@ export default function ProductionOrdersIndex() {
     });
 
     // Live "what this build consumes" preview: each material's per-unit need × qty.
-    const previewBom = productId ? (productBoms[productId] ?? []) : [];
+    const previewRecipe = productId ? (productRecipes[productId] ?? []) : [];
     const buildQty = Number(quantity) || 0;
 
     const submitComplete = () => {
@@ -124,7 +124,7 @@ export default function ProductionOrdersIndex() {
     const columns: ColumnDef<ProductionOrder>[] = [
         {
             accessorKey: 'id',
-            header: 'MO #',
+            header: 'Order #',
             cell: ({ row }) => (
                 <Link
                     href={productionRoutes.show.url({
@@ -187,7 +187,7 @@ export default function ProductionOrdersIndex() {
                                 variant="ghost"
                                 size="icon"
                                 className="size-8"
-                                aria-label={`Actions for MO #${order.id}`}
+                                aria-label={`Actions for order #${order.id}`}
                             >
                                 <MoreHorizontal className="size-4" />
                             </Button>
@@ -280,7 +280,7 @@ export default function ProductionOrdersIndex() {
                         title={`No ${productionOrderMeta.plural.toLowerCase()} yet`}
                         description={
                             products.length === 0
-                                ? 'Give a product a bill of materials first, then you can build it here.'
+                                ? 'Give a product a recipe first, then you can build it here.'
                                 : 'Create your first production order to start manufacturing.'
                         }
                         action={
@@ -325,13 +325,13 @@ export default function ProductionOrdersIndex() {
                                     error={errors.product_id}
                                     placeholder="Select product"
                                     searchPlaceholder="Search products…"
-                                    emptyText="No manufacturable products."
+                                    emptyText="No products can be manufactured yet."
                                 />
                             </div>
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="quantity"
-                                    hint="How many finished units to build. The raw materials needed come from the product's bill of materials, multiplied by this number."
+                                    hint="How many finished units to build. The raw materials needed come from the product's recipe, multiplied by this number."
                                 >
                                     Quantity
                                 </FieldLabel>
@@ -351,13 +351,13 @@ export default function ProductionOrdersIndex() {
                             </div>
                         </div>
 
-                        {previewBom.length > 0 ? (
+                        {previewRecipe.length > 0 ? (
                             <div className="space-y-2 rounded-md border bg-muted/40 p-3">
                                 <p className="font-medium text-sm">
                                     Materials consumed on completion
                                 </p>
                                 <ul className="space-y-1 text-sm">
-                                    {previewBom.map((line) => (
+                                    {previewRecipe.map((line) => (
                                         <li
                                             key={line.name}
                                             className="flex items-center justify-between gap-2"
@@ -414,17 +414,19 @@ export default function ProductionOrdersIndex() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Complete MO #{completing?.id}</DialogTitle>
+                        <DialogTitle>
+                            Complete production order #{completing?.id}
+                        </DialogTitle>
                         <DialogDescription>
-                            Consume the materials and stock the finished “
-                            {completing?.product}” at a warehouse. If any
-                            material is short there, nothing is posted.
+                            This will consume the materials and add the finished
+                            “{completing?.product}” at a warehouse. If any
+                            material is short there, nothing happens.
                         </DialogDescription>
                     </DialogHeader>
                     <ComboboxField
                         id="complete-warehouse"
-                        label="At warehouse"
-                        hint="Where the finished units are added and materials consumed."
+                        label="Warehouse"
+                        hint="Where the finished units are added and the materials are consumed."
                         options={warehouseOptions}
                         value={completeWarehouseId}
                         onChange={setCompleteWarehouseId}
@@ -466,7 +468,7 @@ export default function ProductionOrdersIndex() {
                     <DialogHeader>
                         <DialogTitle>Cancel production order</DialogTitle>
                         <DialogDescription>
-                            Cancel MO #{cancelling?.id}? It can no longer be
+                            Cancel order #{cancelling?.id}? It can no longer be
                             completed.
                         </DialogDescription>
                     </DialogHeader>

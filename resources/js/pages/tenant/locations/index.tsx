@@ -65,7 +65,7 @@ export default function LocationsIndex() {
         },
         {
             accessorKey: 'code',
-            header: 'Code',
+            header: 'Location code',
             cell: ({ row }) =>
                 row.original.code ? (
                     <span className="font-mono text-muted-foreground text-xs">
@@ -251,8 +251,8 @@ export default function LocationsIndex() {
                 title="Delete location"
                 description={
                     <>
-                        Remove “{del.deleting?.name}” from your inventory? A
-                        site that still has warehouses can't be deleted.
+                        Delete “{del.deleting?.name}”? A location that still has
+                        warehouses can't be deleted.
                     </>
                 }
             />

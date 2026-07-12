@@ -90,7 +90,7 @@ export default function TenantDashboard() {
                                         className="gap-1"
                                     >
                                         <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                                        2FA on
+                                        2FA enabled
                                     </Badge>
                                 )}
                                 {user?.created_at && (

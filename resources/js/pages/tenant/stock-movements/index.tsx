@@ -36,7 +36,7 @@ type PageProps = TenantPageProps & {
 const TYPES: { value: MovementType; label: string }[] = [
     { value: 'in', label: 'In' },
     { value: 'out', label: 'Out' },
-    { value: 'adjustment', label: 'Adjust' },
+    { value: 'adjustment', label: 'Adjustment' },
 ];
 
 export default function StockMovementsIndex() {
@@ -112,7 +112,7 @@ export default function StockMovementsIndex() {
         },
         {
             accessorKey: 'quantity',
-            header: 'Qty',
+            header: 'Quantity',
             cell: ({ row }) => {
                 const q = row.original.quantity;
                 return (
@@ -139,7 +139,7 @@ export default function StockMovementsIndex() {
         },
         {
             accessorKey: 'user',
-            header: 'By',
+            header: 'Performed by',
             cell: ({ row }) => row.original.user ?? '—',
             meta: { className: 'hidden text-muted-foreground lg:table-cell' },
         },
@@ -248,7 +248,7 @@ export default function StockMovementsIndex() {
 
                         <div className="space-y-2">
                             <FieldLabel hint="In adds stock, Out removes it, and Adjustment sets the amount in stock to an exact figure — handy after a physical count.">
-                                Type
+                                Movement type
                             </FieldLabel>
                             <div className="grid grid-cols-3 gap-2">
                                 {TYPES.map((option) => (
@@ -315,7 +315,7 @@ export default function StockMovementsIndex() {
                                 onChange={(event) =>
                                     setNotes(event.target.value)
                                 }
-                                placeholder="Reason for this adjustment…"
+                                placeholder="Reason for this movement…"
                             />
                         </div>
                     </>

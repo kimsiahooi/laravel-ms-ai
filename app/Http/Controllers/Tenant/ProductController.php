@@ -9,8 +9,8 @@ use App\Data\ProductData;
 use App\Http\Controllers\Concerns\InteractsWithTenantAssets;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
-use App\Http\Requests\Tenant\BomRequest;
 use App\Http\Requests\Tenant\ProductRequest;
+use App\Http\Requests\Tenant\RecipeRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\RawMaterial;
@@ -38,7 +38,7 @@ class ProductController
         $perPage = $this->perPage($request);
 
         $products = Product::query()
-            ->with(['category', 'supplier', 'bomItems.rawMaterial'])
+            ->with(['category', 'supplier', 'recipeItems.rawMaterial'])
             ->search($search)
             ->latest()
             ->paginate($perPage)
@@ -58,24 +58,24 @@ class ProductController
     }
 
     /**
-     * Replace a product's bill of materials (the raw materials + per-unit
-     * quantity needed to make one unit). A production order snapshots this at
-     * creation, so editing it does not touch existing orders.
+     * Replace a product's recipe (the raw materials + per-unit quantity needed
+     * to make one unit). A production order snapshots this at creation, so
+     * editing it does not touch existing orders.
      */
-    public function updateBom(BomRequest $request, Product $product): RedirectResponse
+    public function updateRecipe(RecipeRequest $request, Product $product): RedirectResponse
     {
         DB::transaction(function () use ($request, $product): void {
-            $product->bomItems()->delete();
+            $product->recipeItems()->delete();
 
             foreach ($request->array('items') as $item) {
-                $product->bomItems()->create([
+                $product->recipeItems()->create([
                     'raw_material_id' => $item['raw_material_id'],
                     'quantity' => $item['quantity'],
                 ]);
             }
         });
 
-        $this->toast('Bill of materials saved.');
+        $this->toast('Recipe saved.');
 
         return back();
     }

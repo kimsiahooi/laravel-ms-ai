@@ -24,7 +24,7 @@ edits are trivial — grep the page and reword.
 | ❌ Technical / DB-speak | ✅ Plain |
 |---|---|
 | on-hand quantity / on-hand levels | the amount you have / your stock |
-| reorder point | minimum (stock level) |
+| reorder point / min | reorder level |
 | ISO currency code | currency code |
 | barcode (EAN, UPC, …) | the barcode number on the packaging |
 | snapshot / snapshotted | saved with the order (a copy is kept) |
@@ -33,6 +33,12 @@ edits are trivial — grep the page and reword.
 | materialized / denormalized | *(never surface these)* |
 | soft-delete | remove / archive |
 | SIGNED quantity (+in/−out) | "In adds stock, Out removes it" |
+| MO # / PO # / SO # (list columns) | Order # |
+| Qty · By · Lines | Quantity · Performed by · Items |
+| slug / workspace URL | Address |
+| provision / seed / spin up | set up / create |
+| database · credentials · control plane | data · email and password · dashboard |
+| soft-deleted · 2FA on · ea | deleted but can still be restored · 2FA enabled · each |
 
 ## Keep the words your users already use
 
@@ -40,8 +46,9 @@ Plain ≠ dumbed-down. Terms a shop/factory operator genuinely uses are fine and
 often clearer than a paraphrase:
 
 - **SKU, unit, currency, supplier, customer, warehouse, stock, purchase/sales order**
-- **Bill of materials** — a recognised manufacturing term; keep it (don't "simplify"
-  it to "recipe"). *(This was tried and reverted — the user prefers BOM.)*
+- **Recipe** — a product's raw materials + how much of each. Use "recipe"
+  everywhere; **never** "BOM" / "bill of materials". *(Standardized 2026-07-12 —
+  this reverses an earlier "keep BOM" preference.)*
 
 The rule is: ban **developer/database** vocabulary; keep **domain** vocabulary the
 user knows.

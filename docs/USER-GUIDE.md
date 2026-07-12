@@ -89,11 +89,11 @@ its own printable work sheet.
 
 ---
 
-## Recipes (bill of materials)
+## Recipes
 
 A product's **recipe** is the list of raw materials, and how much of each, it
 takes to make one unit. You set it from the **Products** screen using the
-"Bill of materials" action. Production orders copy the recipe at the moment
+"Recipe" action. Production orders copy the recipe at the moment
 they're created, so changing a recipe later never disturbs orders you've
 already started.
 
@@ -106,7 +106,7 @@ already started.
 | **Stock / on hand** | How much of something you physically have right now. |
 | **Raw material** | Something you buy in to make products from. |
 | **Product** | A finished thing you sell. |
-| **Recipe / bill of materials** | The list of materials needed to make one product. |
+| **Recipe** | The list of materials needed to make one product. |
 | **Warehouse** | A building or site that holds stock. |
 | **Location** | A specific spot inside a warehouse. |
 | **Purchase order** | A request to buy materials from a supplier. |

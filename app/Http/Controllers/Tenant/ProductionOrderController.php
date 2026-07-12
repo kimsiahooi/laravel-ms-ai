@@ -13,9 +13,9 @@ use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\ProductionOrderRequest;
-use App\Models\BomItem;
 use App\Models\Product;
 use App\Models\ProductionOrder;
+use App\Models\RecipeItem;
 use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,8 +44,8 @@ class ProductionOrderController
 
         // Only products with a recipe can be manufactured; ship each one's
         // exploded per-unit needs so the create dialog can preview consumption.
-        $manufacturable = Product::has('bomItems')
-            ->with('bomItems.rawMaterial')
+        $manufacturable = Product::has('recipeItems')
+            ->with('recipeItems.rawMaterial')
             ->orderBy('name')
             ->get();
 
@@ -57,10 +57,10 @@ class ProductionOrderController
                     'name' => $product->name,
                 ]),
             ),
-            'productBoms' => $manufacturable->mapWithKeys(fn (Product $product): array => [
-                $product->id => $product->bomItems->map(fn (BomItem $bom): array => [
-                    'name' => $bom->rawMaterial?->name ?? '—',
-                    'quantity' => (float) $bom->quantity,
+            'productRecipes' => $manufacturable->mapWithKeys(fn (Product $product): array => [
+                $product->id => $product->recipeItems->map(fn (RecipeItem $item): array => [
+                    'name' => $item->rawMaterial?->name ?? '—',
+                    'quantity' => (float) $item->quantity,
                 ])->all(),
             ])->all(),
             'warehouses' => $this->stockWarehouseOptions(),
@@ -82,11 +82,11 @@ class ProductionOrderController
 
     public function store(ProductionOrderRequest $request): RedirectResponse
     {
-        $product = Product::with('bomItems.rawMaterial')->findOrFail($request->integer('product_id'));
+        $product = Product::with('recipeItems.rawMaterial')->findOrFail($request->integer('product_id'));
 
-        if ($product->bomItems->isEmpty()) {
+        if ($product->recipeItems->isEmpty()) {
             throw ValidationException::withMessages([
-                'product_id' => 'This product has no bill of materials to manufacture from.',
+                'product_id' => 'This product has no recipe to manufacture from.',
             ]);
         }
 
@@ -106,16 +106,16 @@ class ProductionOrderController
                 'status' => ProductionOrderStatus::Pending,
             ]);
 
-            foreach ($product->bomItems as $bom) {
+            foreach ($product->recipeItems as $item) {
                 $order->items()->create([
-                    'raw_material_id' => $bom->raw_material_id,
+                    'raw_material_id' => $item->raw_material_id,
                     'raw_material_snapshot' => [
-                        'name' => $bom->rawMaterial?->name ?? '',
-                        'sku' => $bom->rawMaterial?->sku ?? '',
-                        'unit' => $bom->rawMaterial?->unit ?? '',
+                        'name' => $item->rawMaterial?->name ?? '',
+                        'sku' => $item->rawMaterial?->sku ?? '',
+                        'unit' => $item->rawMaterial?->unit ?? '',
                     ],
-                    'quantity_per_unit' => $bom->quantity,
-                    'quantity_required' => (float) $bom->quantity * $quantity,
+                    'quantity_per_unit' => $item->quantity,
+                    'quantity_required' => (float) $item->quantity * $quantity,
                 ]);
             }
         });

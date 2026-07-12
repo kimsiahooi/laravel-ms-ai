@@ -104,7 +104,7 @@ pages (raw-materials 403→304, categories 329→242, suppliers/customers 437→
 ### 3. ✅ `ComboboxField` (Label + Combobox + InputError) → component  · **DONE**
 `resources/js/components/combobox-field.tsx` — `<ComboboxField id label options value onChange
 error placeholder searchPlaceholder emptyText hint? />` wraps the label + combobox + wired error.
-Used by the products form's category/supplier pickers; ready for Orders/BOM pickers. The optional
+Used by the products form's category/supplier pickers; ready for Orders/recipe pickers. The optional
 `hint` prop renders a field help tooltip via `FieldLabel` (see item 11).
 
 ### 4. ✅ `RowActions` (Edit/Delete dropdown column) → component  · **DONE**

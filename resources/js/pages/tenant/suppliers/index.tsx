@@ -128,7 +128,7 @@ export default function SuppliersIndex() {
                 only={['suppliers', 'filters']}
                 getRowId={(supplier) => String(supplier.id)}
                 title={supplierMeta.plural}
-                searchPlaceholder="Search name or email…"
+                searchPlaceholder="Search by name or email…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
@@ -303,7 +303,8 @@ export default function SuppliersIndex() {
                 description={
                     <>
                         Remove “{del.deleting?.name}” from your catalog?
-                        Products keep their data but lose this supplier.
+                        Products keep their data but will no longer be linked to
+                        this supplier.
                     </>
                 }
             />

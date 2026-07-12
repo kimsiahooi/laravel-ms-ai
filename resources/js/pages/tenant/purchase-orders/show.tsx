@@ -56,7 +56,12 @@ export default function PurchaseOrderShow() {
                 ]}
             >
                 <PrintItemsTable
-                    head={['Raw material', 'Qty', 'Unit cost', 'Line total']}
+                    head={[
+                        'Raw material',
+                        'Quantity',
+                        'Unit cost',
+                        'Line total',
+                    ]}
                     rows={order.items.map((item) => ({
                         key: item.id,
                         cells: [

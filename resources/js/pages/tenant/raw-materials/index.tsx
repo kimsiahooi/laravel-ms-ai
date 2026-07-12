@@ -202,7 +202,7 @@ export default function RawMaterialsIndex() {
                         <div className="space-y-2">
                             <FieldLabel
                                 htmlFor="unit"
-                                hint="The unit you count this material in, such as “kg”, “L”, or “ea”. It's shown wherever quantities appear."
+                                hint="The unit you count this material in, such as “kg”, “L”, or “each”. It's shown wherever quantities appear."
                             >
                                 Unit
                             </FieldLabel>

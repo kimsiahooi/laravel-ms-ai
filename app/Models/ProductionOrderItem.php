@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * One exploded BOM line of a production order. `quantity_required` is what
+ * One exploded recipe line of a production order. `quantity_required` is what
  * "Complete" consumes; `raw_material_snapshot` is the name/sku/unit captured at
  * write time. Lives on the default (tenant) connection.
  *

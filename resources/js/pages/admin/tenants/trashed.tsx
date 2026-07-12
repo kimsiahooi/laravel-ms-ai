@@ -126,7 +126,7 @@ export default function AdminTenantsTrashed() {
         },
         {
             accessorKey: 'slug',
-            header: 'Slug',
+            header: 'Address',
             meta: { className: 'hidden sm:table-cell' },
             cell: ({ row }) => (
                 <Badge variant="outline" className="font-mono font-normal">
@@ -223,8 +223,9 @@ export default function AdminTenantsTrashed() {
                         Archived tenants
                     </h1>
                     <p className="text-muted-foreground text-sm">
-                        Soft-deleted workspaces. Restore one, or permanently
-                        delete it to drop its database for good.
+                        These workspaces have been deleted but can still be
+                        restored. Restore one, or permanently delete it to erase
+                        all of its data for good.
                     </p>
                 </div>
                 <Button asChild variant="outline">
@@ -243,7 +244,7 @@ export default function AdminTenantsTrashed() {
                 only={['tenants', 'filters']}
                 getRowId={(tenant) => tenant.slug}
                 title="Archived"
-                searchPlaceholder="Search name or slug…"
+                searchPlaceholder="Search by name or address…"
                 emptyState={
                     <EmptyState
                         icon={ArchiveX}
@@ -316,8 +317,8 @@ export default function AdminTenantsTrashed() {
                     <DialogHeader>
                         <DialogTitle>Delete tenant permanently</DialogTitle>
                         <DialogDescription>
-                            This permanently deletes “{purging?.name}” and drops
-                            its database. This cannot be undone. Type{' '}
+                            This permanently deletes “{purging?.name}” and
+                            erases all of its data. This cannot be undone. Type{' '}
                             <span className="font-medium font-mono text-foreground">
                                 {purging?.slug}
                             </span>{' '}
@@ -326,7 +327,7 @@ export default function AdminTenantsTrashed() {
                     </DialogHeader>
                     <div className="space-y-2">
                         <Label htmlFor="confirm-slug" className="sr-only">
-                            Type the tenant slug to confirm
+                            Type the workspace address to confirm
                         </Label>
                         <Input
                             id="confirm-slug"
