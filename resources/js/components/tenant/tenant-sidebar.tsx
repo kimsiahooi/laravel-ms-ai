@@ -3,6 +3,7 @@ import {
     ArrowLeftRight,
     ArrowRightLeft,
     Boxes,
+    ClipboardCheck,
     Contact,
     Factory,
     FolderTree,
@@ -38,6 +39,7 @@ import purchaseOrders from '@/routes/tenant/purchase-orders';
 import rawMaterials from '@/routes/tenant/raw-materials';
 import salesOrders from '@/routes/tenant/sales-orders';
 import stockMovements from '@/routes/tenant/stock-movements';
+import stockTakes from '@/routes/tenant/stock-takes';
 import stockTransfers from '@/routes/tenant/stock-transfers';
 import suppliers from '@/routes/tenant/suppliers';
 import warehouses from '@/routes/tenant/warehouses';
@@ -101,6 +103,11 @@ export function TenantSidebar() {
             title: 'Stock transfers',
             href: stockTransfers.index.url({ tenant: slug }),
             icon: ArrowRightLeft,
+        },
+        {
+            title: 'Stock takes',
+            href: stockTakes.index.url({ tenant: slug }),
+            icon: ClipboardCheck,
         },
         {
             title: 'Purchase orders',

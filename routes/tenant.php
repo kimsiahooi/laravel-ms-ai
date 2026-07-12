@@ -16,6 +16,7 @@ use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\StockLookupController;
 use App\Http\Controllers\Tenant\StockMovementController;
+use App\Http\Controllers\Tenant\StockTakeController;
 use App\Http\Controllers\Tenant\StockTransferController;
 use App\Http\Controllers\Tenant\SupplierController;
 use App\Http\Controllers\Tenant\WarehouseController;
@@ -109,6 +110,15 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // On-hand lookup for the movement/transfer dialogs (read-only JSON).
             Route::get('stock/on-hand', [StockLookupController::class, 'onHand'])
                 ->name('stock.on-hand');
+
+            // Stock take — physical count that posts variance adjustments.
+            Route::resource('stock-takes', StockTakeController::class)
+                ->parameters(['stock-takes' => 'stockTake'])
+                ->only(['index', 'show', 'store', 'destroy']);
+            Route::post('stock-takes/{stockTake}/post', [StockTakeController::class, 'post'])
+                ->name('stock-takes.post');
+            Route::post('stock-takes/{stockTake}/cancel', [StockTakeController::class, 'cancel'])
+                ->name('stock-takes.cancel');
 
             // Orders
             Route::resource('purchase-orders', PurchaseOrderController::class)

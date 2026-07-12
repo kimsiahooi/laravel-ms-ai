@@ -138,6 +138,27 @@ on_hand: number,
 unit: string,
 reorder_level: number | null,
 };
+export type StockTakeData = {
+id: number,
+warehouse: string | null,
+status: string,
+status_label: string,
+item_count: number,
+total_variance: number,
+notes: string | null,
+counted_at: string | null,
+created_at: string,
+items: App.Data.StockTakeItemData[],
+};
+export type StockTakeItemData = {
+id: number,
+name: string,
+sku: string | null,
+unit: string,
+system_qty: number,
+counted_qty: number,
+variance: number,
+};
 export type StockTransferData = {
 id: number,
 item: string,

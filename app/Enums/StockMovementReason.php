@@ -18,6 +18,7 @@ enum StockMovementReason: string
     case TransferIn = 'transfer_in';
     case TransferOut = 'transfer_out';
     case Adjustment = 'adjustment';
+    case StockTake = 'stock_take';
 
     /** Humanized label for display (e.g. `purchase_receipt` => "Purchase receipt"). */
     public function label(): string
@@ -30,6 +31,7 @@ enum StockMovementReason: string
             self::TransferIn => 'Transfer in',
             self::TransferOut => 'Transfer out',
             self::Adjustment => 'Adjustment',
+            self::StockTake => 'Stock take',
         };
     }
 }
