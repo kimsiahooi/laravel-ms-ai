@@ -1,0 +1,35 @@
+# Git hooks — run the project's standard checkup automatically (this repo has no CI,
+# so these are the enforcement gate; they apply whether a human or an agent commits).
+#
+#   pre-commit — fast: format/lint/type-check + the UI/standards guard.
+#   pre-push   — full: the whole test suite + a production build.
+#
+# Installed by `bun run prepare` (lefthook install); run `bunx lefthook install` after
+# cloning if hooks aren't active. Skip once with `LEFTHOOK=0 git commit …` in a pinch.
+
+pre-commit:
+  parallel: false
+  commands:
+    pint:
+      glob: "*.php"
+      run: vendor/bin/pint {staged_files}
+      stage_fixed: true
+    biome:
+      glob: "*.{js,ts,tsx,jsx,json,jsonc,css}"
+      run: bunx biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+    types:
+      glob: "*.{ts,tsx}"
+      run: bun run types:check
+    ui-guard:
+      run: bash scripts/ui-guard.sh
+
+pre-push:
+  parallel: false
+  commands:
+    vitest:
+      run: bun run test:ci
+    pest:
+      run: php artisan test --compact
+    build:
+      run: bun run build

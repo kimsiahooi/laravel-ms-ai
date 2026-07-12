@@ -17,7 +17,8 @@
         "types:check": "tsc --noEmit",
         "types:generate": "php artisan typescript:transform",
         "test": "vitest",
-        "test:ci": "vitest run"
+        "test:ci": "vitest run",
+        "prepare": "lefthook install"
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.2",
@@ -27,6 +28,7 @@
         "@types/node": "^22.13.5",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^29.1.1",
+        "lefthook": "^2.1.10",
         "playwright": "^1.61.1",
         "vitest": "^4.1.10"
     },
