@@ -7,12 +7,14 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
+import { OnHandHint } from '@/components/on-hand-hint';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { stockMovementMeta } from '@/config/resources';
+import { useOnHand } from '@/hooks/use-on-hand';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
@@ -64,6 +66,8 @@ export default function StockMovementsIndex() {
             setNotes('');
         },
     });
+
+    const onHand = useOnHand(tenant.slug, warehouseId, stockable);
 
     // Deep-link: /stock-movements?warehouse={id} opens the create dialog pre-scoped
     // to that warehouse. openCreate() runs the onCreate reset (clears warehouseId),
@@ -274,6 +278,10 @@ export default function StockMovementsIndex() {
                                     ? 'Set stock to'
                                     : 'Quantity'}
                             </Label>
+                            <OnHandHint
+                                data={onHand.data}
+                                loading={onHand.loading}
+                            />
                             <Input
                                 id="quantity"
                                 name="quantity"

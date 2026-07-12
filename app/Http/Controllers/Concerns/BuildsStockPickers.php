@@ -8,6 +8,7 @@ use App\Data\OptionData;
 use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\Warehouse;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\LaravelData\DataCollection;
 
 /**
@@ -59,5 +60,19 @@ trait BuildsStockPickers
             )
             ->values()
             ->all();
+    }
+
+    /**
+     * Resolve a merged-picker value ("product:5" / "raw_material:3") back to its
+     * model — the inverse of stockItemOptions(). Assumes a well-formed value; the
+     * FormRequests validate the shape and existence before this runs.
+     */
+    protected function resolveStockable(string $value): Model
+    {
+        [$type, $id] = explode(':', $value, 2);
+
+        return $type === 'product'
+            ? Product::findOrFail($id)
+            : RawMaterial::findOrFail($id);
     }
 }

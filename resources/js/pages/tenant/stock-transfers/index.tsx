@@ -7,12 +7,14 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
+import { OnHandHint } from '@/components/on-hand-hint';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { stockTransferMeta } from '@/config/resources';
+import { useOnHand } from '@/hooks/use-on-hand';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
@@ -56,6 +58,8 @@ export default function StockTransfersIndex() {
             setNotes('');
         },
     });
+
+    const onHand = useOnHand(tenant.slug, fromWarehouseId, stockable);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentional one-time mount effect
     useEffect(() => {
@@ -240,6 +244,11 @@ export default function StockTransfersIndex() {
                             >
                                 Quantity
                             </FieldLabel>
+                            <OnHandHint
+                                data={onHand.data}
+                                loading={onHand.loading}
+                                label="On hand at source"
+                            />
                             <Input
                                 id="quantity"
                                 name="quantity"

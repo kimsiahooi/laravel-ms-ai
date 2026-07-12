@@ -80,11 +80,7 @@ class StockMovementController
 
     public function store(StockMovementRequest $request, StockService $service): RedirectResponse
     {
-        [$type, $id] = explode(':', (string) $request->input('stockable'), 2);
-
-        $stockable = $type === 'product'
-            ? Product::findOrFail($id)
-            : RawMaterial::findOrFail($id);
+        $stockable = $this->resolveStockable((string) $request->input('stockable'));
 
         $warehouse = Warehouse::findOrFail($request->integer('warehouse_id'));
         $user = $request->user();

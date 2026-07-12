@@ -98,6 +98,20 @@ class StockService
     }
 
     /**
+     * Current on-hand for (warehouse, stockable) WITHOUT a lock — a read-only
+     * lookup for display (e.g. the movement/transfer dialogs). Returns 0 when no
+     * row exists. Use record()/setLevel()/transfer() for anything that mutates.
+     */
+    public function onHand(Warehouse $warehouse, Model $stockable): float
+    {
+        return (float) (WarehouseStock::query()
+            ->where('warehouse_id', $warehouse->id)
+            ->where('stockable_type', $stockable->getMorphClass())
+            ->where('stockable_id', $stockable->getKey())
+            ->value('quantity') ?? 0);
+    }
+
+    /**
      * Lock the on-hand row, add $delta, and persist the new level. Returns the
      * pre-delta quantity. MUST run inside a transaction (callers wrap it).
      *

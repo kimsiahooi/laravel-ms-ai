@@ -13,6 +13,7 @@ use App\Http\Controllers\Tenant\PurchaseOrderController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SessionController;
+use App\Http\Controllers\Tenant\StockLookupController;
 use App\Http\Controllers\Tenant\StockMovementController;
 use App\Http\Controllers\Tenant\StockTransferController;
 use App\Http\Controllers\Tenant\SupplierController;
@@ -103,6 +104,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('stock-transfers.index');
             Route::post('stock-transfers', [StockTransferController::class, 'store'])
                 ->name('stock-transfers.store');
+
+            // On-hand lookup for the movement/transfer dialogs (read-only JSON).
+            Route::get('stock/on-hand', [StockLookupController::class, 'onHand'])
+                ->name('stock.on-hand');
 
             // Orders
             Route::resource('purchase-orders', PurchaseOrderController::class)

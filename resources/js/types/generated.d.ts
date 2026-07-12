@@ -119,6 +119,11 @@ reason: string,
 user: string | null,
 created_at: string,
 };
+export type StockOnHandData = {
+on_hand: number,
+unit: string,
+reorder_level: number | null,
+};
 export type StockTransferData = {
 id: number,
 item: string,
