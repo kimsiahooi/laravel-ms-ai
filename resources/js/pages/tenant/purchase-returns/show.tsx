@@ -3,18 +3,13 @@ import { PrintDocument, PrintItemsTable } from '@/components/print-document';
 import { usePageProps } from '@/hooks/use-page-props';
 import PrintLayout from '@/layouts/print-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
+import { statusVariant } from '@/lib/status';
 import returnsRoutes from '@/routes/tenant/purchase-returns';
 import type { TenantPageProps } from '@/types';
 
 type PurchaseReturn = App.Data.PurchaseReturnData;
 
 type PageProps = TenantPageProps & { return: PurchaseReturn };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'completed') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function PurchaseReturnShow() {
     const { return: ret, tenant } = usePageProps<PageProps>();

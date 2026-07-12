@@ -14,7 +14,7 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { SignedQuantity } from '@/components/signed-quantity';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -41,12 +41,6 @@ type PageProps = TenantPageProps & {
     takes: Paginator<StockTake>;
     warehouses: Option[];
 };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'posted') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function StockTakesIndex() {
     const { takes, filters, warehouses, tenant } = usePageProps<PageProps>();
@@ -91,9 +85,10 @@ export default function StockTakesIndex() {
             accessorKey: 'status',
             header: 'Status',
             cell: ({ row }) => (
-                <Badge variant={statusVariant(row.original.status)}>
-                    {row.original.status_label}
-                </Badge>
+                <StatusBadge
+                    status={row.original.status}
+                    label={row.original.status_label}
+                />
             ),
         },
         {

@@ -15,7 +15,7 @@ import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -55,12 +55,6 @@ type PageProps = TenantPageProps & {
 };
 
 type Line = { key: number; productId: string; quantity: string };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'completed') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function SalesReturnsIndex() {
     const { returns, filters, customers, products, warehouses, tenant } =
@@ -163,9 +157,10 @@ export default function SalesReturnsIndex() {
             accessorKey: 'status',
             header: 'Status',
             cell: ({ row }) => (
-                <Badge variant={statusVariant(row.original.status)}>
-                    {row.original.status_label}
-                </Badge>
+                <StatusBadge
+                    status={row.original.status}
+                    label={row.original.status_label}
+                />
             ),
         },
         {

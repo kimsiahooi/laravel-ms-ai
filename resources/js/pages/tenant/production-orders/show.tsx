@@ -3,18 +3,13 @@ import { PrintDocument, PrintItemsTable } from '@/components/print-document';
 import { usePageProps } from '@/hooks/use-page-props';
 import PrintLayout from '@/layouts/print-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
+import { statusVariant } from '@/lib/status';
 import productionRoutes from '@/routes/tenant/production-orders';
 import type { TenantPageProps } from '@/types';
 
 type ProductionOrder = App.Data.ProductionOrderData;
 
 type PageProps = TenantPageProps & { order: ProductionOrder };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'completed') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function ProductionOrderShow() {
     const { order, tenant } = usePageProps<PageProps>();

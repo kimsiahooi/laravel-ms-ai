@@ -14,7 +14,7 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -135,17 +135,12 @@ export default function ProductionOrdersIndex() {
         {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => {
-                const variant =
-                    row.original.status === 'completed'
-                        ? 'default'
-                        : row.original.status === 'cancelled'
-                          ? 'outline'
-                          : 'secondary';
-                return (
-                    <Badge variant={variant}>{row.original.status_label}</Badge>
-                );
-            },
+            cell: ({ row }) => (
+                <StatusBadge
+                    status={row.original.status}
+                    label={row.original.status_label}
+                />
+            ),
         },
         {
             accessorKey: 'quantity',

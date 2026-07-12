@@ -3,18 +3,13 @@ import { PrintDocument, PrintItemsTable } from '@/components/print-document';
 import { usePageProps } from '@/hooks/use-page-props';
 import PrintLayout from '@/layouts/print-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
+import { statusVariant } from '@/lib/status';
 import returnsRoutes from '@/routes/tenant/sales-returns';
 import type { TenantPageProps } from '@/types';
 
 type SalesReturn = App.Data.SalesReturnData;
 
 type PageProps = TenantPageProps & { return: SalesReturn };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'completed') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function SalesReturnShow() {
     const { return: ret, tenant } = usePageProps<PageProps>();

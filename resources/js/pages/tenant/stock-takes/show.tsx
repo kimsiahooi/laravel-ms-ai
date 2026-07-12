@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
 import { SignedQuantity } from '@/components/signed-quantity';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,12 +29,6 @@ type StockTake = App.Data.StockTakeData;
 type PageProps = TenantPageProps & {
     take: StockTake;
 };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'posted') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function StockTakeShow() {
     const { take, tenant } = usePageProps<PageProps>();
@@ -111,9 +105,10 @@ export default function StockTakeShow() {
                         <h1 className="font-semibold text-2xl tracking-tight">
                             Stock take #{take.id}
                         </h1>
-                        <Badge variant={statusVariant(take.status)}>
-                            {take.status_label}
-                        </Badge>
+                        <StatusBadge
+                            status={take.status}
+                            label={take.status_label}
+                        />
                     </div>
                     <p className="text-muted-foreground text-sm">
                         {take.warehouse ?? '—'}

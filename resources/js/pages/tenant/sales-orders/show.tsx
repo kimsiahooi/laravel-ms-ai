@@ -3,18 +3,13 @@ import { PrintDocument, PrintItemsTable } from '@/components/print-document';
 import { usePageProps } from '@/hooks/use-page-props';
 import PrintLayout from '@/layouts/print-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
+import { statusVariant } from '@/lib/status';
 import soRoutes from '@/routes/tenant/sales-orders';
 import type { TenantPageProps } from '@/types';
 
 type SalesOrder = App.Data.SalesOrderData;
 
 type PageProps = TenantPageProps & { order: SalesOrder };
-
-function statusVariant(status: string): 'default' | 'secondary' | 'outline' {
-    if (status === 'fulfilled') return 'default';
-    if (status === 'cancelled') return 'outline';
-    return 'secondary';
-}
 
 export default function SalesOrderShow() {
     const { order, tenant } = usePageProps<PageProps>();
