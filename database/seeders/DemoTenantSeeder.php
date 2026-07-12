@@ -26,26 +26,128 @@ use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
 use App\Models\SalesOrder;
 use App\Models\SalesReturn;
+use App\Models\StockMovement;
 use App\Models\StockTake;
+use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseReorderLevel;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Seeds a brand-new tenant with a realistic Malaysia + Singapore starter dataset so
- * the owner can see how every screen works before entering their own data. Runs
- * inside the tenant database (via ProvisionTenant when the "sample data" toggle is
- * on). Uses StockService + the completion actions so on-hand and the ledger stay
- * consistent, and signs the admin in for the duration so activity is attributed.
+ * Seeds a brand-new tenant with a fuller Malaysia + Singapore starter dataset so the
+ * owner can see how every screen behaves before entering their own data — ~20 rows per
+ * list, at least one row of every status, and dates spread across the last ~90 days so
+ * newest-first sorting and the dashboard charts show real variation. Runs inside the
+ * tenant database (via ProvisionTenant when the "sample data" toggle is on), routing all
+ * stock through StockService + the completion actions so on-hand + the ledger stay
+ * consistent, and signing the admin in for the duration so activity is attributed.
  */
 class DemoTenantSeeder extends Seeder
 {
+    private const CATEGORY_NAMES = [
+        'Electronics', 'Packaging', 'Metal stock', 'Office supplies',
+        'Tools & hardware', 'Cables & wiring', 'Cleaning supplies', 'Safety equipment',
+    ];
+
+    /** Sites: [name, code, region] — region drives the address pool. */
+    private const SITES = [
+        ['Kuala Lumpur HQ', 'KL-HQ', 'KL'],
+        ['Selangor Distribution', 'SEL-DC', 'SEL'],
+        ['Penang Branch', 'PNG-BR', 'PNG'],
+        ['Johor Bahru Depot', 'JB-DP', 'JB'],
+        ['Singapore Central', 'SG-CTL', 'SG'],
+    ];
+
+    /** @var array<string, list<string>> street lines per region (block number prepended). */
+    private const STREETS = [
+        'KL' => ['Jalan Tun Razak, Kuala Lumpur 50400', 'Jalan Ampang, Kuala Lumpur 50450', 'Jalan Bukit Bintang, Kuala Lumpur 55100'],
+        'SEL' => ['Jalan Perindustrian, Shah Alam, Selangor 40000', 'Jalan SS15/4, Subang Jaya, Selangor 47500', 'Persiaran Kerjaya, Klang, Selangor 41200'],
+        'PNG' => ['Lorong Industri, Bayan Lepas, Penang 11900', 'Jalan Perusahaan, Prai, Penang 13600'],
+        'JB' => ['Jalan Tebrau, Johor Bahru, Johor 80300', 'Jalan Perindustrian Senai, Johor 81400'],
+        'SG' => ['Tuas Avenue 8, Singapore 639234', 'Changi North Way, Singapore 498771', 'Ang Mo Kio Industrial Park, Singapore 569139', 'Marina Boulevard, Singapore 018983'],
+    ];
+
+    /** Supplier stems: [name stem, 'MY'|'SG']. Suffix + phone + address assembled below. */
+    private const SUPPLIER_STEMS = [
+        ['Sinar Teknik', 'MY'], ['Kim Heng Hardware', 'MY'], ['Maju Jaya Supplies', 'MY'],
+        ['Global Metal Works', 'MY'], ['Bina Logam', 'MY'], ['Cahaya Elektrik', 'MY'],
+        ['Perkasa Tooling', 'MY'], ['Seri Mutiara Trading', 'MY'], ['Utara Components', 'MY'],
+        ['Damai Packaging', 'MY'], ['Warisan Industri', 'MY'], ['Zenith Fasteners', 'MY'],
+        ['Harmoni Plastik', 'MY'], ['Teguh Steel', 'MY'],
+        ['Lion City Components', 'SG'], ['Marina Metalworks', 'SG'], ['Orchard Electronics', 'SG'],
+        ['Sentosa Supplies', 'SG'], ['Raffles Hardware', 'SG'], ['Jurong Fasteners', 'SG'],
+    ];
+
+    /** Customer stems: [name stem, 'MY'|'SG', 'Sdn Bhd'|'Pte Ltd'|'']. */
+    private const CUSTOMER_STEMS = [
+        ['Bumi Mesra Retail', 'MY', 'Sdn Bhd'], ['Kedai Serbaneka Aman', 'MY', ''],
+        ['Metro Runcit', 'MY', 'Sdn Bhd'], ['Gemilang Stores', 'MY', 'Sdn Bhd'],
+        ['Pasaraya Harmoni', 'MY', ''], ['Sri Impian Trading', 'MY', 'Sdn Bhd'],
+        ['Kedai Elektrik Jaya', 'MY', ''], ['Nusantara Mart', 'MY', 'Sdn Bhd'],
+        ['Restoran Selera Kita', 'MY', ''], ['Bengkel Auto Cergas', 'MY', ''],
+        ['Kilang Roti Maju', 'MY', 'Sdn Bhd'], ['Koperasi Warga', 'MY', ''],
+        ['Delima Furniture', 'MY', 'Sdn Bhd'], ['Fajar Hardware', 'MY', 'Sdn Bhd'],
+        ['Marina Bay Traders', 'SG', 'Pte Ltd'], ['Katong Provisions', 'SG', 'Pte Ltd'],
+        ['Tampines Retail', 'SG', 'Pte Ltd'], ['Clarke Quay Supplies', 'SG', 'Pte Ltd'],
+        ['Bugis Trading', 'SG', 'Pte Ltd'], ['Woodlands Mart', 'SG', 'Pte Ltd'],
+    ];
+
+    /** Extra raw materials beyond the manufacturable core: [name, sku, unit]. */
+    private const RAW_MATERIAL_POOL = [
+        ['Aluminium sheet 2mm', 'RM-ALU-2MM', 'kg'], ['PVC pipe 20mm', 'RM-PVC-20', 'm'],
+        ['Rubber gasket', 'RM-RUB-GSK', 'pcs'], ['Tempered glass panel', 'RM-GLS-PNL', 'pcs'],
+        ['Enamel paint', 'RM-PNT-ENL', 'L'], ['Solder wire 0.8mm', 'RM-SLD-08', 'm'],
+        ['Hex nut M4', 'RM-NUT-M4', 'pcs'], ['Flat washer M4', 'RM-WSH-M4', 'pcs'],
+        ['Ball bearing 608', 'RM-BRG-608', 'pcs'], ['Coil spring 20mm', 'RM-SPR-20', 'pcs'],
+        ['Epoxy adhesive', 'RM-ADH-EPX', 'L'], ['EVA foam sheet', 'RM-FOM-EVA', 'pcs'],
+        ['Label roll 40mm', 'RM-LBL-40', 'roll'], ['Corrugated cardboard', 'RM-CBD-COR', 'pcs'],
+        ['Packing tape', 'RM-TPE-PCK', 'roll'], ['Hex bolt M6', 'RM-BLT-M6', 'pcs'],
+    ];
+
+    /** Extra bought-in products beyond the manufacturable core: [name, sku, unit]. */
+    private const PRODUCT_POOL = [
+        ['LED desk lamp', 'LMP-LED', 'pcs'], ['USB wall charger 20W', 'CHG-20W', 'pcs'],
+        ['Power bank 10000mAh', 'PWB-10K', 'pcs'], ['HDMI cable 2m', 'HDMI-2M', 'pcs'],
+        ['Travel adapter', 'ADP-TRV', 'pcs'], ['Wall bracket', 'BRK-WAL', 'pcs'],
+        ['Steel shelf 900mm', 'SHF-900', 'pcs'], ['Plastic container 10L', 'CNT-10L', 'pcs'],
+        ['Cable organiser tray', 'TRY-CBL', 'pcs'], ['Binder clip pack', 'CLP-BND', 'pack'],
+        ['Phone holder', 'HLD-PHN', 'pcs'], ['Laptop stand', 'STD-LAP', 'pcs'],
+        ['USB hub 4-port', 'HUB-4P', 'pcs'], ['HDMI splitter', 'SPL-HDMI', 'pcs'],
+        ['Desk mat large', 'MAT-DSK', 'pcs'], ['Surge protector', 'SRG-PRO', 'pcs'],
+    ];
+
+    private const CURRENCIES = ['MYR', 'SGD'];
+
     private StockService $stock;
+
+    private User $admin;
+
+    /** @var list<Warehouse> */
+    private array $warehouses = [];
+
+    private Warehouse $mainWarehouse;
+
+    /** @var list<Supplier> */
+    private array $suppliers = [];
+
+    /** @var list<Customer> */
+    private array $customers = [];
+
+    /** @var list<RawMaterial> */
+    private array $rawMaterials = [];
+
+    /** @var list<Product> */
+    private array $products = [];
+
+    /** @var list<Product> products that carry a BOM (manufacturable) */
+    private array $manufacturable = [];
 
     public function run(): void
     {
@@ -55,155 +157,337 @@ class DemoTenantSeeder extends Seeder
             return; // provisioning always creates the first user before seeding
         }
 
+        $this->admin = $admin;
         $this->stock = app(StockService::class);
 
         // Attribute the seeded activity + user_id to the workspace's first admin.
         Auth::guard('web')->login($admin);
 
         try {
-            $this->seed($admin);
+            $this->seedCatalog();
+            $this->seedSites();
+            $this->seedOpeningStock();
+            $this->seedTransfers();
+            $this->seedPurchaseOrders();
+            $this->seedProductionOrders();
+            $this->seedSalesOrders();
+            $this->seedPurchaseReturns();
+            $this->seedSalesReturns();
+            $this->seedStockTakes();
         } finally {
             Auth::guard('web')->logout();
         }
     }
 
-    private function seed(User $admin): void
+    // -- Date + stamping helpers -------------------------------------------------
+
+    /** A random moment within the last $maxDaysAgo days (the app uses CarbonImmutable). */
+    private function randomDate(int $maxDaysAgo = 88): CarbonInterface
     {
-        // --- Catalog -------------------------------------------------------
-        $electronics = Category::create(['name' => 'Electronics', 'description' => 'Finished electronic goods']);
-        Category::create(['name' => 'Packaging', 'description' => 'Boxes and packaging materials']);
-        Category::create(['name' => 'Metal stock', 'description' => 'Sheet metal and fasteners']);
-        Category::create(['name' => 'Office supplies', 'description' => 'General office items']);
+        return now()
+            ->subDays(random_int(1, $maxDaysAgo))
+            ->subHours(random_int(0, 23))
+            ->subMinutes(random_int(0, 59));
+    }
 
-        $sinar = Supplier::create([
-            'name' => 'Sinar Teknik Sdn Bhd', 'email' => 'sales@sinarteknik.com.my',
-            'phone' => '+60 3-7845 1200', 'address' => '12 Jalan Perindustrian, Shah Alam, Selangor 40000',
-        ]);
-        $kimHeng = Supplier::create([
-            'name' => 'Kim Heng Hardware Sdn Bhd', 'email' => 'orders@kimheng.com.my',
-            'phone' => '+60 3-7955 8820', 'address' => '88 Jalan SS15/4, Subang Jaya, Selangor 47500',
-        ]);
-        Supplier::create([
-            'name' => 'Lion City Components Pte Ltd', 'email' => 'sales@lioncitycomp.sg',
-            'phone' => '+65 6220 4455', 'address' => '3 Tuas Avenue 8, Singapore 639234',
-        ]);
+    /**
+     * Backdate a model's timestamps (and any extra date columns) without firing model
+     * events. forceFill bypasses guarded columns; saveQuietly skips the activity log.
+     *
+     * @param  array<string, mixed>  $extra
+     */
+    private function stamp(Model $model, CarbonInterface $when, array $extra = []): void
+    {
+        $model->forceFill(['created_at' => $when, 'updated_at' => $when, ...$extra])->saveQuietly();
+    }
 
-        $bumiMesra = Customer::create([
-            'name' => 'Bumi Mesra Retail Sdn Bhd', 'email' => 'hello@bumimesra.com.my',
-            'phone' => '+60 3-2141 6600', 'address' => 'Lot 5, Jalan Bukit Bintang, Kuala Lumpur 55100',
-        ]);
-        Customer::create([
-            'name' => 'Kedai Serbaneka Aman', 'email' => 'aman.store@gmail.com',
-            'phone' => '+60 12-334 9080', 'address' => '23 Jalan Ampang, Kuala Lumpur 50450',
-        ]);
-        $marinaBay = Customer::create([
-            'name' => 'Marina Bay Traders Pte Ltd', 'email' => 'procurement@marinabaytraders.sg',
-            'phone' => '+65 6820 1199', 'address' => '10 Marina Boulevard, Singapore 018983',
-        ]);
+    /**
+     * Run a stock-mutating callback, then backdate every stock movement + transfer it
+     * created to $when — so the movements + Sales-vs-Purchases charts spread out instead
+     * of clustering at seed time. Sequential seeding makes the id floor reliable.
+     */
+    private function atDate(CarbonInterface $when, callable $callback): mixed
+    {
+        $movementFloor = (int) (StockMovement::max('id') ?? 0);
+        $transferFloor = (int) (StockTransfer::max('id') ?? 0);
 
+        $result = $callback();
+
+        StockMovement::where('id', '>', $movementFloor)->update(['created_at' => $when, 'updated_at' => $when]);
+        StockTransfer::where('id', '>', $transferFloor)->update(['created_at' => $when, 'updated_at' => $when]);
+
+        return $result;
+    }
+
+    private function myPhone(): string
+    {
+        return sprintf('+60 3-%d %04d', random_int(7000, 9999), random_int(0, 9999));
+    }
+
+    private function sgPhone(): string
+    {
+        return sprintf('+65 6%03d %04d', random_int(200, 999), random_int(0, 9999));
+    }
+
+    private function address(string $region): string
+    {
+        $streets = self::STREETS[$region];
+
+        return random_int(1, 120).' '.$streets[array_rand($streets)];
+    }
+
+    private function slug(string $name): string
+    {
+        return preg_replace('/[^a-z0-9]+/', '', strtolower($name)) ?? 'demo';
+    }
+
+    // -- Catalog -----------------------------------------------------------------
+
+    private function seedCatalog(): void
+    {
+        $categories = [];
+        foreach (self::CATEGORY_NAMES as $name) {
+            $categories[] = Category::create(['name' => $name, 'description' => $name.' items']);
+        }
+
+        foreach (self::SUPPLIER_STEMS as [$stem, $region]) {
+            $name = $stem.($region === 'SG' ? ' Pte Ltd' : ' Sdn Bhd');
+            $tld = $region === 'SG' ? 'sg' : 'com.my';
+            $this->suppliers[] = Supplier::create([
+                'name' => $name,
+                'email' => 'sales@'.$this->slug($stem).'.'.$tld,
+                'phone' => $region === 'SG' ? $this->sgPhone() : $this->myPhone(),
+                'address' => $this->address($region === 'SG' ? 'SG' : ['KL', 'SEL', 'PNG', 'JB'][array_rand(['KL', 'SEL', 'PNG', 'JB'])]),
+            ]);
+        }
+
+        foreach (self::CUSTOMER_STEMS as [$stem, $region, $suffix]) {
+            $name = trim($stem.' '.$suffix);
+            $this->customers[] = Customer::create([
+                'name' => $name,
+                'email' => 'hello@'.$this->slug($stem).'.'.($region === 'SG' ? 'sg' : 'com.my'),
+                'phone' => $region === 'SG' ? $this->sgPhone() : $this->myPhone(),
+                'address' => $this->address($region === 'SG' ? 'SG' : ['KL', 'SEL'][array_rand(['KL', 'SEL'])]),
+            ]);
+        }
+
+        // Manufacturable core (kept coherent so production orders explode a real BOM).
         $steel = RawMaterial::create(['name' => 'Steel sheet 1mm', 'sku' => 'RM-STEEL-1MM', 'unit' => 'kg']);
         $copper = RawMaterial::create(['name' => 'Copper wire 2.5mm', 'sku' => 'RM-CU-2.5', 'unit' => 'm']);
         $abs = RawMaterial::create(['name' => 'ABS plastic pellet', 'sku' => 'RM-ABS-PEL', 'unit' => 'kg']);
         $screw = RawMaterial::create(['name' => 'M4 screw', 'sku' => 'RM-M4-SCR', 'unit' => 'pcs']);
+        $this->rawMaterials = [$steel, $copper, $abs, $screw];
+        foreach (self::RAW_MATERIAL_POOL as [$name, $sku, $unit]) {
+            $this->rawMaterials[] = RawMaterial::create(['name' => $name, 'sku' => $sku, 'unit' => $unit]);
+        }
 
-        $fan = Product::create([
-            'name' => 'Desk fan 12-inch', 'sku' => 'FAN-12', 'barcode' => '9551234500018',
-            'unit' => 'pcs', 'category_id' => $electronics->id, 'supplier_id' => $sinar->id,
-            'description' => 'Table fan with 3 speeds',
-        ]);
-        $socket = Product::create([
-            'name' => 'Power extension socket 4-way', 'sku' => 'PWR-EXT-4W', 'barcode' => '9551234500025',
-            'unit' => 'pcs', 'category_id' => $electronics->id, 'supplier_id' => $sinar->id,
-        ]);
-        $box = Product::create([
-            'name' => 'Storage box 20L', 'sku' => 'BOX-20L', 'barcode' => '9551234500032', 'unit' => 'pcs',
-        ]);
-        $cable = Product::create([
-            'name' => 'USB-C cable 1m', 'sku' => 'USB-C-1M', 'barcode' => '9551234500049',
-            'unit' => 'pcs', 'category_id' => $electronics->id,
-        ]);
+        $electronics = $categories[0];
+        $fan = Product::create(['name' => 'Desk fan 12-inch', 'sku' => 'FAN-12', 'barcode' => '9551234500018', 'unit' => 'pcs', 'category_id' => $electronics->id, 'supplier_id' => $this->suppliers[0]->id, 'description' => 'Table fan with 3 speeds']);
+        $socket = Product::create(['name' => 'Power extension socket 4-way', 'sku' => 'PWR-EXT-4W', 'barcode' => '9551234500025', 'unit' => 'pcs', 'category_id' => $electronics->id, 'supplier_id' => $this->suppliers[0]->id]);
+        $this->products = [$fan, $socket];
+        $this->manufacturable = [$fan, $socket];
 
-        // BOMs (the fan + socket are manufacturable; the box + cable are bought-in).
+        foreach (self::PRODUCT_POOL as $i => [$name, $sku, $unit]) {
+            $this->products[] = Product::create([
+                'name' => $name, 'sku' => $sku, 'unit' => $unit,
+                'barcode' => (string) (9551234500030 + $i),
+                'category_id' => $categories[array_rand($categories)]->id,
+                'supplier_id' => $this->suppliers[array_rand($this->suppliers)]->id,
+            ]);
+        }
+
+        // BOMs for the manufacturable core.
         $this->bom($fan, $steel, 0.5);
         $this->bom($fan, $copper, 3);
         $this->bom($fan, $screw, 8);
         $this->bom($socket, $abs, 0.3);
         $this->bom($socket, $copper, 2);
         $this->bom($socket, $screw, 6);
-
-        // --- Sites + warehouses -------------------------------------------
-        $klHq = Location::create(['name' => 'Kuala Lumpur HQ', 'code' => 'KL-HQ', 'address' => 'Menara Aman, Jalan Tun Razak, Kuala Lumpur 50400']);
-        $selDc = Location::create(['name' => 'Selangor Distribution', 'code' => 'SEL-DC', 'address' => 'Warehouse Block C, Shah Alam, Selangor 40150']);
-        $sgCtl = Location::create(['name' => 'Singapore Central', 'code' => 'SG-CTL', 'address' => '5 Changi North Way, Singapore 498771']);
-
-        $main = Warehouse::create(['location_id' => $klHq->id, 'name' => 'Main Store', 'code' => 'WH-KL-01', 'address' => $klHq->address]);
-        $overflow = Warehouse::create(['location_id' => $selDc->id, 'name' => 'Overflow', 'code' => 'WH-SEL-01', 'address' => $selDc->address]);
-        $sgWarehouse = Warehouse::create(['location_id' => $sgCtl->id, 'name' => 'Singapore Warehouse', 'code' => 'WH-SG-01', 'address' => $sgCtl->address]);
-
-        // Reorder levels at the main store.
-        $this->reorder($main, $steel, 100);
-        $this->reorder($main, $copper, 150);
-        $this->reorder($main, $abs, 80);
-        $this->reorder($main, $cable, 50);
-
-        // --- Opening stock (StockService keeps on-hand + ledger in sync) ---
-        $this->stock->setLevel($main, $steel, 500, $admin, 'Opening balance');
-        $this->stock->setLevel($main, $copper, 800, $admin, 'Opening balance');
-        $this->stock->setLevel($main, $abs, 300, $admin, 'Opening balance');
-        $this->stock->setLevel($main, $screw, 5000, $admin, 'Opening balance');
-        $this->stock->setLevel($main, $box, 120, $admin, 'Opening balance');
-        $this->stock->setLevel($main, $cable, 200, $admin, 'Opening balance');
-        $this->stock->setLevel($sgWarehouse, $cable, 60, $admin, 'Opening balance');
-        $this->stock->setLevel($sgWarehouse, $box, 40, $admin, 'Opening balance');
-
-        // Transfers between warehouses.
-        $this->stock->transfer($main, $overflow, $steel, 50, $admin, 'Rebalance stock');
-        $this->stock->transfer($main, $overflow, $screw, 500, $admin, 'Rebalance stock');
-        $this->stock->transfer($main, $sgWarehouse, $cable, 30, $admin, 'Restock Singapore');
-
-        // --- Purchasing (1 pending, 1 received) ----------------------------
-        $po = PurchaseOrder::create(['supplier_id' => $sinar->id, 'currency' => 'MYR', 'status' => PurchaseOrderStatus::Pending, 'user_id' => $admin->id, 'notes' => 'Restock for next production run']);
-        $this->poItem($po, $steel, 200, 3.50);
-        $this->poItem($po, $copper, 300, 1.20);
-
-        $poReceived = PurchaseOrder::create(['supplier_id' => $kimHeng->id, 'currency' => 'MYR', 'status' => PurchaseOrderStatus::Pending, 'user_id' => $admin->id]);
-        $this->poItem($poReceived, $abs, 150, 4.00);
-        $this->poItem($poReceived, $screw, 2000, 0.05);
-        app(ReceivePurchaseOrder::class)->handle($poReceived, $main, $admin);
-
-        // --- Manufacturing (1 pending, 1 completed) ------------------------
-        $this->productionOrder($fan, 20, $admin);                       // pending
-        $completedMo = $this->productionOrder($socket, 30, $admin);
-        app(CompleteProductionOrder::class)->handle($completedMo, $main, $admin);
-
-        // --- Sales (1 pending, 1 fulfilled) --------------------------------
-        $so = SalesOrder::create(['customer_id' => $bumiMesra->id, 'currency' => 'MYR', 'status' => SalesOrderStatus::Pending, 'user_id' => $admin->id]);
-        $this->soItem($so, $box, 10, 25.00);
-        $this->soItem($so, $cable, 15, 12.00);
-
-        $soFulfilled = SalesOrder::create(['customer_id' => $marinaBay->id, 'currency' => 'SGD', 'status' => SalesOrderStatus::Pending, 'user_id' => $admin->id]);
-        $this->soItem($soFulfilled, $cable, 20, 6.50);
-        app(FulfillSalesOrder::class)->handle($soFulfilled, $main, $admin);
-
-        // --- Returns (1 pending + 1 completed each) ------------------------
-        $pr = PurchaseReturn::create(['supplier_id' => $sinar->id, 'status' => ReturnStatus::Pending, 'user_id' => $admin->id, 'notes' => 'Damaged on arrival']);
-        $pr->items()->create($this->rmLine($steel, 10));
-
-        $prDone = PurchaseReturn::create(['supplier_id' => $kimHeng->id, 'status' => ReturnStatus::Pending, 'user_id' => $admin->id]);
-        $prDone->items()->create($this->rmLine($copper, 20));
-        app(CompletePurchaseReturn::class)->handle($prDone, $main, $admin);
-
-        $sr = SalesReturn::create(['customer_id' => $bumiMesra->id, 'status' => ReturnStatus::Pending, 'user_id' => $admin->id, 'notes' => 'Customer changed their mind']);
-        $sr->items()->create($this->productLine($box, 2));
-
-        $srDone = SalesReturn::create(['customer_id' => $marinaBay->id, 'status' => ReturnStatus::Pending, 'user_id' => $admin->id]);
-        $srDone->items()->create($this->productLine($cable, 5));
-        app(CompleteSalesReturn::class)->handle($srDone, $main, $admin);
-
-        // --- Stock takes (1 draft, 1 posted) -------------------------------
-        $this->stockTake($main, $admin, post: false);
-        $this->stockTake($main, $admin, post: true);
     }
+
+    // -- Sites, reorder levels, opening stock ------------------------------------
+
+    private function seedSites(): void
+    {
+        foreach (self::SITES as [$name, $code, $region]) {
+            $location = Location::create(['name' => $name, 'code' => $code, 'address' => $this->address($region)]);
+            $this->warehouses[] = Warehouse::create([
+                'location_id' => $location->id,
+                'name' => $name.' Store',
+                'code' => 'WH-'.$code,
+                'address' => $location->address,
+            ]);
+        }
+        $this->mainWarehouse = $this->warehouses[0];
+
+        // Reorder levels at the main store: a mix, some ABOVE opening stock so the
+        // dashboard's low-stock KPI + the Reports low-stock list are non-empty.
+        foreach ($this->rawMaterials as $i => $rm) {
+            if ($i % 2 === 0) {
+                $this->reorder($this->mainWarehouse, $rm, $i < 4 ? 100 : random_int(50, 400));
+            }
+        }
+        foreach ($this->products as $i => $product) {
+            if ($i % 3 === 0) {
+                // Every 6th product's threshold sits above its opening stock (low alert).
+                $this->reorder($this->mainWarehouse, $product, $i % 6 === 0 ? 5000 : random_int(20, 120));
+            }
+        }
+    }
+
+    private function seedOpeningStock(): void
+    {
+        $openingDate = now()->subDays(90);
+
+        // Generous opening balances at the main store for everything, so the ~7 done
+        // fulfillments / productions / returns below never run short of stock.
+        foreach ($this->rawMaterials as $rm) {
+            $this->atDate($openingDate, fn () => $this->stock->setLevel($this->mainWarehouse, $rm, random_int(2000, 6000), $this->admin, 'Opening balance'));
+        }
+        foreach ($this->products as $product) {
+            $this->atDate($openingDate, fn () => $this->stock->setLevel($this->mainWarehouse, $product, random_int(200, 800), $this->admin, 'Opening balance'));
+        }
+
+        // A little stock at the other warehouses too (so transfers + their lists show data).
+        foreach (array_slice($this->warehouses, 1) as $warehouse) {
+            foreach (array_slice($this->products, 0, 5) as $product) {
+                $this->atDate($openingDate, fn () => $this->stock->setLevel($warehouse, $product, random_int(40, 150), $this->admin, 'Opening balance'));
+            }
+        }
+    }
+
+    private function seedTransfers(): void
+    {
+        // ~20 transfers from the main store out to the other warehouses, spread in time.
+        for ($i = 0; $i < 20; $i++) {
+            $to = $this->warehouses[1 + ($i % (count($this->warehouses) - 1))];
+            $item = $this->rawMaterials[array_rand($this->rawMaterials)];
+            $when = $this->randomDate(80);
+            $this->atDate($when, fn () => $this->stock->transfer($this->mainWarehouse, $to, $item, random_int(5, 40), $this->admin, 'Rebalance stock'));
+        }
+    }
+
+    // -- Status-carrying documents (~20 each, all statuses, spread dates) --------
+
+    private function seedPurchaseOrders(): void
+    {
+        // 10 pending, 7 received, 3 cancelled.
+        for ($i = 0; $i < 20; $i++) {
+            $status = $i < 10 ? PurchaseOrderStatus::Pending : ($i < 17 ? PurchaseOrderStatus::Pending : PurchaseOrderStatus::Cancelled);
+            $when = $this->randomDate();
+            $supplier = $this->suppliers[array_rand($this->suppliers)];
+
+            $po = PurchaseOrder::create(['supplier_id' => $supplier->id, 'currency' => self::CURRENCIES[array_rand(self::CURRENCIES)], 'status' => $status, 'user_id' => $this->admin->id]);
+            foreach ($this->pickRawMaterials() as $rm) {
+                $this->poItem($po, $rm, random_int(50, 400), random_int(1, 20) + 0.5);
+            }
+
+            if ($i >= 10 && $i < 17) {
+                $this->atDate($when, fn () => app(ReceivePurchaseOrder::class)->handle($po, $this->mainWarehouse, $this->admin));
+                $this->stamp($po, $when, ['received_at' => $when]);
+            } else {
+                $this->stamp($po, $when);
+            }
+        }
+    }
+
+    private function seedProductionOrders(): void
+    {
+        // 10 pending, 7 completed, 3 cancelled.
+        for ($i = 0; $i < 20; $i++) {
+            $status = $i < 10 ? ProductionOrderStatus::Pending : ($i < 17 ? ProductionOrderStatus::Pending : ProductionOrderStatus::Cancelled);
+            $when = $this->randomDate();
+            $product = $this->manufacturable[array_rand($this->manufacturable)];
+            $order = $this->productionOrder($product, random_int(5, 25));
+
+            if ($i >= 10 && $i < 17) {
+                $this->atDate($when, fn () => app(CompleteProductionOrder::class)->handle($order, $this->mainWarehouse, $this->admin));
+                $this->stamp($order, $when, ['completed_at' => $when]);
+            } else {
+                if ($status === ProductionOrderStatus::Cancelled) {
+                    $order->update(['status' => ProductionOrderStatus::Cancelled]);
+                }
+                $this->stamp($order, $when);
+            }
+        }
+    }
+
+    private function seedSalesOrders(): void
+    {
+        // 10 pending, 7 fulfilled, 3 cancelled.
+        for ($i = 0; $i < 20; $i++) {
+            $status = $i < 17 ? SalesOrderStatus::Pending : SalesOrderStatus::Cancelled;
+            $when = $this->randomDate();
+            $customer = $this->customers[array_rand($this->customers)];
+
+            $so = SalesOrder::create(['customer_id' => $customer->id, 'currency' => self::CURRENCIES[array_rand(self::CURRENCIES)], 'status' => $status, 'user_id' => $this->admin->id]);
+            foreach ($this->pickProducts() as $product) {
+                $this->soItem($so, $product, random_int(2, 15), random_int(8, 60) + 0.5);
+            }
+
+            if ($i >= 10 && $i < 17) {
+                $this->atDate($when, fn () => app(FulfillSalesOrder::class)->handle($so, $this->mainWarehouse, $this->admin));
+                $this->stamp($so, $when, ['fulfilled_at' => $when]);
+            } else {
+                $this->stamp($so, $when);
+            }
+        }
+    }
+
+    private function seedPurchaseReturns(): void
+    {
+        // 10 pending, 7 completed, 3 cancelled.
+        for ($i = 0; $i < 20; $i++) {
+            $status = $i < 17 ? ReturnStatus::Pending : ReturnStatus::Cancelled;
+            $when = $this->randomDate();
+            $pr = PurchaseReturn::create(['supplier_id' => $this->suppliers[array_rand($this->suppliers)]->id, 'status' => $status, 'user_id' => $this->admin->id, 'notes' => 'Damaged on arrival']);
+            $pr->items()->create($this->rmLine($this->rawMaterials[array_rand($this->rawMaterials)], random_int(2, 20)));
+
+            if ($i >= 10 && $i < 17) {
+                $this->atDate($when, fn () => app(CompletePurchaseReturn::class)->handle($pr, $this->mainWarehouse, $this->admin));
+                $this->stamp($pr, $when, ['completed_at' => $when]);
+            } else {
+                $this->stamp($pr, $when);
+            }
+        }
+    }
+
+    private function seedSalesReturns(): void
+    {
+        // 10 pending, 7 completed, 3 cancelled.
+        for ($i = 0; $i < 20; $i++) {
+            $status = $i < 17 ? ReturnStatus::Pending : ReturnStatus::Cancelled;
+            $when = $this->randomDate();
+            $sr = SalesReturn::create(['customer_id' => $this->customers[array_rand($this->customers)]->id, 'status' => $status, 'user_id' => $this->admin->id, 'notes' => 'Customer changed their mind']);
+            $sr->items()->create($this->productLine($this->products[array_rand($this->products)], random_int(1, 8)));
+
+            if ($i >= 10 && $i < 17) {
+                $this->atDate($when, fn () => app(CompleteSalesReturn::class)->handle($sr, $this->mainWarehouse, $this->admin));
+                $this->stamp($sr, $when, ['completed_at' => $when]);
+            } else {
+                $this->stamp($sr, $when);
+            }
+        }
+    }
+
+    private function seedStockTakes(): void
+    {
+        // 10 draft, 7 posted, 3 cancelled.
+        for ($i = 0; $i < 20; $i++) {
+            $when = $this->randomDate();
+
+            if ($i >= 17) {
+                $take = StockTake::create(['warehouse_id' => $this->mainWarehouse->id, 'status' => StockTakeStatus::Cancelled, 'user_id' => $this->admin->id]);
+                $this->stamp($take, $when);
+
+                continue;
+            }
+
+            $this->stockTake($this->mainWarehouse, post: $i >= 10, when: $when);
+        }
+    }
+
+    // -- Row builders ------------------------------------------------------------
 
     private function bom(Product $product, RawMaterial $rawMaterial, float $quantity): void
     {
@@ -220,66 +504,60 @@ class DemoTenantSeeder extends Seeder
         ]);
     }
 
+    /** @return list<RawMaterial> 1-2 distinct raw materials for an order. */
+    private function pickRawMaterials(): array
+    {
+        $keys = array_rand($this->rawMaterials, min(2, count($this->rawMaterials)));
+
+        return array_map(fn ($k) => $this->rawMaterials[$k], (array) $keys);
+    }
+
+    /** @return list<Product> 1-2 distinct products for an order. */
+    private function pickProducts(): array
+    {
+        $keys = array_rand($this->products, min(2, count($this->products)));
+
+        return array_map(fn ($k) => $this->products[$k], (array) $keys);
+    }
+
     private function poItem(PurchaseOrder $po, RawMaterial $rm, float $qty, float $cost): void
     {
-        $po->items()->create([
-            'raw_material_id' => $rm->id,
-            'raw_material_snapshot' => ['name' => $rm->name, 'sku' => $rm->sku, 'unit' => $rm->unit],
-            'quantity' => $qty,
-            'unit_cost' => $cost,
-        ]);
+        $po->items()->create(['raw_material_id' => $rm->id, 'raw_material_snapshot' => $rm->snapshot(), 'quantity' => $qty, 'unit_cost' => $cost]);
     }
 
     private function soItem(SalesOrder $so, Product $product, float $qty, float $price): void
     {
-        $so->items()->create([
-            'product_id' => $product->id,
-            'product_snapshot' => ['name' => $product->name, 'sku' => $product->sku, 'unit' => $product->unit],
-            'quantity' => $qty,
-            'unit_price' => $price,
-        ]);
+        $so->items()->create(['product_id' => $product->id, 'product_snapshot' => $product->snapshot(), 'quantity' => $qty, 'unit_price' => $price]);
     }
 
     /** @return array<string, mixed> */
     private function rmLine(RawMaterial $rm, float $qty): array
     {
-        return [
-            'raw_material_id' => $rm->id,
-            'raw_material_snapshot' => ['name' => $rm->name, 'sku' => $rm->sku, 'unit' => $rm->unit],
-            'quantity' => $qty,
-        ];
+        return ['raw_material_id' => $rm->id, 'raw_material_snapshot' => $rm->snapshot(), 'quantity' => $qty];
     }
 
     /** @return array<string, mixed> */
     private function productLine(Product $product, float $qty): array
     {
-        return [
-            'product_id' => $product->id,
-            'product_snapshot' => ['name' => $product->name, 'sku' => $product->sku, 'unit' => $product->unit],
-            'quantity' => $qty,
-        ];
+        return ['product_id' => $product->id, 'product_snapshot' => $product->snapshot(), 'quantity' => $qty];
     }
 
-    private function productionOrder(Product $product, float $qty, User $admin): ProductionOrder
+    private function productionOrder(Product $product, float $qty): ProductionOrder
     {
         $product->loadMissing('bomItems.rawMaterial');
 
         $order = ProductionOrder::create([
             'product_id' => $product->id,
-            'product_snapshot' => ['name' => $product->name, 'sku' => $product->sku, 'unit' => $product->unit],
+            'product_snapshot' => $product->snapshot(),
             'quantity' => $qty,
-            'user_id' => $admin->id,
+            'user_id' => $this->admin->id,
             'status' => ProductionOrderStatus::Pending,
         ]);
 
         foreach ($product->bomItems as $item) {
             $order->items()->create([
                 'raw_material_id' => $item->raw_material_id,
-                'raw_material_snapshot' => [
-                    'name' => $item->rawMaterial?->name ?? '',
-                    'sku' => $item->rawMaterial?->sku ?? '',
-                    'unit' => $item->rawMaterial?->unit ?? '',
-                ],
+                'raw_material_snapshot' => RawMaterial::snapshotOf($item->rawMaterial),
                 'quantity_per_unit' => $item->quantity,
                 'quantity_required' => (float) $item->quantity * $qty,
             ]);
@@ -290,21 +568,16 @@ class DemoTenantSeeder extends Seeder
 
     /**
      * Snapshot the warehouse's current on-hand into a stock take. When posting, count
-     * one item 1 unit short to show a difference and post the adjustment.
+     * one item short so the posted take shows a difference; backdate it to $when.
      */
-    private function stockTake(Warehouse $warehouse, User $admin, bool $post): void
+    private function stockTake(Warehouse $warehouse, bool $post, CarbonInterface $when): void
     {
-        $take = StockTake::create([
-            'warehouse_id' => $warehouse->id,
-            'status' => StockTakeStatus::Draft,
-            'user_id' => $admin->id,
-        ]);
+        $take = StockTake::create(['warehouse_id' => $warehouse->id, 'status' => StockTakeStatus::Draft, 'user_id' => $this->admin->id]);
 
         $stocks = WarehouseStock::where('warehouse_id', $warehouse->id)->with('stockable')->get();
 
         foreach ($stocks as $stock) {
             $stockable = $stock->stockable;
-
             if ($stockable === null) {
                 continue;
             }
@@ -312,11 +585,7 @@ class DemoTenantSeeder extends Seeder
             $take->items()->create([
                 'stockable_type' => $stockable->getMorphClass(),
                 'stockable_id' => $stockable->getKey(),
-                'stockable_snapshot' => [
-                    'name' => $stockable->name,
-                    'sku' => $stockable->sku ?? null,
-                    'unit' => $stockable->unit ?? '',
-                ],
+                'stockable_snapshot' => ['name' => $stockable->name, 'sku' => $stockable->sku ?? null, 'unit' => $stockable->unit ?? ''],
                 'system_qty' => (float) $stock->quantity,
                 'counted_qty' => (float) $stock->quantity,
                 'variance' => 0,
@@ -324,21 +593,21 @@ class DemoTenantSeeder extends Seeder
         }
 
         if (! $post) {
+            $this->stamp($take, $when);
+
             return;
         }
 
         $take->load('items');
         $first = true;
         $counts = $take->items->map(function ($item) use (&$first): array {
-            // Count the first item one short so the posted take shows a difference.
-            $counted = $first && (float) $item->counted_qty >= 1
-                ? (float) $item->counted_qty - 1
-                : (float) $item->counted_qty;
+            $counted = $first && (float) $item->counted_qty >= 1 ? (float) $item->counted_qty - 1 : (float) $item->counted_qty;
             $first = false;
 
             return ['id' => $item->id, 'counted_qty' => $counted];
         })->all();
 
-        app(PostStockTake::class)->handle($take, $counts, $admin);
+        $this->atDate($when, fn () => app(PostStockTake::class)->handle($take, $counts, $this->admin));
+        $this->stamp($take, $when, ['counted_at' => $when]);
     }
 }
