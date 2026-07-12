@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,6 +21,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { WarningBadge } from '@/components/warning-badge';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
@@ -158,14 +158,10 @@ export default function WarehouseShow() {
                     {row.original.needs_reorder && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Badge
-                                    variant="secondary"
-                                    tabIndex={0}
-                                    className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
-                                >
+                                <WarningBadge tabIndex={0} className="gap-1">
                                     <TriangleAlert className="size-3" />
                                     Reorder
-                                </Badge>
+                                </WarningBadge>
                             </TooltipTrigger>
                             <TooltipContent>
                                 On hand ({formatQuantity(row.original.on_hand)})

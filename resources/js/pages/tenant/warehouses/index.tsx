@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { WarningBadge } from '@/components/warning-badge';
 import { warehouseMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
@@ -119,12 +120,7 @@ export default function WarehousesIndex() {
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
                         <span className="tabular-nums">{w.items_in_stock}</span>
                         {w.low_stock > 0 && (
-                            <Badge
-                                variant="secondary"
-                                className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
-                            >
-                                {w.low_stock} low
-                            </Badge>
+                            <WarningBadge>{w.low_stock} low</WarningBadge>
                         )}
                         {w.out_of_stock > 0 && (
                             <Badge variant="destructive">

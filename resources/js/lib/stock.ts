@@ -41,6 +41,14 @@ export const STOCK_STATUS_TEXT: Record<StockStatusKey, string> = {
 export const POSITIVE_TEXT = 'text-emerald-600 dark:text-emerald-400';
 
 /**
+ * Amber "needs attention" badge tint (border + bg + text, light & dark). Amber has
+ * no design token, so this centralises the explicit utilities used for reorder / low
+ * -stock badges. See the {@link WarningBadge} component.
+ */
+export const AMBER_WARNING =
+    'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400';
+
+/**
  * Text colour for a signed quantity: `destructive` when negative (out),
  * {@link POSITIVE_TEXT} when positive (in), and neutral (inherit) at zero.
  */
