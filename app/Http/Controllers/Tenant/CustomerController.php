@@ -5,40 +5,30 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Data\CustomerData;
+use App\Http\Controllers\Concerns\RendersResourceIndex;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Inertia\Response;
 
 class CustomerController
 {
+    use RendersResourceIndex;
     use ResolvesPerPage;
     use RespondsWithToast;
 
     public function index(Request $request): Response
     {
-        $search = trim((string) $request->string('search'));
-
-        $perPage = $this->perPage($request);
-
-        $customers = Customer::query()
-            ->search($search)
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (Customer $customer): CustomerData => CustomerData::from($customer));
-
-        return Inertia::render('tenant/customers/index', [
-            'customers' => $customers,
-            'filters' => [
-                'search' => $search,
-                'per_page' => $perPage,
-            ],
-        ]);
+        return $this->resourceIndex(
+            $request,
+            Customer::class,
+            'tenant/customers/index',
+            'customers',
+            fn (Customer $customer): CustomerData => CustomerData::from($customer),
+        );
     }
 
     public function store(CustomerRequest $request): RedirectResponse
