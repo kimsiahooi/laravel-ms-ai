@@ -13,6 +13,7 @@ use App\Http\Controllers\Tenant\ProductionOrderController;
 use App\Http\Controllers\Tenant\PurchaseOrderController;
 use App\Http\Controllers\Tenant\PurchaseReturnController;
 use App\Http\Controllers\Tenant\RawMaterialController;
+use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SalesReturnController;
 use App\Http\Controllers\Tenant\SessionController;
@@ -176,6 +177,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // Traceability — a read-only history of catalog/order changes.
             Route::get('activity', [ActivityController::class, 'index'])
                 ->name('activity.index');
+
+            // Period-scoped reports (sales, purchases, production, movements, low stock).
+            Route::get('reports', [ReportController::class, 'index'])
+                ->name('reports.index');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

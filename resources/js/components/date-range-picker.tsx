@@ -2,14 +2,17 @@ import {
     endOfDay,
     endOfMonth,
     endOfWeek,
+    endOfYear,
     format,
     parseISO,
     startOfDay,
     startOfMonth,
     startOfWeek,
+    startOfYear,
     subDays,
     subMonths,
     subWeeks,
+    subYears,
 } from 'date-fns';
 import { CalendarDays, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -207,6 +210,19 @@ const PRESETS: Preset[] = [
         compute: (n) => {
             const m = subMonths(n, 1);
             return { from: startOfMonth(m), to: endOfMonth(m) };
+        },
+    },
+    {
+        key: 'this_year',
+        label: 'This year',
+        compute: (n) => ({ from: startOfYear(n), to: endOfDay(n) }),
+    },
+    {
+        key: 'last_year',
+        label: 'Last year',
+        compute: (n) => {
+            const y = subYears(n, 1);
+            return { from: startOfYear(y), to: endOfYear(y) };
         },
     },
     {

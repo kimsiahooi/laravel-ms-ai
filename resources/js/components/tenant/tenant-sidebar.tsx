@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeftRight,
     ArrowRightLeft,
+    BarChart3,
     Boxes,
     ClipboardCheck,
     Contact,
@@ -40,6 +41,7 @@ import products from '@/routes/tenant/products';
 import purchaseOrders from '@/routes/tenant/purchase-orders';
 import purchaseReturns from '@/routes/tenant/purchase-returns';
 import rawMaterials from '@/routes/tenant/raw-materials';
+import reports from '@/routes/tenant/reports';
 import salesOrders from '@/routes/tenant/sales-orders';
 import salesReturns from '@/routes/tenant/sales-returns';
 import stockMovements from '@/routes/tenant/stock-movements';
@@ -137,6 +139,11 @@ export function TenantSidebar() {
             title: 'Production orders',
             href: productionOrders.index.url({ tenant: slug }),
             icon: Factory,
+        },
+        {
+            title: 'Reports',
+            href: reports.index.url({ tenant: slug }),
+            icon: BarChart3,
         },
         {
             title: 'Activity',
