@@ -40,6 +40,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatMoney } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import poRoutes from '@/routes/tenant/purchase-orders';
 import type { TenantPageProps } from '@/types';
@@ -66,18 +67,9 @@ export default function PurchaseOrdersIndex() {
         usePageProps<PageProps>();
     const base = poRoutes.index.url({ tenant: tenant.slug });
 
-    const supplierOptions = suppliers.map((s) => ({
-        value: String(s.id),
-        label: s.name,
-    }));
-    const rawMaterialOptions = rawMaterials.map((r) => ({
-        value: String(r.id),
-        label: r.name,
-    }));
-    const warehouseOptions = warehouses.map((w) => ({
-        value: String(w.id),
-        label: w.name,
-    }));
+    const supplierOptions = toOptions(suppliers);
+    const rawMaterialOptions = toOptions(rawMaterials);
+    const warehouseOptions = toOptions(warehouses);
 
     const [supplierId, setSupplierId] = useState('');
     const [currency, setCurrency] = useState('USD');

@@ -39,6 +39,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import productionRoutes from '@/routes/tenant/production-orders';
 import type { TenantPageProps } from '@/types';
@@ -61,14 +62,8 @@ export default function ProductionOrdersIndex() {
         usePageProps<PageProps>();
     const base = productionRoutes.index.url({ tenant: tenant.slug });
 
-    const productOptions = products.map((p) => ({
-        value: String(p.id),
-        label: p.name,
-    }));
-    const warehouseOptions = warehouses.map((w) => ({
-        value: String(w.id),
-        label: w.name,
-    }));
+    const productOptions = toOptions(products);
+    const warehouseOptions = toOptions(warehouses);
 
     const [productId, setProductId] = useState('');
     const [quantity, setQuantity] = useState('1');

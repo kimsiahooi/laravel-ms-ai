@@ -40,6 +40,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatMoney } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import soRoutes from '@/routes/tenant/sales-orders';
 import type { TenantPageProps } from '@/types';
@@ -66,18 +67,9 @@ export default function SalesOrdersIndex() {
         usePageProps<PageProps>();
     const base = soRoutes.index.url({ tenant: tenant.slug });
 
-    const customerOptions = customers.map((c) => ({
-        value: String(c.id),
-        label: c.name,
-    }));
-    const productOptions = products.map((p) => ({
-        value: String(p.id),
-        label: p.name,
-    }));
-    const warehouseOptions = warehouses.map((w) => ({
-        value: String(w.id),
-        label: w.name,
-    }));
+    const customerOptions = toOptions(customers);
+    const productOptions = toOptions(products);
+    const warehouseOptions = toOptions(warehouses);
 
     const [customerId, setCustomerId] = useState('');
     const [currency, setCurrency] = useState('USD');

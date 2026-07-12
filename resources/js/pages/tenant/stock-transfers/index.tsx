@@ -19,6 +19,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity, timeAgo } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import stockTransfersRoutes from '@/routes/tenant/stock-transfers';
 import type { TenantPageProps } from '@/types';
@@ -38,10 +39,7 @@ export default function StockTransfersIndex() {
         usePageProps<PageProps>();
     const base = stockTransfersRoutes.index.url({ tenant: tenant.slug });
 
-    const warehouseOptions = warehouses.map((warehouse) => ({
-        value: String(warehouse.id),
-        label: warehouse.name,
-    }));
+    const warehouseOptions = toOptions(warehouses);
 
     const [stockable, setStockable] = useState('');
     const [fromWarehouseId, setFromWarehouseId] = useState('');

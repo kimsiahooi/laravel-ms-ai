@@ -39,6 +39,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import returnsRoutes from '@/routes/tenant/sales-returns';
 import type { TenantPageProps } from '@/types';
@@ -66,18 +67,9 @@ export default function SalesReturnsIndex() {
         usePageProps<PageProps>();
     const base = returnsRoutes.index.url({ tenant: tenant.slug });
 
-    const customerOptions = customers.map((s) => ({
-        value: String(s.id),
-        label: s.name,
-    }));
-    const productOptions = products.map((r) => ({
-        value: String(r.id),
-        label: r.name,
-    }));
-    const warehouseOptions = warehouses.map((w) => ({
-        value: String(w.id),
-        label: w.name,
-    }));
+    const customerOptions = toOptions(customers);
+    const productOptions = toOptions(products);
+    const warehouseOptions = toOptions(warehouses);
 
     const [customerId, setCustomerId] = useState('');
     const [notes, setNotes] = useState('');

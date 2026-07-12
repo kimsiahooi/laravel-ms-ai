@@ -43,6 +43,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import productsRoutes from '@/routes/tenant/products';
 import type { TenantPageProps } from '@/types';
@@ -66,18 +67,9 @@ export default function ProductsIndex() {
         usePageProps<PageProps>();
     const base = productsRoutes.index.url({ tenant: tenant.slug });
 
-    const categoryOptions = categories.map((c) => ({
-        value: String(c.id),
-        label: c.name,
-    }));
-    const supplierOptions = suppliers.map((s) => ({
-        value: String(s.id),
-        label: s.name,
-    }));
-    const rawMaterialOptions = rawMaterials.map((m) => ({
-        value: String(m.id),
-        label: m.name,
-    }));
+    const categoryOptions = toOptions(categories);
+    const supplierOptions = toOptions(suppliers);
+    const rawMaterialOptions = toOptions(rawMaterials);
 
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');

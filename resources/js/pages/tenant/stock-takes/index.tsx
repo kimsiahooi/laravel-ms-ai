@@ -28,6 +28,7 @@ import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity, timeAgo } from '@/lib/format';
+import { toOptions } from '@/lib/options';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/tenant';
 import stockTakesRoutes from '@/routes/tenant/stock-takes';
@@ -51,10 +52,7 @@ export default function StockTakesIndex() {
     const { takes, filters, warehouses, tenant } = usePageProps<PageProps>();
     const base = stockTakesRoutes.index.url({ tenant: tenant.slug });
 
-    const warehouseOptions = warehouses.map((warehouse) => ({
-        value: String(warehouse.id),
-        label: warehouse.name,
-    }));
+    const warehouseOptions = toOptions(warehouses);
 
     const [warehouseId, setWarehouseId] = useState('');
     const [notes, setNotes] = useState('');

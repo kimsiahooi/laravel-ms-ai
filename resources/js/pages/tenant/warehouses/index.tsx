@@ -20,6 +20,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import locationsRoutes from '@/routes/tenant/locations';
 import warehousesRoutes from '@/routes/tenant/warehouses';
@@ -39,10 +40,7 @@ export default function WarehousesIndex() {
     const base = warehousesRoutes.index.url({ tenant: tenant.slug });
     const locationsUrl = locationsRoutes.index.url({ tenant: tenant.slug });
 
-    const locationOptions = locations.map((location) => ({
-        value: String(location.id),
-        label: location.name,
-    }));
+    const locationOptions = toOptions(locations);
     const canCreate = locations.length > 0;
 
     const [locationId, setLocationId] = useState('');
