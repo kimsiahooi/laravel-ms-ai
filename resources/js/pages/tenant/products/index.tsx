@@ -200,6 +200,19 @@ export default function ProductsIndex() {
         bomForm.clearErrors();
     };
 
+    // Ask before closing the BOM editor when its lines changed since it opened.
+    // Only called from an explicit close intent, so "Keep editing" can't loop.
+    const attemptCloseBom = () => {
+        if (
+            bomLinesKey(bomLines) !== bomSnapshotRef.current &&
+            !bomForm.processing
+        ) {
+            setBomConfirmOpen(true);
+        } else {
+            closeBom();
+        }
+    };
+
     const addBomLine = () => setBomLines((prev) => [...prev, blankBomLine()]);
     const removeBomLine = (key: number) =>
         setBomLines((prev) => prev.filter((line) => line.key !== key));
@@ -716,17 +729,17 @@ export default function ProductsIndex() {
                 open={bomProduct !== null}
                 onOpenChange={(next) => {
                     if (next) return;
-                    if (
-                        bomLinesKey(bomLines) !== bomSnapshotRef.current &&
-                        !bomForm.processing
-                    ) {
-                        setBomConfirmOpen(true);
-                    } else {
-                        closeBom();
-                    }
+                    attemptCloseBom();
                 }}
             >
-                <DialogContent className="sm:max-w-2xl">
+                <DialogContent
+                    className="sm:max-w-2xl"
+                    onEscapeKeyDown={(event) => {
+                        event.preventDefault();
+                        attemptCloseBom();
+                    }}
+                    onInteractOutside={(event) => event.preventDefault()}
+                >
                     <DialogHeader>
                         <DialogTitle>BOM</DialogTitle>
                         <DialogDescription>

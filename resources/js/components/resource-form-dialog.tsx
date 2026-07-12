@@ -65,13 +65,12 @@ export function ResourceFormDialog<T extends { id: number }>({
     const processingRef = useRef(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const requestClose = (next: boolean) => {
-        if (next) {
-            onOpenChange(true);
-            return;
-        }
+    // Close the form, or ask first when there are unsaved edits. Only ever called
+    // from an explicit close intent (Esc / Cancel / ✕) — never from the nested
+    // discard dialog closing — so choosing "Keep editing" can't re-trigger it.
+    const attemptClose = () => {
         if (dirtyRef.current && !processingRef.current) {
-            setConfirmOpen(true); // block the close and ask
+            setConfirmOpen(true);
             return;
         }
         onOpenChange(false);
@@ -79,8 +78,20 @@ export function ResourceFormDialog<T extends { id: number }>({
 
     return (
         <>
-            <Dialog open={open} onOpenChange={requestClose}>
-                <DialogContent className={contentClassName}>
+            <Dialog
+                open={open}
+                onOpenChange={(next) =>
+                    next ? onOpenChange(true) : attemptClose()
+                }
+            >
+                <DialogContent
+                    className={contentClassName}
+                    onEscapeKeyDown={(event) => {
+                        event.preventDefault();
+                        attemptClose();
+                    }}
+                    onInteractOutside={(event) => event.preventDefault()}
+                >
                     <DialogHeader>
                         <DialogTitle>
                             {isEdit
