@@ -28,10 +28,13 @@ trait ResolvesPerPage
     }
 
     /**
-     * Paginate a list query with the shared UI defaults: a compact 2-sibling
-     * page window (`onEachSide(2)` — shorter than Laravel's default of 3) and
-     * the current query string preserved on the page links. Ordering stays with
-     * the caller (add a deterministic `latest()->latest('id')` there).
+     * Paginate a list query with the shared UI defaults, preserving the current
+     * query string on the page links. The visible page-number window is now
+     * computed client-side in the DataTable (a compact 2/3/2 window that stays
+     * short at every position — Laravel's `onEachSide` can't shrink its edge run
+     * below 4), so `onEachSide(1)` here only bounds the otherwise-unused `links`
+     * payload. Ordering stays with the caller (add a deterministic
+     * `latest()->latest('id')` there).
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
@@ -42,7 +45,7 @@ trait ResolvesPerPage
     {
         return $query
             ->paginate($perPage)
-            ->onEachSide(2)
+            ->onEachSide(1)
             ->withQueryString();
     }
 }

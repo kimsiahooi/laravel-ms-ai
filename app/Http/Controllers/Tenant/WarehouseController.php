@@ -83,7 +83,7 @@ class WarehouseController
             ->orderBy('stockable_type')  // deterministic tiebreaker — (type, id) is
             ->orderBy('stockable_id')    // unique across the two UNION legs
             ->paginate($perPage)
-            ->onEachSide(2)              // compact 2-sibling page window (matches paginateList)
+            ->onEachSide(1)              // only bounds the links payload; the visible window is client-side (matches paginateList)
             ->withQueryString()
             ->through(fn (object $row) => WarehouseItemData::fromRow($row));
 

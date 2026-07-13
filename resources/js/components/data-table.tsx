@@ -66,6 +66,59 @@ export type Paginator<T> = {
 
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
+/**
+ * Compact page-number window computed client-side (Laravel's server `onEachSide`
+ * can't shrink its edge run below 4, so page 1 would still spill `1 2 3 4 5 6 …`).
+ * Shows a consistent 2 / 3 / 2 shape at every position: the first 2 pages, 3 around
+ * the current page, and the last 2 pages, with `'ellipsis'` between the groups. A
+ * gap of exactly one page renders that page instead of an ellipsis (no `… 3` hiding
+ * a single page). Groups merge when they touch, so short lists show every number.
+ */
+function pageWindow(current: number, last: number): Array<number | 'ellipsis'> {
+    const pages = new Set<number>();
+    const add = (n: number) => {
+        if (n >= 1 && n <= last) pages.add(n);
+    };
+
+    add(1);
+    add(2); // left edge
+    add(last - 1);
+    add(last); // right edge
+    add(current - 1);
+    add(current);
+    add(current + 1); // middle
+
+    const sorted = [...pages].sort((a, b) => a - b);
+    const items: Array<number | 'ellipsis'> = [];
+    let prev = 0;
+
+    for (const page of sorted) {
+        if (prev) {
+            if (page - prev === 2) {
+                items.push(prev + 1); // fill a single-page gap
+            } else if (page - prev > 2) {
+                items.push('ellipsis');
+            }
+        }
+        items.push(page);
+        prev = page;
+    }
+
+    return items;
+}
+
+/**
+ * Build the href for an arbitrary page number by swapping only the `page` param on a
+ * template URL that already carries the current query string (search / per_page / any
+ * extra filter, via the paginator's `withQueryString()`). Laravel emits absolute URLs,
+ * so `new URL` needs no base — SSR-safe (no `window`).
+ */
+function pageHref(template: string, page: number): string {
+    const url = new URL(template);
+    url.searchParams.set('page', String(page));
+    return url.toString();
+}
+
 type DataTableProps<T> = {
     columns: ColumnDef<T, unknown>[];
     paginator: Paginator<T>;
@@ -174,11 +227,19 @@ export function DataTable<T>({
         getCoreRowModel: getCoreRowModel(),
         getRowId,
         manualPagination: true,
-        rowCount: paginator.total, // informational only — pagination is server-driven via paginator.links
+        rowCount: paginator.total, // informational only — the number window is derived client-side from current_page/last_page (see pageWindow)
     });
 
     const hasExpand = !!renderExpanded;
     const columnCount = table.getAllLeafColumns().length + (hasExpand ? 1 : 0);
+
+    // Client-side pager. The visible page numbers are computed from the paginator's own
+    // current_page/last_page (see pageWindow — a compact 2/3/2 window that stays short at
+    // every position). Per-page hrefs reuse a template URL (prev/next) that already carries
+    // the active query string, so only the `page` param changes.
+    const loadingClass = cn(loading && 'pointer-events-none opacity-50');
+    const pageTemplate = paginator.next_page_url ?? paginator.prev_page_url;
+    const windowPages = pageWindow(paginator.current_page, paginator.last_page);
 
     const toggleRow = (id: string) =>
         setExpandedRows((prev) => {
@@ -487,144 +548,138 @@ export function DataTable<T>({
                             </div>
                             <Pagination className="mx-0 w-auto">
                                 <PaginationContent>
-                                    {paginator.links.map((link, index) => {
-                                        const loadingClass = cn(
-                                            loading &&
-                                                'pointer-events-none opacity-50',
-                                        );
-
-                                        // Previous
-                                        if (index === 0) {
-                                            return (
-                                                <PaginationItem key="prev">
-                                                    {link.url ? (
-                                                        <PaginationLink
-                                                            asChild
-                                                            size="default"
-                                                            className="gap-1 px-2.5 sm:pl-2.5"
-                                                        >
-                                                            <Link
-                                                                href={link.url}
-                                                                {...reload}
-                                                                aria-label="Go to previous page"
-                                                                tabIndex={
-                                                                    loading
-                                                                        ? -1
-                                                                        : undefined
-                                                                }
-                                                                className={
-                                                                    loadingClass
-                                                                }
-                                                            >
-                                                                <ChevronLeft />
-                                                                <span className="hidden sm:block">
-                                                                    Previous
-                                                                </span>
-                                                            </Link>
-                                                        </PaginationLink>
-                                                    ) : (
-                                                        <PaginationLink
-                                                            aria-disabled
-                                                            aria-label="Go to previous page"
-                                                            size="default"
-                                                            className="pointer-events-none gap-1 px-2.5 opacity-50 sm:pl-2.5"
-                                                        >
-                                                            <ChevronLeft />
-                                                            <span className="hidden sm:block">
-                                                                Previous
-                                                            </span>
-                                                        </PaginationLink>
-                                                    )}
-                                                </PaginationItem>
-                                            );
-                                        }
-
-                                        // Next
-                                        if (
-                                            index ===
-                                            paginator.links.length - 1
-                                        ) {
-                                            return (
-                                                <PaginationItem key="next">
-                                                    {link.url ? (
-                                                        <PaginationLink
-                                                            asChild
-                                                            size="default"
-                                                            className="gap-1 px-2.5 sm:pr-2.5"
-                                                        >
-                                                            <Link
-                                                                href={link.url}
-                                                                {...reload}
-                                                                aria-label="Go to next page"
-                                                                tabIndex={
-                                                                    loading
-                                                                        ? -1
-                                                                        : undefined
-                                                                }
-                                                                className={
-                                                                    loadingClass
-                                                                }
-                                                            >
-                                                                <span className="hidden sm:block">
-                                                                    Next
-                                                                </span>
-                                                                <ChevronRight />
-                                                            </Link>
-                                                        </PaginationLink>
-                                                    ) : (
-                                                        <PaginationLink
-                                                            aria-disabled
-                                                            aria-label="Go to next page"
-                                                            size="default"
-                                                            className="pointer-events-none gap-1 px-2.5 opacity-50 sm:pr-2.5"
-                                                        >
-                                                            <span className="hidden sm:block">
-                                                                Next
-                                                            </span>
-                                                            <ChevronRight />
-                                                        </PaginationLink>
-                                                    )}
-                                                </PaginationItem>
-                                            );
-                                        }
-
-                                        if (link.label === '...') {
-                                            return (
-                                                <PaginationItem
-                                                    // biome-ignore lint/suspicious/noArrayIndexKey: paginator.links is a stable, server-generated list
-                                                    key={`ellipsis-${index}`}
-                                                    className="hidden sm:flex"
+                                    {/* Previous */}
+                                    <PaginationItem>
+                                        {paginator.prev_page_url ? (
+                                            <PaginationLink
+                                                asChild
+                                                size="default"
+                                                className="gap-1 px-2.5 sm:pl-2.5"
+                                            >
+                                                <Link
+                                                    href={
+                                                        paginator.prev_page_url
+                                                    }
+                                                    {...reload}
+                                                    aria-label="Go to previous page"
+                                                    tabIndex={
+                                                        loading ? -1 : undefined
+                                                    }
+                                                    className={loadingClass}
                                                 >
-                                                    <PaginationEllipsis />
-                                                </PaginationItem>
-                                            );
-                                        }
+                                                    <ChevronLeft />
+                                                    <span className="hidden sm:block">
+                                                        Previous
+                                                    </span>
+                                                </Link>
+                                            </PaginationLink>
+                                        ) : (
+                                            <PaginationLink
+                                                aria-disabled
+                                                aria-label="Go to previous page"
+                                                size="default"
+                                                className="pointer-events-none gap-1 px-2.5 opacity-50 sm:pl-2.5"
+                                            >
+                                                <ChevronLeft />
+                                                <span className="hidden sm:block">
+                                                    Previous
+                                                </span>
+                                            </PaginationLink>
+                                        )}
+                                    </PaginationItem>
 
-                                        return (
+                                    {/* Numbered 2/3/2 window (desktop only) */}
+                                    {windowPages.map((page, index) =>
+                                        page === 'ellipsis' ? (
                                             <PaginationItem
-                                                key={link.label}
+                                                // biome-ignore lint/suspicious/noArrayIndexKey: the window is a stable derived sequence
+                                                key={`ellipsis-${index}`}
+                                                className="hidden sm:flex"
+                                            >
+                                                <PaginationEllipsis />
+                                            </PaginationItem>
+                                        ) : (
+                                            <PaginationItem
+                                                key={page}
                                                 className="hidden sm:flex"
                                             >
                                                 <PaginationLink
                                                     asChild
-                                                    isActive={link.active}
+                                                    isActive={
+                                                        page ===
+                                                        paginator.current_page
+                                                    }
                                                     className={loadingClass}
                                                 >
                                                     <Link
-                                                        href={link.url ?? '#'}
+                                                        href={
+                                                            pageTemplate
+                                                                ? pageHref(
+                                                                      pageTemplate,
+                                                                      page,
+                                                                  )
+                                                                : '#'
+                                                        }
                                                         {...reload}
+                                                        aria-label={`Go to page ${page}`}
+                                                        aria-current={
+                                                            page ===
+                                                            paginator.current_page
+                                                                ? 'page'
+                                                                : undefined
+                                                        }
                                                         tabIndex={
                                                             loading
                                                                 ? -1
                                                                 : undefined
                                                         }
                                                     >
-                                                        {link.label}
+                                                        {page}
                                                     </Link>
                                                 </PaginationLink>
                                             </PaginationItem>
-                                        );
-                                    })}
+                                        ),
+                                    )}
+
+                                    {/* Next */}
+                                    <PaginationItem>
+                                        {paginator.next_page_url ? (
+                                            <PaginationLink
+                                                asChild
+                                                size="default"
+                                                className="gap-1 px-2.5 sm:pr-2.5"
+                                            >
+                                                <Link
+                                                    href={
+                                                        paginator.next_page_url
+                                                    }
+                                                    {...reload}
+                                                    aria-label="Go to next page"
+                                                    tabIndex={
+                                                        loading ? -1 : undefined
+                                                    }
+                                                    className={loadingClass}
+                                                >
+                                                    <span className="hidden sm:block">
+                                                        Next
+                                                    </span>
+                                                    <ChevronRight />
+                                                </Link>
+                                            </PaginationLink>
+                                        ) : (
+                                            <PaginationLink
+                                                aria-disabled
+                                                aria-label="Go to next page"
+                                                size="default"
+                                                className="pointer-events-none gap-1 px-2.5 opacity-50 sm:pr-2.5"
+                                            >
+                                                <span className="hidden sm:block">
+                                                    Next
+                                                </span>
+                                                <ChevronRight />
+                                            </PaginationLink>
+                                        )}
+                                    </PaginationItem>
                                 </PaginationContent>
                             </Pagination>
                         </div>
