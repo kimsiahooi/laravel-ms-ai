@@ -33,3 +33,6 @@ laradumps.yaml
 test-results
 playwright-report
 playwright/.cache
+
+# Playwright saved auth state
+e2e/.auth

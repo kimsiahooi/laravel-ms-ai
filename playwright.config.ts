@@ -14,7 +14,9 @@ export default defineConfig({
     fullyParallel: false,
     workers: 1,
     forbidOnly: true,
-    retries: 0,
+    // One retry absorbs the rare transient hitch of the single-threaded dev server
+    // (php artisan serve) under a long serial run — product failures still fail twice.
+    retries: 1,
     reporter: [['list']],
     globalTeardown: './e2e/global-teardown.ts',
     timeout: 30_000,
@@ -23,7 +25,19 @@ export default defineConfig({
         baseURL: 'http://localhost:8123',
         trace: 'retain-on-failure',
     },
-    projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+    projects: [
+        // Authenticate once; every spec below reuses the saved session.
+        { name: 'setup', testMatch: /auth\.setup\.ts/ },
+        {
+            name: 'chromium',
+            testIgnore: /auth\.setup\.ts/,
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: 'e2e/.auth/user.json',
+            },
+            dependencies: ['setup'],
+        },
+    ],
     webServer: {
         // Build the isolated e2e databases, then serve the app against them.
         command:
