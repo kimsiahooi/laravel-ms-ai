@@ -249,3 +249,56 @@ it('lists sales orders with picker options', function () {
             ->has('warehouses', 1)
         );
 });
+
+it('filters, paginates and orders the sales orders index by query params', function () {
+    ['widget' => $widget] = seedSalesFixture();
+
+    [$alpha, $beta] = $this->tenant->run(fn () => [
+        Customer::create(['name' => 'Alpha Retail'])->id,
+        Customer::create(['name' => 'Beta Traders'])->id,
+    ]);
+    $id1 = makePendingSo($alpha, $widget);
+    $id2 = makePendingSo($beta, $widget);
+    $id3 = makePendingSo($alpha, $widget);
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/sales-orders?search=Beta')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.id', $id2)
+            ->where('filters.search', 'Beta'));
+
+    $this->get('/acme/sales-orders?search=Zenith')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 0)
+            ->where('filters.search', 'Zenith'));
+
+    $this->get('/acme/sales-orders?per_page=25')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 3)
+            ->where('orders.per_page', 25));
+
+    $this->get('/acme/sales-orders')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('orders.data.0.id', $id3)
+            ->where('orders.data.2.id', $id1));
+});
+
+it('deletes a sales order', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    $soId = makePendingSo($customer, $widget);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/sales-orders')
+        ->delete("/acme/sales-orders/{$soId}")
+        ->assertRedirect('/acme/sales-orders')
+        ->assertToast('Sales order deleted.');
+
+    $this->tenant->run(fn () => expect(SalesOrder::find($soId))->toBeNull());
+});

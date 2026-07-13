@@ -9,6 +9,7 @@ use App\Models\StockTake;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->tenant = app(ProvisionTenant::class)->handle(
@@ -101,4 +102,87 @@ it('refuses to post a stock take twice', function () {
 
     $this->post("/acme/stock-takes/{$takeId}/post", ['items' => []])->assertRedirect();
     $this->post("/acme/stock-takes/{$takeId}/post", ['items' => []])->assertStatus(422);
+});
+
+/** Create a draft stock take at $warehouseId (no items needed for the list). */
+function makeDraftStockTake(int $warehouseId): int
+{
+    return test()->tenant->run(fn () => StockTake::create([
+        'warehouse_id' => $warehouseId,
+        'status' => 'draft',
+    ])->id);
+}
+
+it('filters, paginates and orders the stock takes index by query params', function () {
+    seedStockTakeFixture();
+
+    [$alpha, $beta] = $this->tenant->run(function () {
+        $location = Location::create(['name' => 'Depots']);
+
+        return [
+            Warehouse::create(['location_id' => $location->id, 'name' => 'Alpha Depot'])->id,
+            Warehouse::create(['location_id' => $location->id, 'name' => 'Beta Depot'])->id,
+        ];
+    });
+    $id1 = makeDraftStockTake($alpha);
+    $id2 = makeDraftStockTake($beta);
+    $id3 = makeDraftStockTake($alpha);
+
+    loginAsAcmeUser();
+
+    // ?search matches the warehouse name.
+    $this->get('/acme/stock-takes?search=Beta')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('takes.data', 1)
+            ->where('takes.data.0.id', $id2)
+            ->where('filters.search', 'Beta'));
+
+    $this->get('/acme/stock-takes?search=Zenith')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('takes.data', 0)
+            ->where('filters.search', 'Zenith'));
+
+    $this->get('/acme/stock-takes?per_page=25')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('takes.data', 3)
+            ->where('takes.per_page', 25));
+
+    $this->get('/acme/stock-takes')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('takes.data.0.id', $id3)
+            ->where('takes.data.2.id', $id1));
+});
+
+it('cancels a draft stock take but not again', function () {
+    ['warehouse' => $wh] = seedStockTakeFixture();
+    $takeId = makeDraftStockTake($wh);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/stock-takes')
+        ->post("/acme/stock-takes/{$takeId}/cancel")
+        ->assertRedirect('/acme/stock-takes')
+        ->assertToast('Stock take cancelled.');
+
+    $this->tenant->run(fn () => expect(StockTake::find($takeId)->status->value)->toBe('cancelled'));
+
+    $this->post("/acme/stock-takes/{$takeId}/cancel")->assertStatus(422);
+});
+
+it('deletes a stock take', function () {
+    ['warehouse' => $wh] = seedStockTakeFixture();
+    $takeId = makeDraftStockTake($wh);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/stock-takes')
+        ->delete("/acme/stock-takes/{$takeId}")
+        ->assertRedirect('/acme/stock-takes')
+        ->assertToast('Stock take deleted.');
+
+    $this->tenant->run(fn () => expect(StockTake::find($takeId))->toBeNull());
 });

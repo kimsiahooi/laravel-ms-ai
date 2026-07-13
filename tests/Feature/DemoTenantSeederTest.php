@@ -65,6 +65,14 @@ it('seeds a fuller Malaysia/Singapore sample dataset when opted in', function ()
         expect(PurchaseOrder::query()->distinct()->count('created_at'))->toBeGreaterThanOrEqual(10)
             ->and(StockMovement::query()->distinct()->count('created_at'))->toBeGreaterThanOrEqual(5);
 
+        // created_at rises with the id, so the newest-first list reads as a clean
+        // descending run of order numbers (not the shuffle random dates produced).
+        $timestamps = PurchaseOrder::orderBy('id')->pluck('created_at')
+            ->map(fn ($when) => $when->getTimestamp())->all();
+        $ascending = $timestamps;
+        sort($ascending);
+        expect($timestamps)->toBe($ascending);
+
         // Stock stayed consistent (never driven negative) and no extra users.
         expect(WarehouseStock::where('quantity', '<', 0)->count())->toBe(0)
             ->and(User::count())->toBe(1);

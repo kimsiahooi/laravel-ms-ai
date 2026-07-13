@@ -221,3 +221,83 @@ it('lists purchase orders with picker options', function () {
             ->has('warehouses', 1)
         );
 });
+
+it('filters, paginates and orders the purchase orders index by query params', function () {
+    ['steel' => $steel] = seedPurchaseFixture();
+
+    [$alpha, $beta] = $this->tenant->run(fn () => [
+        Supplier::create(['name' => 'Alpha Metals'])->id,
+        Supplier::create(['name' => 'Beta Supplies'])->id,
+    ]);
+    $id1 = makePendingPo($alpha, $steel);
+    $id2 = makePendingPo($beta, $steel);
+    $id3 = makePendingPo($alpha, $steel);
+
+    loginAsAcmeUser();
+
+    // ?search matches the supplier name; the term echoes back in filters.search.
+    $this->get('/acme/purchase-orders?search=Beta')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.id', $id2)
+            ->where('filters.search', 'Beta'));
+
+    // A non-matching term yields an empty page (still echoing the term).
+    $this->get('/acme/purchase-orders?search=Zenith')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 0)
+            ->where('filters.search', 'Zenith'));
+
+    // ?per_page is honoured (25 is in the allow-list; 3 rows fit on one page).
+    $this->get('/acme/purchase-orders?per_page=25')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 3)
+            ->where('orders.per_page', 25));
+
+    // Newest-first, deterministic: highest id first, lowest last.
+    $this->get('/acme/purchase-orders')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('orders.data.0.id', $id3)
+            ->where('orders.data.2.id', $id1));
+});
+
+it('paginates the purchase orders index across pages', function () {
+    ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
+    foreach (range(1, 11) as $ignored) {
+        makePendingPo($supplier, $steel);
+    }
+
+    loginAsAcmeUser();
+
+    // Default per_page is 10 → 11 rows spill onto a second page.
+    $this->get('/acme/purchase-orders')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 10)
+            ->where('orders.current_page', 1)
+            ->where('orders.last_page', 2));
+
+    $this->get('/acme/purchase-orders?page=2')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.current_page', 2));
+});
+
+it('deletes a purchase order', function () {
+    ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
+    $poId = makePendingPo($supplier, $steel);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/purchase-orders')
+        ->delete("/acme/purchase-orders/{$poId}")
+        ->assertRedirect('/acme/purchase-orders')
+        ->assertToast('Purchase order deleted.');
+
+    $this->tenant->run(fn () => expect(PurchaseOrder::find($poId))->toBeNull());
+});

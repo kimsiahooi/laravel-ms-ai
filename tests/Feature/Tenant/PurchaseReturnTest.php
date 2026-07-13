@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->tenant = app(ProvisionTenant::class)->handle(
@@ -41,9 +42,132 @@ function seedPurchaseReturnFixture(): array
     });
 }
 
+/** Create a pending purchase return for $supplierId with one $rmId line. Returns its id. */
+function makePendingPurchaseReturn(int $supplierId, int $rmId, float $qty = 3): int
+{
+    return test()->tenant->run(function () use ($supplierId, $rmId, $qty) {
+        $return = PurchaseReturn::create(['supplier_id' => $supplierId, 'status' => 'pending']);
+        $rm = RawMaterial::find($rmId);
+        $return->items()->create([
+            'raw_material_id' => $rm->id,
+            'raw_material_snapshot' => ['name' => $rm->name, 'sku' => $rm->sku, 'unit' => $rm->unit],
+            'quantity' => $qty,
+        ]);
+
+        return $return->id;
+    });
+}
+
 it('redirects a guest from the purchase returns page to the tenant login', function () {
     $this->get('/acme/purchase-returns')
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
+});
+
+it('filters, paginates and orders the purchase returns index by query params', function () {
+    ['raw_material' => $rm] = seedPurchaseReturnFixture();
+
+    [$alpha, $beta] = $this->tenant->run(fn () => [
+        Supplier::create(['name' => 'Alpha Metals'])->id,
+        Supplier::create(['name' => 'Beta Supplies'])->id,
+    ]);
+    $id1 = makePendingPurchaseReturn($alpha, $rm);
+    $id2 = makePendingPurchaseReturn($beta, $rm);
+    $id3 = makePendingPurchaseReturn($alpha, $rm);
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/purchase-returns?search=Beta')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('returns.data', 1)
+            ->where('returns.data.0.id', $id2)
+            ->where('filters.search', 'Beta'));
+
+    $this->get('/acme/purchase-returns?search=Zenith')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('returns.data', 0)
+            ->where('filters.search', 'Zenith'));
+
+    $this->get('/acme/purchase-returns?per_page=25')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('returns.data', 3)
+            ->where('returns.per_page', 25));
+
+    $this->get('/acme/purchase-returns')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('returns.data.0.id', $id3)
+            ->where('returns.data.2.id', $id1));
+});
+
+it('shows a purchase return', function () {
+    ['supplier' => $supplier, 'raw_material' => $rm] = seedPurchaseReturnFixture();
+    $returnId = makePendingPurchaseReturn($supplier, $rm);
+
+    loginAsAcmeUser();
+
+    $this->get("/acme/purchase-returns/{$returnId}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/purchase-returns/show')
+            ->where('return.id', $returnId)
+            ->has('return.items', 1));
+});
+
+it('updates a pending purchase return but rejects updating a non-pending one', function () {
+    ['supplier' => $supplier, 'raw_material' => $rm] = seedPurchaseReturnFixture();
+    $returnId = makePendingPurchaseReturn($supplier, $rm, 3);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/purchase-returns')
+        ->put("/acme/purchase-returns/{$returnId}", [
+            'supplier_id' => $supplier,
+            'items' => [['raw_material_id' => $rm, 'quantity' => 8]],
+        ])
+        ->assertRedirect('/acme/purchase-returns')
+        ->assertToast('Purchase return updated.');
+
+    $this->tenant->run(fn () => expect((float) PurchaseReturn::with('items')->find($returnId)->items->first()->quantity)->toBe(8.0));
+
+    // Cancel it, then updating is rejected.
+    $this->post("/acme/purchase-returns/{$returnId}/cancel");
+    $this->put("/acme/purchase-returns/{$returnId}", [
+        'supplier_id' => $supplier,
+        'items' => [['raw_material_id' => $rm, 'quantity' => 1]],
+    ])->assertStatus(422);
+});
+
+it('cancels a pending purchase return but not again', function () {
+    ['supplier' => $supplier, 'raw_material' => $rm] = seedPurchaseReturnFixture();
+    $returnId = makePendingPurchaseReturn($supplier, $rm);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/purchase-returns')
+        ->post("/acme/purchase-returns/{$returnId}/cancel")
+        ->assertRedirect('/acme/purchase-returns')
+        ->assertToast('Purchase return cancelled.');
+
+    $this->tenant->run(fn () => expect(PurchaseReturn::find($returnId)->status->value)->toBe('cancelled'));
+
+    $this->post("/acme/purchase-returns/{$returnId}/cancel")->assertStatus(422);
+});
+
+it('deletes a purchase return', function () {
+    ['supplier' => $supplier, 'raw_material' => $rm] = seedPurchaseReturnFixture();
+    $returnId = makePendingPurchaseReturn($supplier, $rm);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/purchase-returns')
+        ->delete("/acme/purchase-returns/{$returnId}")
+        ->assertRedirect('/acme/purchase-returns')
+        ->assertToast('Purchase return deleted.');
+
+    $this->tenant->run(fn () => expect(PurchaseReturn::find($returnId))->toBeNull());
 });
 
 it('creates a purchase return and completes it, posting stock OUT', function () {

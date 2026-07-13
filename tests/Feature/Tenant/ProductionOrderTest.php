@@ -250,3 +250,60 @@ it('lists production orders with picker options', function () {
             ->has('warehouses', 1)
         );
 });
+
+it('filters, paginates and orders the production orders index by query params', function () {
+    ['widget' => $widget, 'steel' => $steel] = seedProductionFixture();
+
+    $gizmo = $this->tenant->run(function () use ($steel) {
+        $product = Product::create(['name' => 'Gizmo', 'sku' => 'G-1', 'unit' => 'ea']);
+        $product->bomItems()->create(['raw_material_id' => $steel, 'quantity' => 1]);
+
+        return $product->id;
+    });
+
+    $id1 = makePendingMo($widget, 3);
+    $id2 = makePendingMo($gizmo, 2);
+    $id3 = makePendingMo($widget, 1);
+
+    loginAsAcmeUser();
+
+    // ?search matches the snapshotted product name.
+    $this->get('/acme/production-orders?search=Gizmo')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.id', $id2)
+            ->where('filters.search', 'Gizmo'));
+
+    $this->get('/acme/production-orders?search=Zenith')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 0)
+            ->where('filters.search', 'Zenith'));
+
+    $this->get('/acme/production-orders?per_page=25')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 3)
+            ->where('orders.per_page', 25));
+
+    $this->get('/acme/production-orders')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('orders.data.0.id', $id3)
+            ->where('orders.data.2.id', $id1));
+});
+
+it('deletes a production order', function () {
+    ['widget' => $widget] = seedProductionFixture();
+    $moId = makePendingMo($widget, 3);
+
+    loginAsAcmeUser();
+
+    $this->from('/acme/production-orders')
+        ->delete("/acme/production-orders/{$moId}")
+        ->assertRedirect('/acme/production-orders')
+        ->assertToast('Production order deleted.');
+
+    $this->tenant->run(fn () => expect(ProductionOrder::find($moId))->toBeNull());
+});

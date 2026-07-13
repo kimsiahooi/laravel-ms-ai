@@ -38,6 +38,17 @@ class ExportRegistry
     }
 
     /**
+     * Every registered list-export key. `reports` is exported too but handled
+     * separately (it isn't a single-table list), so it isn't in here.
+     *
+     * @return list<string>
+     */
+    public static function keys(): array
+    {
+        return array_keys(self::configs());
+    }
+
+    /**
      * @return array<string, array{query: callable, columns: array<int, array{heading: string, value: callable}>}>
      */
     private static function configs(): array
