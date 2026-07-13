@@ -316,13 +316,22 @@ class DemoTenantSeeder extends Seeder
             ]);
         }
 
-        // BOMs for the manufacturable core.
+        // BOMs for the manufacturable core (hand-tuned so production reads coherently).
         $this->bom($fan, $steel, 0.5);
         $this->bom($fan, $copper, 3);
         $this->bom($fan, $screw, 8);
         $this->bom($socket, $abs, 0.3);
         $this->bom($socket, $copper, 2);
         $this->bom($socket, $screw, 6);
+
+        // Give most pool products a randomized BOM too, so they're manufacturable and their
+        // product page shows a real bill of materials. Products can only ever be made here
+        // (POs buy raw materials, never finished goods), so a BOM-less product is a dead end.
+        // Keep the last 3 without a BOM to still demonstrate the empty-BOM ("bought-in") state.
+        $pool = array_slice($this->products, 2); // the PRODUCT_POOL entries
+        foreach (array_slice($pool, 0, max(0, count($pool) - 3)) as $product) {
+            $this->seedRandomBom($product);
+        }
     }
 
     // -- Sites, reorder levels, opening stock ------------------------------------
@@ -353,6 +362,19 @@ class DemoTenantSeeder extends Seeder
                 $this->reorder($this->mainWarehouse, $product, $i % 6 === 0 ? 5000 : random_int(20, 120));
             }
         }
+
+        // A handful of reorder levels at the other warehouses too, so their detail pages'
+        // "needs reorder" summary and the reorder editor aren't empty.
+        foreach (array_slice($this->warehouses, 1) as $warehouse) {
+            foreach ($this->rawMaterials as $i => $rm) {
+                if ($i % 4 === 0) {
+                    $this->reorder($warehouse, $rm, random_int(50, 300));
+                }
+            }
+            foreach (array_slice($this->products, 0, 5) as $product) {
+                $this->reorder($warehouse, $product, random_int(20, 100));
+            }
+        }
     }
 
     private function seedOpeningStock(): void
@@ -368,9 +390,13 @@ class DemoTenantSeeder extends Seeder
             $this->atDate($openingDate, fn () => $this->stock->setLevel($this->mainWarehouse, $product, random_int(200, 800), $this->admin, 'Opening balance'));
         }
 
-        // A little stock at the other warehouses too (so transfers + their lists show data).
+        // Stock at the other warehouses too — raw materials and products alike — so transfers,
+        // their stock-detail pages, and their reorder summaries all show real data.
         foreach (array_slice($this->warehouses, 1) as $warehouse) {
-            foreach (array_slice($this->products, 0, 5) as $product) {
+            foreach (array_slice($this->rawMaterials, 0, 8) as $rm) {
+                $this->atDate($openingDate, fn () => $this->stock->setLevel($warehouse, $rm, random_int(200, 1000), $this->admin, 'Opening balance'));
+            }
+            foreach (array_slice($this->products, 0, 8) as $product) {
                 $this->atDate($openingDate, fn () => $this->stock->setLevel($warehouse, $product, random_int(40, 150), $this->admin, 'Opening balance'));
             }
         }
@@ -465,7 +491,9 @@ class DemoTenantSeeder extends Seeder
             $status = $i < 17 ? ReturnStatus::Pending : ReturnStatus::Cancelled;
             $when = $dates[$i];
             $pr = PurchaseReturn::create(['supplier_id' => $this->suppliers[array_rand($this->suppliers)]->id, 'status' => $status, 'user_id' => $this->admin->id, 'notes' => 'Damaged on arrival']);
-            $pr->items()->create($this->rmLine($this->rawMaterials[array_rand($this->rawMaterials)], random_int(2, 20)));
+            foreach ($this->pickRawMaterials(random_int(1, 3)) as $rm) {
+                $pr->items()->create($this->rmLine($rm, random_int(2, 20)));
+            }
 
             if ($i >= 10 && $i < 17) {
                 $this->atDate($when, fn () => app(CompletePurchaseReturn::class)->handle($pr, $this->mainWarehouse, $this->admin));
@@ -484,7 +512,9 @@ class DemoTenantSeeder extends Seeder
             $status = $i < 17 ? ReturnStatus::Pending : ReturnStatus::Cancelled;
             $when = $dates[$i];
             $sr = SalesReturn::create(['customer_id' => $this->customers[array_rand($this->customers)]->id, 'status' => $status, 'user_id' => $this->admin->id, 'notes' => 'Customer changed their mind']);
-            $sr->items()->create($this->productLine($this->products[array_rand($this->products)], random_int(1, 8)));
+            foreach ($this->pickProducts(random_int(1, 3)) as $product) {
+                $sr->items()->create($this->productLine($product, random_int(1, 8)));
+            }
 
             if ($i >= 10 && $i < 17) {
                 $this->atDate($when, fn () => app(CompleteSalesReturn::class)->handle($sr, $this->mainWarehouse, $this->admin));
@@ -503,7 +533,9 @@ class DemoTenantSeeder extends Seeder
             $when = $dates[$i];
 
             if ($i >= 17) {
+                // Cancelled after the count was started: snapshot items, then cancel.
                 $take = StockTake::create(['warehouse_id' => $this->mainWarehouse->id, 'status' => StockTakeStatus::Cancelled, 'user_id' => $this->admin->id]);
+                $this->snapshotStockTakeItems($take, $this->mainWarehouse);
                 $this->stamp($take, $when);
 
                 continue;
@@ -520,6 +552,20 @@ class DemoTenantSeeder extends Seeder
         BomItem::create(['product_id' => $product->id, 'raw_material_id' => $rawMaterial->id, 'quantity' => $quantity]);
     }
 
+    /**
+     * Attach a randomized BOM (2-4 distinct raw materials, per-unit quantity 0.1-6.0) to a
+     * product and mark it manufacturable. Distinct picks satisfy the unique (product, material)
+     * constraint; the quantity is always > 0.
+     */
+    private function seedRandomBom(Product $product): void
+    {
+        $count = min(random_int(2, 4), count($this->rawMaterials));
+        foreach ((array) array_rand($this->rawMaterials, $count) as $key) {
+            $this->bom($product, $this->rawMaterials[$key], random_int(1, 60) / 10);
+        }
+        $this->manufacturable[] = $product;
+    }
+
     private function reorder(Warehouse $warehouse, Product|RawMaterial $stockable, float $min): void
     {
         WarehouseReorderLevel::create([
@@ -530,18 +576,18 @@ class DemoTenantSeeder extends Seeder
         ]);
     }
 
-    /** @return list<RawMaterial> 1-2 distinct raw materials for an order. */
-    private function pickRawMaterials(): array
+    /** @return list<RawMaterial> $count distinct raw materials for an order/return. */
+    private function pickRawMaterials(int $count = 2): array
     {
-        $keys = array_rand($this->rawMaterials, min(2, count($this->rawMaterials)));
+        $keys = array_rand($this->rawMaterials, min($count, count($this->rawMaterials)));
 
         return array_map(fn ($k) => $this->rawMaterials[$k], (array) $keys);
     }
 
-    /** @return list<Product> 1-2 distinct products for an order. */
-    private function pickProducts(): array
+    /** @return list<Product> $count distinct products for an order/return. */
+    private function pickProducts(int $count = 2): array
     {
-        $keys = array_rand($this->products, min(2, count($this->products)));
+        $keys = array_rand($this->products, min($count, count($this->products)));
 
         return array_map(fn ($k) => $this->products[$k], (array) $keys);
     }
@@ -592,14 +638,9 @@ class DemoTenantSeeder extends Seeder
         return $order;
     }
 
-    /**
-     * Snapshot the warehouse's current on-hand into a stock take. When posting, count
-     * one item short so the posted take shows a difference; backdate it to $when.
-     */
-    private function stockTake(Warehouse $warehouse, bool $post, CarbonInterface $when): void
+    /** Snapshot every on-hand row at the warehouse into the take as a counted item. */
+    private function snapshotStockTakeItems(StockTake $take, Warehouse $warehouse): void
     {
-        $take = StockTake::create(['warehouse_id' => $warehouse->id, 'status' => StockTakeStatus::Draft, 'user_id' => $this->admin->id]);
-
         $stocks = WarehouseStock::where('warehouse_id', $warehouse->id)->with('stockable')->get();
 
         foreach ($stocks as $stock) {
@@ -617,6 +658,17 @@ class DemoTenantSeeder extends Seeder
                 'variance' => 0,
             ]);
         }
+    }
+
+    /**
+     * Snapshot the warehouse's current on-hand into a stock take. When posting, count
+     * one item short so the posted take shows a difference; backdate it to $when.
+     */
+    private function stockTake(Warehouse $warehouse, bool $post, CarbonInterface $when): void
+    {
+        $take = StockTake::create(['warehouse_id' => $warehouse->id, 'status' => StockTakeStatus::Draft, 'user_id' => $this->admin->id]);
+
+        $this->snapshotStockTakeItems($take, $warehouse);
 
         if (! $post) {
             $this->stamp($take, $when);

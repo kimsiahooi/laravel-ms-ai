@@ -17,6 +17,7 @@ use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\WarehouseReorderLevel;
 use App\Models\WarehouseStock;
 
 it('seeds a fuller Malaysia/Singapore sample dataset when opted in', function () {
@@ -59,6 +60,20 @@ it('seeds a fuller Malaysia/Singapore sample dataset when opted in', function ()
         foreach (['draft', 'posted', 'cancelled'] as $s) {
             expect(StockTake::where('status', $s)->count())->toBeGreaterThanOrEqual(1);
         }
+
+        // Relationships are actually linked, not just parent rows present:
+        // most products have a real BOM (manufacturable), with a few bought-in kept to show
+        // the empty-BOM state; every production order exploded its BOM into item lines; every
+        // stock take (incl. the cancelled ones) snapshotted items; returns can be multi-line;
+        // and reorder levels exist at more than one warehouse.
+        expect(Product::has('bomItems')->count())->toBeGreaterThanOrEqual(12)
+            ->and(Product::doesntHave('bomItems')->count())->toBeGreaterThanOrEqual(1)
+            ->and(BomItem::count())->toBeGreaterThanOrEqual(30)
+            ->and(ProductionOrder::doesntHave('items')->count())->toBe(0)
+            ->and(StockTake::doesntHave('items')->count())->toBe(0)
+            ->and(PurchaseReturn::has('items', '>=', 2)->exists())->toBeTrue()
+            ->and(SalesReturn::has('items', '>=', 2)->exists())->toBeTrue()
+            ->and(WarehouseReorderLevel::distinct()->count('warehouse_id'))->toBeGreaterThanOrEqual(2);
 
         // Dates are spread out, so newest-first sorting is meaningful and the dashboard
         // charts vary rather than clustering at seed time.
