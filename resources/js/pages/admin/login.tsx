@@ -172,7 +172,7 @@ export default function AdminLogin() {
                                                     required
                                                     autoFocus
                                                     autoComplete="email"
-                                                    placeholder="admin@example.com"
+                                                    placeholder="admin@gmail.com"
                                                     className="pl-9"
                                                     aria-invalid={
                                                         !!errors.email

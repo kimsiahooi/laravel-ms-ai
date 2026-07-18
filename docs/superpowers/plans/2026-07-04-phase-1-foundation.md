@@ -1107,7 +1107,7 @@ export default function AdminDashboard({ organizationsCount }: { organizationsCo
 public function run(): void
 {
     \App\Models\CentralUser::firstOrCreate(
-        ['email' => 'admin@example.com'],
+        ['email' => 'admin@gmail.com'],
         ['name' => 'Super Admin', 'password' => \Illuminate\Support\Facades\Hash::make('password')],
     );
 }
@@ -1486,7 +1486,7 @@ Expected: all green.
 
 ```bash
 composer run dev   # serves app + Vite + queue + logs
-# 1. Visit /admin/login, sign in as admin@example.com / password
+# 1. Visit /admin/login, sign in as admin@gmail.com / password
 # 2. (Temporary) tinker-provision an org, or add a create-org form in Phase 1 follow-up:
 php artisan tinker --execute="app(App\Actions\ProvisionOrganization::class)->handle('Demo','demo','Demo Owner','owner@demo.test','password');"
 # 3. Visit /demo/login, sign in as owner@demo.test / password -> lands on /demo/dashboard
