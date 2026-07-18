@@ -20,6 +20,14 @@ raw_material_id: number,
 name: string,
 quantity: number,
 };
+export type BusinessSettingsData = {
+legal_name: string | null,
+registration_no: string | null,
+address: string | null,
+tax_type: string,
+tax_registration_no: string | null,
+has_logo: boolean,
+};
 export type CategoryData = {
 id: number,
 name: string,

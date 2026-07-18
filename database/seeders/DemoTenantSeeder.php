@@ -26,6 +26,7 @@ use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
 use App\Models\SalesOrder;
 use App\Models\SalesReturn;
+use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\StockTake;
 use App\Models\StockTransfer;
@@ -164,6 +165,7 @@ class DemoTenantSeeder extends Seeder
         Auth::guard('web')->login($admin);
 
         try {
+            $this->seedBusinessSettings();
             $this->seedCatalog();
             $this->seedSites();
             $this->seedOpeningStock();
@@ -262,6 +264,23 @@ class DemoTenantSeeder extends Seeder
     }
 
     // -- Catalog -----------------------------------------------------------------
+
+    private function seedBusinessSettings(): void
+    {
+        Setting::putMany('business', [
+            'legal_name' => 'Acme Manufacturing Sdn Bhd',
+            'registration_no' => '202301012345 (1509876-A)',
+            'tax_type' => 'sst',
+            'tax_registration_no' => 'W10-1808-32000123',
+            'tin' => 'C20880690010',
+            'country' => 'MY',
+            'email' => 'accounts@acme.com.my',
+            'phone' => '+60 3-7890 1234',
+            'address' => "Lot 12, Jalan Perindustrian 3\n47810 Petaling Jaya, Selangor\nMalaysia",
+            'financial_year_start_month' => '1',
+            'default_currency' => 'MYR',
+        ]);
+    }
 
     private function seedCatalog(): void
     {

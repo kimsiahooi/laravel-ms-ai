@@ -4,6 +4,7 @@ import {
     ArrowRightLeft,
     BarChart3,
     Boxes,
+    Building2,
     ClipboardCheck,
     Contact,
     Factory,
@@ -44,6 +45,7 @@ import rawMaterials from '@/routes/tenant/raw-materials';
 import reports from '@/routes/tenant/reports';
 import salesOrders from '@/routes/tenant/sales-orders';
 import salesReturns from '@/routes/tenant/sales-returns';
+import settingsRoutes from '@/routes/tenant/settings';
 import stockMovements from '@/routes/tenant/stock-movements';
 import stockTakes from '@/routes/tenant/stock-takes';
 import stockTransfers from '@/routes/tenant/stock-transfers';
@@ -149,6 +151,14 @@ export function TenantSidebar() {
             title: 'Activity',
             href: activity.index.url({ tenant: slug }),
             icon: History,
+        },
+        {
+            title: 'Business settings',
+            href: settingsRoutes.edit.url({
+                tenant: slug,
+                category: 'business',
+            }),
+            icon: Building2,
         },
     ];
 

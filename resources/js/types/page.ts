@@ -19,4 +19,6 @@ export type TenantBrand = {
 export type TenantPageProps = {
     filters: ResourceFilters;
     tenant: TenantBrand;
+    /** The tenant's company profile, shared for document headers (null until set). */
+    business?: App.Data.BusinessSettingsData | null;
 };

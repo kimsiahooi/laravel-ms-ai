@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Settings\BusinessSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -51,6 +52,13 @@ class HandleInertiaRequests extends Middleware
                 'slug' => $tenant->getKey(),
                 'name' => $tenant->name,
             ] : null,
+            // The company profile for document headers — shared read-only, only in
+            // tenant context for an authed user (so guests/central pages never query
+            // the tenant DB). Reads are side-effect free; empty fields fall back to
+            // tenant.name on the document.
+            'business' => $tenant && $request->user()
+                ? fn () => app(BusinessSettings::class)->documentHeader()
+                : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

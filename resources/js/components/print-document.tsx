@@ -1,8 +1,17 @@
+import { usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import settingsRoutes from '@/routes/tenant/settings';
 
 type MetaRow = { label: string; value: ReactNode };
+
+type CompanyHeader = {
+    business?: App.Data.BusinessSettingsData | null;
+    tenant?: { slug: string; name: string } | null;
+};
+
+const TAX_LABEL: Record<string, string> = { sst: 'SST No.', gst: 'GST No.' };
 
 /**
  * The line-items table shared by every order document. Column 0 is left-aligned
@@ -109,14 +118,53 @@ export function PrintDocument({
     meta: MetaRow[];
     children: ReactNode;
 }) {
+    const { props } = usePage<CompanyHeader>();
+    const business = props.business ?? null;
+    const slug = props.tenant?.slug;
+    const companyName = business?.legal_name || org;
+    const logoUrl =
+        business?.has_logo && slug
+            ? settingsRoutes.file.url({
+                  tenant: slug,
+                  category: 'business',
+                  key: 'logo',
+              })
+            : null;
+    const taxLabel = business ? TAX_LABEL[business.tax_type] : undefined;
+    const taxLine =
+        taxLabel && business?.tax_registration_no
+            ? `${taxLabel} ${business.tax_registration_no}`
+            : null;
+
     return (
         <div className="rounded-lg border bg-card p-8 text-card-foreground shadow-sm print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black print:shadow-none">
             <header className="flex items-start justify-between gap-4 border-b pb-6">
-                <div className="min-w-0">
-                    <p className="truncate font-semibold text-lg">{org}</p>
-                    <p className="text-muted-foreground text-sm print:text-black">
-                        {docType}
-                    </p>
+                <div className="flex min-w-0 items-start gap-3">
+                    {logoUrl ? (
+                        <img
+                            src={logoUrl}
+                            alt=""
+                            className="size-12 shrink-0 object-contain"
+                        />
+                    ) : null}
+                    <div className="min-w-0">
+                        <p className="truncate font-semibold text-lg">
+                            {companyName}
+                        </p>
+                        {business?.address ? (
+                            <p className="whitespace-pre-line text-muted-foreground text-xs print:text-black">
+                                {business.address}
+                            </p>
+                        ) : null}
+                        {taxLine ? (
+                            <p className="text-muted-foreground text-xs print:text-black">
+                                {taxLine}
+                            </p>
+                        ) : null}
+                        <p className="mt-1 text-muted-foreground text-sm print:text-black">
+                            {docType}
+                        </p>
+                    </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                     <p className="font-semibold text-xl tabular-nums">

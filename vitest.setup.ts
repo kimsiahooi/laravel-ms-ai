@@ -1,8 +1,14 @@
 // Registers the jest-dom matchers (toBeInTheDocument, toHaveTextContent, …) on
 // Vitest's `expect`, for every test file.
 import '@testing-library/jest-dom/vitest';
+import { cleanup } from '@testing-library/react';
 import { createElement } from 'react';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+// `globals: false` in vitest.config, so Testing Library's auto-cleanup never
+// registers — unmount + reset the DOM after each test ourselves, otherwise a file
+// with two render tests leaks the first render into the second.
+afterEach(() => cleanup());
 
 // --- jsdom polyfills the app's UI relies on -------------------------------------
 // recharts' ResponsiveContainer observes size; DateRangePicker reads matchMedia.

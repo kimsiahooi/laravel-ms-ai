@@ -18,6 +18,8 @@ use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SalesReturnController;
 use App\Http\Controllers\Tenant\SessionController;
+use App\Http\Controllers\Tenant\SettingsController;
+use App\Http\Controllers\Tenant\SettingsFileController;
 use App\Http\Controllers\Tenant\StockLookupController;
 use App\Http\Controllers\Tenant\StockMovementController;
 use App\Http\Controllers\Tenant\StockTakeController;
@@ -186,6 +188,17 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             // CSV / Excel export for any registered list resource.
             Route::get('export/{resource}', [ExportController::class, 'download'])
                 ->name('export');
+
+            // Settings — schema-driven, one route per category (business now; more
+            // later). The controller resolves the category via SettingsRegistry.
+            Route::get('settings/{category}', [SettingsController::class, 'edit'])
+                ->name('settings.edit');
+            Route::put('settings/{category}', [SettingsController::class, 'update'])
+                ->name('settings.update');
+            // Stream a file-typed setting (e.g. the logo) at an extension-less,
+            // auth-gated URL (see ProductImageController for the nginx rationale).
+            Route::get('settings/{category}/file/{key}', SettingsFileController::class)
+                ->name('settings.file');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });
