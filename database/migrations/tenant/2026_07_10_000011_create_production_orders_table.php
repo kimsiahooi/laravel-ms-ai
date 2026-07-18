@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Product;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,14 +20,14 @@ return new class extends Migration
     {
         Schema::create('production_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Product::class)->nullable()->constrained()->nullOnDelete();
             $table->json('product_snapshot');
             $table->decimal('quantity', 15, 4);
             $table->string('status', 20)->default('pending');
             $table->text('notes')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
             $table->timestamp('completed_at')->nullable();
-            $table->foreignId('completed_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->foreignIdFor(Warehouse::class, 'completed_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

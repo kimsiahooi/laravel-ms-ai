@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Supplier;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,13 +18,13 @@ return new class extends Migration
     {
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Supplier::class)->nullable()->constrained()->nullOnDelete();
             $table->string('status', 20)->default('pending');
             $table->string('currency', 3)->default('USD');
             $table->text('notes')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
             $table->timestamp('received_at')->nullable();
-            $table->foreignId('received_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->foreignIdFor(Warehouse::class, 'received_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

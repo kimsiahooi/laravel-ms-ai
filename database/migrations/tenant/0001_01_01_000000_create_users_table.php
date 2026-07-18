@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 // Per-tenant users table. Mirrors the central `users` schema with the Fortify
 // two-factor columns folded in (App\Models\User uses TwoFactorAuthenticatable).
-// No organization_id (one database per tenant); no softDeletes / avatar (central
-// users has neither). Password resets run in tenant context, so the token table
-// lives here too. (A per-tenant `passkeys` table is a later follow-up.)
+// No organization_id (one database per tenant); no avatar (central users has none).
+// Soft-deletes so a tenant member can be deactivated without losing their history.
+// Password resets run in tenant context, so the token table lives here too.
 return new class extends Migration
 {
     public function up(): void
@@ -26,6 +26,7 @@ return new class extends Migration
             $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

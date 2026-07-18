@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\Category;
+use App\Models\Supplier;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -20,10 +22,10 @@ return new class extends Migration
             $table->string('sku')->unique();
             $table->string('barcode')->nullable();
             $table->text('description')->nullable();
-            $table->foreignId('category_id')->nullable()
-                ->constrained('categories')->nullOnDelete();
-            $table->foreignId('supplier_id')->nullable()
-                ->constrained('suppliers')->nullOnDelete();
+            $table->foreignIdFor(Category::class)->nullable()
+                ->constrained()->nullOnDelete();
+            $table->foreignIdFor(Supplier::class)->nullable()
+                ->constrained()->nullOnDelete();
             $table->string('unit');
             $table->string('image')->nullable();
             $table->timestamps();

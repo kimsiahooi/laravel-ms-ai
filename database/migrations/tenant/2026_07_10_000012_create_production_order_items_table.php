@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\ProductionOrder;
+use App\Models\RawMaterial;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,8 +19,8 @@ return new class extends Migration
     {
         Schema::create('production_order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('production_order_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('raw_material_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(ProductionOrder::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(RawMaterial::class)->nullable()->constrained()->nullOnDelete();
             $table->json('raw_material_snapshot');
             $table->decimal('quantity_per_unit', 15, 4);
             $table->decimal('quantity_required', 15, 4);
