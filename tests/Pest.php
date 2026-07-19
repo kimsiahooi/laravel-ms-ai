@@ -19,6 +19,9 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Architecture tests boot the app (so `config()` resolves) but need no database.
+pest()->extend(TestCase::class)->in('Arch');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
