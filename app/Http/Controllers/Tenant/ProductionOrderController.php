@@ -75,12 +75,14 @@ class ProductionOrderController
         ]);
     }
 
-    public function show(ProductionOrder $productionOrder): Response
+    public function show(Request $request, ProductionOrder $productionOrder): Response
     {
         $productionOrder->load(['product', 'items']);
 
         return Inertia::render('tenant/production-orders/show', [
             'order' => ProductionOrderData::from($productionOrder),
+            'warehouses' => fn () => $this->stockWarehouseOptions(),
+            'print' => $request->boolean('print'),
         ]);
     }
 

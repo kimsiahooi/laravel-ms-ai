@@ -60,7 +60,7 @@ it('redirects a guest from the purchase orders page to the tenant login', functi
         ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
 });
 
-it('shows a printable purchase order document', function () {
+it('shows the interactive purchase order detail with warehouse options', function () {
     ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
     $poId = makePendingPo($supplier, $steel);
 
@@ -72,6 +72,22 @@ it('shows a printable purchase order document', function () {
             ->component('tenant/purchase-orders/show')
             ->where('order.id', $poId)
             ->has('order.items', 1)
+            ->has('warehouses')          // the receive dialog needs them
+            ->where('print', false)
+        );
+});
+
+it('renders the purchase order in print mode when asked', function () {
+    ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
+    $poId = makePendingPo($supplier, $steel);
+
+    loginAsAcmeUser();
+
+    $this->get("/acme/purchase-orders/{$poId}?print=1")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/purchase-orders/show')
+            ->where('print', true)
         );
 });
 

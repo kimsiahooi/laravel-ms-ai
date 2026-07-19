@@ -104,7 +104,9 @@ it('shows a sales return', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/sales-returns/show')
             ->where('return.id', $returnId)
-            ->has('return.items', 1));
+            ->has('return.items', 1)
+            ->has('warehouses')
+            ->where('print', false));
 });
 
 it('updates a pending sales return but rejects updating a non-pending one', function () {

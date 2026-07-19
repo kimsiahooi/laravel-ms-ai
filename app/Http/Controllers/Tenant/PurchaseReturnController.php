@@ -57,12 +57,14 @@ class PurchaseReturnController
         ]);
     }
 
-    public function show(PurchaseReturn $purchaseReturn): Response
+    public function show(Request $request, PurchaseReturn $purchaseReturn): Response
     {
         $purchaseReturn->load(['supplier', 'items']);
 
         return Inertia::render('tenant/purchase-returns/show', [
             'return' => PurchaseReturnData::from($purchaseReturn),
+            'warehouses' => fn () => $this->stockWarehouseOptions(),
+            'print' => $request->boolean('print'),
         ]);
     }
 

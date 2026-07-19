@@ -57,12 +57,14 @@ class SalesOrderController
         ]);
     }
 
-    public function show(SalesOrder $salesOrder): Response
+    public function show(Request $request, SalesOrder $salesOrder): Response
     {
         $salesOrder->load(['customer', 'items']);
 
         return Inertia::render('tenant/sales-orders/show', [
             'order' => SalesOrderData::from($salesOrder),
+            'warehouses' => fn () => $this->stockWarehouseOptions(),
+            'print' => $request->boolean('print'),
         ]);
     }
 

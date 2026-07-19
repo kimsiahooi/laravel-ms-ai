@@ -55,12 +55,14 @@ class PurchaseOrderController
         ]);
     }
 
-    public function show(PurchaseOrder $purchaseOrder): Response
+    public function show(Request $request, PurchaseOrder $purchaseOrder): Response
     {
         $purchaseOrder->load(['supplier', 'items']);
 
         return Inertia::render('tenant/purchase-orders/show', [
             'order' => PurchaseOrderData::from($purchaseOrder),
+            'warehouses' => fn () => $this->stockWarehouseOptions(),
+            'print' => $request->boolean('print'),
         ]);
     }
 

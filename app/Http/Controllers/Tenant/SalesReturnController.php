@@ -55,12 +55,14 @@ class SalesReturnController
         ]);
     }
 
-    public function show(SalesReturn $salesReturn): Response
+    public function show(Request $request, SalesReturn $salesReturn): Response
     {
         $salesReturn->load(['customer', 'items']);
 
         return Inertia::render('tenant/sales-returns/show', [
             'return' => SalesReturnData::from($salesReturn),
+            'warehouses' => fn () => $this->stockWarehouseOptions(),
+            'print' => $request->boolean('print'),
         ]);
     }
 

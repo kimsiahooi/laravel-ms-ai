@@ -86,6 +86,8 @@ it('shows a printable sales order document', function () {
             ->component('tenant/sales-orders/show')
             ->where('order.id', $soId)
             ->has('order.items', 1)
+            ->has('warehouses')
+            ->where('print', false)
         );
 });
 

@@ -113,7 +113,9 @@ it('shows a purchase return', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/purchase-returns/show')
             ->where('return.id', $returnId)
-            ->has('return.items', 1));
+            ->has('return.items', 1)
+            ->has('warehouses')
+            ->where('print', false));
 });
 
 it('updates a pending purchase return but rejects updating a non-pending one', function () {

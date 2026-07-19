@@ -100,6 +100,8 @@ it('shows a printable work order document', function () {
             ->component('tenant/production-orders/show')
             ->where('order.id', $moId)
             ->has('order.items', 2)
+            ->has('warehouses')
+            ->where('print', false)
         );
 });
 
