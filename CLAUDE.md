@@ -77,6 +77,23 @@ A **`lefthook`** gate enforces this automatically (fast checks on commit, full s
 push; installed by `bun run prepare`). Run it by hand too before finalizing:
 
 1. `bun run check` (frontend changed) · `vendor/bin/pint --dirty` (PHP changed)
-2. `bun run types:check`
+2. `bun run types:check` (TS) · `composer types:check` (PHPStan level 7, PHP changed)
 3. `bun run test:ci` (frontend changed) · `php artisan test --compact` (affected)
 4. `bun run build` before a release/deploy
+
+## Review flow
+
+Two layers — deterministic first, judgment second:
+
+- **Deterministic (free, automatic).** The lefthook gates above ARE the review for
+  mechanical issues: Biome + Pint (format/lint, a11y/correctness at error for authored
+  code), `tsc` + **PHPStan** (types), **Pest arch tests** (`tests/Arch` — strict types,
+  no debug helpers, DTO/Request/enum shape, no `tenant` connection), Vitest + Pest
+  (behaviour), the `ui-guard` (design tokens, read-only trees, SSR determinism), and the
+  production build. Prefer encoding a new rule here over relying on a human/agent.
+- **Judgment (cheap, on demand).** For the semantic/UX bugs the gates can't catch (wrong
+  copy, a misreported state, a broken edge case), run the cheap diff-scoped review:
+  `Workflow({ scriptPath: '.claude/workflows/diff-review.js' })` — one reviewer per changed
+  file, single pass, skips small diffs. For a deeper, billed pass on a risky change, use
+  **`/code-review`** (local branch) or `/code-review ultra` (cloud). Don't spin up bespoke
+  multi-agent review swarms — they're expensive; reach for these instead.

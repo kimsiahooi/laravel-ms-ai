@@ -10,6 +10,7 @@
         "includes": [
             "**",
             "!public",
+            "!.claude",
             "!resources/css",
             "!resources/js/components/ui",
             "!resources/js/types/generated.d.ts",
