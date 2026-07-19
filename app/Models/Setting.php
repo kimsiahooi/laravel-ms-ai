@@ -6,11 +6,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * A per-tenant key-value setting, grouped by category. Stores only values — field
  * metadata (type, options, validation) lives in code (App\Settings\*). Lives on the
  * default connection, which InitializeTenancyByPath has switched to the tenant DB.
+ *
+ * File-typed fields (e.g. the business logo) attach their upload to the field's own
+ * row via medialibrary rather than storing a path in `value`.
  *
  * @property int $id
  * @property string $category
@@ -18,8 +23,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $value
  */
 #[Fillable(['category', 'key', 'value'])]
-class Setting extends Model
+class Setting extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
     /**
      * All stored values for a category as [key => value]. Read-only — never creates
      * rows (so document/share reads stay side-effect free).

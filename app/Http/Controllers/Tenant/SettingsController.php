@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
-use App\Http\Controllers\Concerns\InteractsWithTenantAssets;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Settings\SettingsRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
  * Renders + saves a settings category through its code-defined schema. The category is
  * resolved from SettingsRegistry, so one controller serves every settings group. Values
- * live in the `settings` KV table; file fields (e.g. the logo) are stored on the private
- * tenant asset disk and their path written back into the KV store.
+ * live in the `settings` KV table; file fields (e.g. the logo) attach their upload to the
+ * field's row via medialibrary (see SettingsCategory::putFile).
  */
 class SettingsController
 {
-    use InteractsWithTenantAssets;
     use RespondsWithToast;
 
     public function __construct(private readonly SettingsRegistry $registry) {}
@@ -43,13 +42,13 @@ class SettingsController
         $validated = $request->validate([...$provider->rules(), ...$provider->fileRules()]);
 
         foreach ($provider->fileFields() as $field) {
-            // A newly uploaded file wins over the remove flag.
-            if ($request->hasFile($field->key)) {
-                $this->deleteAsset($provider->rawValue($field->key));
-                $provider->putRaw($field->key, $this->storeAsset($request->file($field->key), $category));
+            // A newly uploaded file wins over the remove flag; putFile replaces
+            // (and deletes) any previous upload, clearFile removes it.
+            $file = $request->file($field->key);
+            if ($file instanceof UploadedFile) {
+                $provider->putFile($field->key, $file);
             } elseif ($request->boolean('remove_'.$field->key)) {
-                $this->deleteAsset($provider->rawValue($field->key));
-                $provider->putRaw($field->key, null);
+                $provider->clearFile($field->key);
             }
         }
 

@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * Product in the per-tenant catalog. Lives on the default connection, which
@@ -27,17 +29,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $category_id
  * @property int|null $supplier_id
  * @property string $unit
- * @property string|null $image
  * @property-read string|null $image_url
  * @property-read Collection<int, BomItem> $bomItems
  */
 #[Fillable([
     'name', 'sku', 'barcode', 'description',
-    'category_id', 'supplier_id', 'unit', 'image',
+    'category_id', 'supplier_id', 'unit',
 ])]
-class Product extends Model
+class Product extends Model implements HasMedia
 {
     use HasSnapshot;
+    use InteractsWithMedia;
     use RecordsActivity;
     use Searchable;
     use SoftDeletes;
@@ -79,6 +81,16 @@ class Product extends Model
     }
 
     /**
+     * A single product photo. `singleFile()` means a new upload replaces (and
+     * deletes) the previous file automatically; deleting the media — or
+     * force-deleting the product — removes the file. A soft delete keeps it.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('image')->singleFile();
+    }
+
+    /**
      * Public URL for the stored image, served through the per-product image route
      * (extension-less so nginx routes it to Laravel; tenant_asset() can't be used —
      * its route is domain-identified, but this app is path/slug-identified). Null
@@ -87,7 +99,7 @@ class Product extends Model
     protected function imageUrl(): Attribute
     {
         return Attribute::get(
-            fn (): ?string => $this->image === null
+            fn (): ?string => $this->getFirstMedia('image') === null
                 ? null
                 : route('tenant.products.image', [
                     'tenant' => tenant('id'),

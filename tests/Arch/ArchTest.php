@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Support\Media\TenantPathGenerator;
+use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +34,18 @@ arch('enums are real enums')
 arch('form requests extend the framework FormRequest')
     ->expect('App\Http\Requests')
     ->toExtend('Illuminate\Foundation\Http\FormRequest');
+
+arch('the tenant media path generator implements the medialibrary contract')
+    ->expect(TenantPathGenerator::class)
+    ->toImplement(PathGenerator::class);
+
+it('points medialibrary at the private assets disk via the tenant path generator', function () {
+    // Files must land on the private `assets` disk and be slug-namespaced by our
+    // generator — the whole tenant-isolation + teardown story depends on it.
+    expect(config('media-library.disk_name'))->toBe('assets')
+        ->and(config('media-library.path_generator'))
+        ->toBe(TenantPathGenerator::class);
+});
 
 it('never defines a database connection named "tenant" (central is the landlord)', function () {
     // CLAUDE.md: the central connection is "central"; a connection literally

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Settings;
 
 use App\Models\Setting;
+use Illuminate\Http\UploadedFile;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Base for a group of settings (business, and future groups). Subclasses declare the
@@ -32,6 +34,13 @@ abstract class SettingsCategory
 
         $values = [];
         foreach ($this->fields() as $field) {
+            if ($field->isFile()) {
+                // File fields expose only a has-file bool, from media existence.
+                $values[$field->key] = $this->fileMedia($field->key) !== null;
+
+                continue;
+            }
+
             $raw = $stored[$field->key] ?? null;
             $values[$field->key] = $this->cast($field, $raw);
         }
@@ -140,16 +149,43 @@ abstract class SettingsCategory
         }
     }
 
-    /** Write a raw string value for one key (used for file paths). */
-    public function putRaw(string $key, ?string $value): void
+    /**
+     * Media collection holding a file field's upload — one file per field row, so a
+     * fixed name is fine (the (category, key) Setting row identifies the field).
+     */
+    private const FILE_COLLECTION = 'file';
+
+    /** Store (replacing any existing) the uploaded file for a file field. */
+    public function putFile(string $key, UploadedFile $file): void
     {
-        Setting::putMany($this->key(), [$key => $value]);
+        $setting = Setting::firstOrCreate(
+            ['category' => $this->key(), 'key' => $key],
+            ['value' => null],
+        );
+
+        $setting->clearMediaCollection(self::FILE_COLLECTION);
+        $setting->addMedia($file)->toMediaCollection(self::FILE_COLLECTION);
     }
 
-    /** Read the raw stored string for one key (used to locate a file to delete/serve). */
-    public function rawValue(string $key): ?string
+    /** Remove the stored file for a file field, if any. */
+    public function clearFile(string $key): void
     {
-        return Setting::valuesFor($this->key())[$key] ?? null;
+        $this->settingRow($key)?->clearMediaCollection(self::FILE_COLLECTION);
+    }
+
+    /** The stored media for a file field (read-only — never creates the row). */
+    public function fileMedia(string $key): ?Media
+    {
+        return $this->settingRow($key)?->getFirstMedia(self::FILE_COLLECTION);
+    }
+
+    /** The existing (category, key) row, or null — never creates it. */
+    private function settingRow(string $key): ?Setting
+    {
+        return Setting::query()
+            ->where('category', $this->key())
+            ->where('key', $key)
+            ->first();
     }
 
     private function field(string $key): ?Field

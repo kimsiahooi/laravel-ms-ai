@@ -8,6 +8,7 @@ use App\Actions\ProvisionTenant;
 use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Provision (or drop) the isolated E2E tenant + its database. MUST run with
@@ -35,9 +36,11 @@ class E2eTenant extends Command
         // Idempotent reset. The Tenant model soft-deletes, so a plain delete() would
         // leave the row occupying the `id` primary key and the re-provision below
         // would hit a duplicate. Hard-delete via the builder (which also bypasses the
-        // DeleteDatabase event), then drop the tenant database ourselves.
+        // DeleteDatabase + DeleteTenantAssets events), then drop the tenant database
+        // and its asset folder ourselves.
         Tenant::withTrashed()->whereKey($slug)->forceDelete();
         DB::connection('central')->getPdo()->exec("DROP DATABASE IF EXISTS `{$dbName}`");
+        Storage::disk('assets')->deleteDirectory($slug);
 
         if ($this->argument('action') === 'down') {
             $this->info("Dropped e2e tenant ({$dbName}).");

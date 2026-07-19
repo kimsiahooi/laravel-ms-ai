@@ -14,4 +14,9 @@ parameters:
         - database/
         - routes/
 
+    # Vendored, published third-party config — references optional MediaLibrary Pro
+    # classes we don't install; not ours to type-check.
+    excludePaths:
+        - config/media-library.php
+
     level: 7

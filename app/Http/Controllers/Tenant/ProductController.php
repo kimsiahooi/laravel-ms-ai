@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Data\OptionData;
 use App\Data\ProductData;
-use App\Http\Controllers\Concerns\InteractsWithTenantAssets;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\BomRequest;
@@ -17,19 +16,15 @@ use App\Models\RawMaterial;
 use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductController
 {
-    use InteractsWithTenantAssets;
     use ResolvesPerPage;
     use RespondsWithToast;
-
-    // Product images live at assets/{tenant-slug}/products/{hash}; the DB stores
-    // the slug-free `products/{hash}`. See InteractsWithTenantAssets.
-    private const IMAGE_DIRECTORY = 'products';
 
     public function index(Request $request): Response
     {
@@ -39,7 +34,7 @@ class ProductController
 
         $products = $this->paginateList(
             Product::query()
-                ->with(['category', 'supplier', 'bomItems.rawMaterial'])
+                ->with(['category', 'supplier', 'bomItems.rawMaterial', 'media'])
                 ->search($search)
                 ->latest()
                 ->latest('id'),
@@ -84,15 +79,14 @@ class ProductController
     public function store(ProductRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        unset($data['remove_image']);
+        unset($data['image'], $data['remove_image']);
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $this->storeAsset($request->file('image'), self::IMAGE_DIRECTORY);
-        } else {
-            unset($data['image']);
+        $product = Product::create($data);
+
+        $file = $request->file('image');
+        if ($file instanceof UploadedFile) {
+            $product->addMedia($file)->toMediaCollection('image');
         }
-
-        Product::create($data);
 
         $this->toast('Product created.');
 
@@ -103,20 +97,18 @@ class ProductController
     {
         $data = $request->validated();
         $removeImage = (bool) ($data['remove_image'] ?? false);
-        unset($data['remove_image']);
-
-        // A newly uploaded file takes precedence over a remove_image flag.
-        if ($request->hasFile('image')) {
-            $this->deleteAsset($product->image);
-            $data['image'] = $this->storeAsset($request->file('image'), self::IMAGE_DIRECTORY);
-        } elseif ($removeImage) {
-            $this->deleteAsset($product->image);
-            $data['image'] = null;
-        } else {
-            unset($data['image']);
-        }
+        unset($data['image'], $data['remove_image']);
 
         $product->update($data);
+
+        // A new upload replaces the old file (the collection is singleFile);
+        // otherwise the remove flag clears the image.
+        $file = $request->file('image');
+        if ($file instanceof UploadedFile) {
+            $product->addMedia($file)->toMediaCollection('image');
+        } elseif ($removeImage) {
+            $product->clearMediaCollection('image');
+        }
 
         $this->toast('Product updated.');
 
@@ -125,7 +117,8 @@ class ProductController
 
     public function destroy(Product $product): RedirectResponse
     {
-        // Soft delete; the image file is kept so a restore stays intact.
+        // Soft delete; medialibrary keeps the image on soft-delete (it's removed
+        // only on force-delete), so a restore stays intact.
         $product->delete();
 
         $this->toast('Product deleted.');

@@ -176,16 +176,22 @@ it('uploads a logo (method-spoofed multipart POST) and then removes it', functio
         ])
         ->assertRedirect('/acme/settings/business');
 
-    $stored = $this->tenant->run(fn () => Setting::valuesFor('business')['logo'] ?? null);
-    expect($stored)->not->toBeNull();
-    Storage::disk('assets')->assertExists('acme/'.$stored);
+    $path = $this->tenant->run(function () {
+        $media = app(BusinessSettings::class)->fileMedia('logo');
+        expect($media)->not->toBeNull();
+
+        return $media->getPathRelativeToRoot();
+    });
+    // Files are namespaced by the tenant slug + media id: acme/{id}/{file}.
+    expect(str_starts_with($path, 'acme/'))->toBeTrue();
+    Storage::disk('assets')->assertExists($path);
 
     // The document header now reports a logo.
     $this->tenant->run(function () {
         expect(app(BusinessSettings::class)->documentHeader()->has_logo)->toBeTrue();
     });
 
-    // Removing clears the stored path + deletes the file.
+    // Removing clears the media + deletes the file.
     $this->from('/acme/settings/business')
         ->post('/acme/settings/business', [
             ...businessBase(),
@@ -194,9 +200,10 @@ it('uploads a logo (method-spoofed multipart POST) and then removes it', functio
         ])
         ->assertRedirect('/acme/settings/business');
 
-    $after = $this->tenant->run(fn () => Setting::valuesFor('business')['logo'] ?? null);
-    expect($after)->toBeNull();
-    Storage::disk('assets')->assertMissing('acme/'.$stored);
+    $this->tenant->run(function () {
+        expect(app(BusinessSettings::class)->fileMedia('logo'))->toBeNull();
+    });
+    Storage::disk('assets')->assertMissing($path);
 });
 
 it('streams the logo through the auth-gated file route but never a non-file field', function () {

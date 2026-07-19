@@ -128,7 +128,7 @@ it('rejects a trashed category or supplier', function () {
         ->assertSessionHasErrors('category_id');
 });
 
-it('stores an uploaded image under the tenant assets folder', function () {
+it('stores an uploaded image as media under the tenant slug', function () {
     Storage::fake('assets');
     loginAsAcmeUser();
 
@@ -140,16 +140,17 @@ it('stores an uploaded image under the tenant assets folder', function () {
         ->assertRedirect('/acme/products')
         ->assertToast('Product created.');
 
-    $path = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->image);
+    $this->tenant->run(function () {
+        $media = Product::firstWhere('sku', 'P-001')->getFirstMedia('image');
 
-    // DB path is slug-free (products/{hash}); the file lives under the tenant's
-    // slug folder on the (central) assets disk: assets/acme/products/{hash}.
-    expect($path)->not->toBeNull()
-        ->and(str_starts_with($path, 'products/'))->toBeTrue();
-    Storage::disk('assets')->assertExists("acme/{$path}");
+        expect($media)->not->toBeNull();
+        // Files are namespaced by the tenant slug + media id: acme/{id}/{file}.
+        expect(str_starts_with($media->getPathRelativeToRoot(), 'acme/'))->toBeTrue();
+        Storage::disk('assets')->assertExists($media->getPathRelativeToRoot());
+    });
 });
 
-it('updates a product and replaces its image', function () {
+it('adds an image to a product on update', function () {
     Storage::fake('assets');
     $id = $this->tenant->run(fn () => Product::create([
         'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
@@ -165,24 +166,22 @@ it('updates a product and replaces its image', function () {
         ->assertRedirect('/acme/products')
         ->assertToast('Product updated.');
 
-    $path = $this->tenant->run(function () use ($id) {
+    $this->tenant->run(function () use ($id) {
         $product = Product::find($id);
+        $media = $product->getFirstMedia('image');
         expect($product->name)->toBe('Widget A')
-            ->and($product->image)->not->toBeNull();
-
-        return $product->image;
+            ->and($media)->not->toBeNull();
+        Storage::disk('assets')->assertExists($media->getPathRelativeToRoot());
     });
-
-    Storage::disk('assets')->assertExists("acme/{$path}");
 });
 
 it('removes a product image when remove_image is set', function () {
     Storage::fake('assets');
     $id = $this->tenant->run(function () {
-        return Product::create([
-            'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
-            'image' => 'products/existing.jpg',
-        ])->id;
+        $product = Product::create(['name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs']);
+        $product->addMedia(UploadedFile::fake()->image('existing.jpg'))->toMediaCollection('image');
+
+        return $product->id;
     });
 
     loginAsAcmeUser();
@@ -196,17 +195,23 @@ it('removes a product image when remove_image is set', function () {
         ->assertToast('Product updated.');
 
     $this->tenant->run(function () use ($id) {
-        expect(Product::find($id)->image)->toBeNull();
+        expect(Product::find($id)->getFirstMedia('image'))->toBeNull();
     });
 });
 
 it('deletes the previous image file when replacing it', function () {
     Storage::fake('assets');
-    Storage::disk('assets')->put('acme/products/old.jpg', 'old-bytes');
 
-    $id = $this->tenant->run(fn () => Product::create([
-        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs', 'image' => 'products/old.jpg',
-    ])->id);
+    $oldPath = $this->tenant->run(function () {
+        $product = Product::create(['name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs']);
+        $product->addMedia(UploadedFile::fake()->image('old.jpg'))->toMediaCollection('image');
+
+        return $product->getFirstMedia('image')->getPathRelativeToRoot();
+    });
+
+    Storage::disk('assets')->assertExists($oldPath);
+
+    $id = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->id);
 
     loginAsAcmeUser();
 
@@ -218,11 +223,38 @@ it('deletes the previous image file when replacing it', function () {
         ->assertRedirect('/acme/products')
         ->assertToast('Product updated.');
 
-    $newPath = $this->tenant->run(fn () => Product::find($id)->image);
+    $newPath = $this->tenant->run(
+        fn () => Product::find($id)->getFirstMedia('image')->getPathRelativeToRoot(),
+    );
 
-    expect($newPath)->not->toBe('products/old.jpg');
-    Storage::disk('assets')->assertMissing('acme/products/old.jpg');
-    Storage::disk('assets')->assertExists("acme/{$newPath}");
+    expect($newPath)->not->toBe($oldPath);
+    Storage::disk('assets')->assertMissing($oldPath);
+    Storage::disk('assets')->assertExists($newPath);
+});
+
+it('keeps a soft-deleted image but removes it on force-delete', function () {
+    Storage::fake('assets');
+
+    [$id, $path] = $this->tenant->run(function () {
+        $product = Product::create(['name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs']);
+        $product->addMedia(UploadedFile::fake()->image('x.jpg'))->toMediaCollection('image');
+
+        return [$product->id, $product->getFirstMedia('image')->getPathRelativeToRoot()];
+    });
+
+    loginAsAcmeUser();
+
+    // Soft delete (the route) keeps the media so a restore stays intact.
+    $this->from('/acme/products')->delete("/acme/products/{$id}")
+        ->assertRedirect('/acme/products');
+    Storage::disk('assets')->assertExists($path);
+    $this->tenant->run(
+        fn () => expect(Product::withTrashed()->find($id)->getFirstMedia('image'))->not->toBeNull(),
+    );
+
+    // Force delete removes the media record + its file.
+    $this->tenant->run(fn () => Product::withTrashed()->find($id)->forceDelete());
+    Storage::disk('assets')->assertMissing($path);
 });
 
 it('soft-deletes a product', function () {
@@ -259,11 +291,10 @@ it('serves a product image over HTTP', function () {
         ->assertHeader('content-type', 'image/jpeg');
 });
 
-it('returns 404 when the product image file is missing', function () {
+it('returns 404 for the image route when a product has no image', function () {
     Storage::fake('assets');
     $id = $this->tenant->run(fn () => Product::create([
         'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
-        'image' => 'products/does-not-exist.jpg',
     ])->id);
 
     loginAsAcmeUser();

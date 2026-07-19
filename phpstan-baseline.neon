@@ -301,22 +301,10 @@ parameters:
 			path: app/Http/Controllers/Tenant/ProductController.php
 
 		-
-			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductController.php
-
-		-
 			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ProductController\:\:paginateList\(\)$#'
 			identifier: argument.templateType
 			count: 1
 			path: app/Http/Controllers/Tenant/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductImageController.php
 
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
@@ -607,18 +595,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/SalesReturnController.php
 
 		-
-			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SettingsController.php
-
-		-
-			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SettingsFileController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
 			identifier: property.notFound
 			count: 1
@@ -821,6 +797,12 @@ parameters:
 			identifier: argument.templateType
 			count: 1
 			path: app/Http/Controllers/Tenant/WarehouseController.php
+
+		-
+			message: '#^Method App\\Http\\Requests\\Settings\\ProfileUpdateRequest\:\:emailRules\(\) should return array\<int, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string\> but returns array\<int, Illuminate\\Validation\\Rules\\Unique\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Requests/Settings/ProfileUpdateRequest.php
 
 		-
 			message: '#^Property App\\Models\\Category\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'

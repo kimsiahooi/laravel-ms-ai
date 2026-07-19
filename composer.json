@@ -19,6 +19,7 @@
         "openspout/openspout": "^5.7",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-data": "^4.23",
+        "spatie/laravel-medialibrary": "^11.23",
         "stancl/tenancy": "^3.10"
     },
     "require-dev": {

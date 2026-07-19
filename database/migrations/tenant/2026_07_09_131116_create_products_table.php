@@ -27,7 +27,6 @@ return new class extends Migration
             $table->foreignIdFor(Supplier::class)->nullable()
                 ->constrained()->nullOnDelete();
             $table->string('unit');
-            $table->string('image')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
