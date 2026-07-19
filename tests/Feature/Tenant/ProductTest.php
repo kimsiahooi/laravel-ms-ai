@@ -143,7 +143,9 @@ it('stores an uploaded image as media under the tenant slug', function () {
     $this->tenant->run(function () {
         $media = Product::firstWhere('sku', 'P-001')->getFirstMedia('image');
 
-        expect($media)->not->toBeNull();
+        expect($media)->not->toBeNull()
+            // Provenance: the morph alias records this came from a product.
+            ->and($media->model_type)->toBe('product');
         // Files are namespaced by the tenant slug + media id: acme/{id}/{file}.
         expect(str_starts_with($media->getPathRelativeToRoot(), 'acme/'))->toBeTrue();
         Storage::disk('assets')->assertExists($media->getPathRelativeToRoot());

@@ -1,7 +1,12 @@
 <?php
 
 declare(strict_types=1);
+use App\Models\Product;
+use App\Models\RawMaterial;
+use App\Models\Setting;
 use App\Support\Media\TenantPathGenerator;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
 
 /*
@@ -55,6 +60,44 @@ it('points medialibrary at the private assets disk via the tenant path generator
         // No queue worker runs; conversions must stay inline or they'd silently
         // pile up in the `jobs` table and never process.
         ->and(config('media-library.queue_conversions_by_default'))->toBeFalse();
+});
+
+it('aliases the media + stock morph types so *_type columns store short keys', function () {
+    // model_type/*_type store these short aliases instead of FQCNs, so media stays
+    // traceable/filterable by source (product vs setting) and the stock tables stay
+    // stable. Asserted so an alias can't be dropped without a failing test.
+    expect(Relation::morphMap())->toMatchArray([
+        'product' => Product::class,
+        'raw_material' => RawMaterial::class,
+        'setting' => Setting::class,
+    ]);
+});
+
+it('registers a morph alias for every model that stores media (guards future models)', function () {
+    // Auto-discovered guardrail: any App\Models model using InteractsWithMedia writes its
+    // getMorphClass() into media.model_type, so each MUST have a morph-map alias — keeping
+    // that column a short, stable, source-traceable key instead of an FQCN. Add a new media
+    // model and forget to alias it (AppServiceProvider::configureMorphMap) and this fails,
+    // naming the class — so you can't forget without the gate catching it.
+    $aliased = array_flip(Relation::morphMap()); // FQCN => alias
+
+    $mediaModels = collect(glob(app_path('Models/*.php')))
+        ->map(fn (string $path): string => 'App\\Models\\'.pathinfo($path, PATHINFO_FILENAME))
+        ->filter(fn (string $class): bool => class_exists($class)
+            && in_array(InteractsWithMedia::class, class_uses_recursive($class), true))
+        ->values();
+
+    // Sanity: discovery actually resolved the media models (Product, Setting, …).
+    expect($mediaModels)->not->toBeEmpty();
+
+    // Each listed class here writes an un-aliased FQCN into media.model_type — add it to
+    // AppServiceProvider::configureMorphMap(). Empty = every media model is aliased.
+    $missing = $mediaModels
+        ->reject(fn (string $class): bool => array_key_exists($class, $aliased))
+        ->values()
+        ->all();
+
+    expect($missing)->toBe([]);
 });
 
 it('never defines a database connection named "tenant" (central is the landlord)', function () {

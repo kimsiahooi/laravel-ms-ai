@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Product;
 use App\Models\RawMaterial;
+use App\Models\Setting;
 use App\Support\ReservedSlugs;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -37,15 +38,18 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Alias the stockable morph types so `stock_movements`/`location_stocks` store
-     * short, stable keys (`product` / `raw_material`) instead of FQCNs. Non-enforcing
-     * so other morphs (e.g. passkeys) are unaffected.
+     * Alias polymorphic morph types so `*_type` columns store short, stable keys instead
+     * of FQCNs: `product` / `raw_material` for the stock tables, and `setting` for the
+     * media parent (a settings file/logo attaches to a Setting row) so `media.model_type`
+     * reads `setting` — matching `product` — and stays traceable/filterable by source.
+     * Non-enforcing so other morphs (e.g. passkeys, the activity log) are unaffected.
      */
     protected function configureMorphMap(): void
     {
         Relation::morphMap([
             'product' => Product::class,
             'raw_material' => RawMaterial::class,
+            'setting' => Setting::class,
         ]);
     }
 

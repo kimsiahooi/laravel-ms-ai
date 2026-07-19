@@ -178,7 +178,9 @@ it('uploads a logo (method-spoofed multipart POST) and then removes it', functio
 
     $path = $this->tenant->run(function () {
         $media = app(BusinessSettings::class)->fileMedia('logo');
-        expect($media)->not->toBeNull();
+        expect($media)->not->toBeNull()
+            // Provenance: the morph alias records this came from a setting.
+            ->and($media->model_type)->toBe('setting');
 
         return $media->getPathRelativeToRoot();
     });
