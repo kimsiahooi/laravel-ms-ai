@@ -31,6 +31,16 @@ class StockOnHandRequest extends TenantFormRequest
     }
 
     /**
+     * The picker's internal key is "stockable"; call it "item" in user-facing errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['stockable' => 'item'];
+    }
+
+    /**
      * Confirm the picked stockable row actually exists (the regex only checks shape).
      */
     public function withValidator(Validator $validator): void

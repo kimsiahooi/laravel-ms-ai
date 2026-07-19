@@ -45,7 +45,7 @@ it('sets a product BOM', function () {
             ],
         ])
         ->assertRedirect('/acme/products')
-        ->assertToast('BOM saved.');
+        ->assertToast('Bill of materials saved.');
 
     $this->tenant->run(function () use ($product, $steel) {
         $bom = Product::find($product)->bomItems;

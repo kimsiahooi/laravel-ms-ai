@@ -156,6 +156,10 @@ export default function LocationsIndex() {
                 editing={dialog.editing}
                 entityLabel={locationMeta.singular}
                 baseUrl={base}
+                description={{
+                    create: 'Add a site or branch — like a factory or office. Warehouses live inside a location.',
+                    edit: "Update this location's details.",
+                }}
             >
                 {({ errors }) => (
                     <>

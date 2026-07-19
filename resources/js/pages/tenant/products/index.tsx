@@ -16,6 +16,7 @@ import { ConfirmDiscardDialog } from '@/components/confirm-discard-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import { InfoHint } from '@/components/info-hint';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
@@ -298,7 +299,15 @@ export default function ProductsIndex() {
         },
         {
             accessorKey: 'sku',
-            header: 'SKU',
+            header: () => (
+                <>
+                    SKU
+                    <InfoHint>
+                        A unique code you assign to identify this product — it
+                        appears on labels, orders, and stock lists.
+                    </InfoHint>
+                </>
+            ),
             cell: ({ row }) => (
                 <span className="font-mono text-muted-foreground text-xs">
                     {row.original.sku}
@@ -350,7 +359,7 @@ export default function ProductsIndex() {
                             onSelect={() => openBom(row.original)}
                         >
                             <ListTree className="size-4" />
-                            BOM
+                            Bill of materials
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             variant="destructive"
@@ -444,7 +453,7 @@ export default function ProductsIndex() {
                                     onClick={() => openBom(product)}
                                 >
                                     <ListTree className="size-4" />
-                                    Set BOM
+                                    Set bill of materials
                                 </Button>
                             </div>
                         )}
@@ -478,6 +487,10 @@ export default function ProductsIndex() {
                 entityLabel={productMeta.singular}
                 baseUrl={base}
                 contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+                description={{
+                    create: 'Add a finished item you make or sell. You can set its bill of materials afterwards to build it from raw materials.',
+                    edit: "Update this product's details.",
+                }}
             >
                 {({ errors }) => (
                     <>
@@ -733,11 +746,11 @@ export default function ProductsIndex() {
                     onInteractOutside={(event) => event.preventDefault()}
                 >
                     <DialogHeader>
-                        <DialogTitle>BOM</DialogTitle>
+                        <DialogTitle>Bill of materials</DialogTitle>
                         <DialogDescription>
                             The raw materials and how much of each it takes to
                             make one “{bomProduct?.name}”. New production orders
-                            save a copy of this BOM.
+                            save a copy of this bill of materials.
                         </DialogDescription>
                     </DialogHeader>
 

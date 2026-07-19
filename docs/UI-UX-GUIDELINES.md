@@ -82,9 +82,13 @@ sidebar, breadcrumb, alert, collapsible, navigation-menu`.
   a submit is in flight.
 - **Menus** — `DropdownMenu` for row actions and the user/account menu; mark
   destructive items `variant="destructive"`.
-- **Tables** — there is **no `Table` component**; build a semantic `<table>` in an
-  `overflow-x-auto` wrapper. Add hover rows (`hover:bg-muted/50`), hide
-  non-essential columns below `sm`/`md`, and use `Badge` for statuses/counts.
+- **Tables** — reach for the **`DataTable`** wrapper
+  ([`components/data-table.tsx`](../resources/js/components/data-table.tsx)):
+  it composes the vendored `ui/table` primitives with search, sort, pagination and
+  export, and already lives in an `overflow-x-auto` wrapper with hover rows and
+  `Badge` statuses. For a one-off layout, compose the `ui/table` primitives
+  (`Table`, `TableHeader`, `TableRow`, `TableCell`) yourself — never a raw
+  `<table>`. Hide non-essential columns below `sm`/`md`.
 - **Icons** — `lucide-react` only, `size-4`/`size-5`, colored via `currentColor`.
 
 ---

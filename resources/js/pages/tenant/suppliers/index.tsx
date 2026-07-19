@@ -157,6 +157,10 @@ export default function SuppliersIndex() {
                 editing={dialog.editing}
                 entityLabel={supplierMeta.singular}
                 baseUrl={base}
+                description={{
+                    create: 'Add a business you buy raw materials from. They can be picked when you create a purchase order.',
+                    edit: "Update this supplier's details.",
+                }}
             >
                 {({ errors }) => (
                     <>

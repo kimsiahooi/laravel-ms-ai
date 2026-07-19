@@ -175,7 +175,15 @@ export default function WarehouseShow() {
         },
         {
             accessorKey: 'sku',
-            header: 'SKU',
+            header: () => (
+                <>
+                    SKU
+                    <InfoHint>
+                        The unique code assigned to this item — it appears on
+                        labels, orders, and stock lists.
+                    </InfoHint>
+                </>
+            ),
             cell: ({ row }) =>
                 row.original.sku ? (
                     <span className="font-mono text-muted-foreground text-xs">

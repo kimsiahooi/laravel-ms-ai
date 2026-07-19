@@ -6,6 +6,7 @@ import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import { InfoHint } from '@/components/info-hint';
 import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { RowActions } from '@/components/row-actions';
@@ -64,7 +65,15 @@ export default function RawMaterialsIndex() {
         },
         {
             accessorKey: 'sku',
-            header: 'SKU',
+            header: () => (
+                <>
+                    SKU
+                    <InfoHint>
+                        A unique code you assign to identify this raw material —
+                        it appears on labels, orders, and stock lists.
+                    </InfoHint>
+                </>
+            ),
             cell: ({ row }) => (
                 <span className="font-mono text-muted-foreground text-xs">
                     {row.original.sku}

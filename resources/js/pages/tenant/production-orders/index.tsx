@@ -234,8 +234,9 @@ export default function ProductionOrdersIndex() {
                     {productionOrderMeta.plural}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Make products from their BOM. Marking an order done uses up
-                    the raw materials and adds the finished products to stock.
+                    Make products from their bill of materials. Marking an order
+                    done uses up the raw materials and adds the finished
+                    products to stock.
                 </p>
             </div>
 
@@ -264,7 +265,7 @@ export default function ProductionOrdersIndex() {
                         title={`No ${productionOrderMeta.plural.toLowerCase()} yet`}
                         description={
                             products.length === 0
-                                ? 'Give a product a BOM first, then you can build it here.'
+                                ? 'Give a product a bill of materials first, then you can build it here.'
                                 : 'Create your first production order to start manufacturing.'
                         }
                         action={
@@ -287,7 +288,7 @@ export default function ProductionOrdersIndex() {
                 baseUrl={base}
                 contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
                 description={{
-                    create: "Pick a product and how many to build. The BOM is saved with the order, so changing it later won't affect this one.",
+                    create: "Pick a product and how many to build. The bill of materials is saved with the order, so changing it later won't affect this one.",
                     edit: 'Update this production order.',
                 }}
             >
@@ -315,7 +316,7 @@ export default function ProductionOrdersIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="quantity"
-                                    hint="How many finished units to build. The raw materials needed come from the product's BOM, multiplied by this number."
+                                    hint="How many finished units to build. The raw materials needed come from the product's bill of materials, multiplied by this number."
                                 >
                                     Quantity
                                 </FieldLabel>

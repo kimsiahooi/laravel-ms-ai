@@ -157,6 +157,10 @@ export default function CustomersIndex() {
                 editing={dialog.editing}
                 entityLabel={customerMeta.singular}
                 baseUrl={base}
+                description={{
+                    create: 'Add a business or person you sell to. They can be picked when you create a sales order.',
+                    edit: "Update this customer's details.",
+                }}
             >
                 {({ errors }) => (
                     <>

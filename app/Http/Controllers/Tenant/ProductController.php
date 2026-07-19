@@ -76,7 +76,7 @@ class ProductController
             }
         });
 
-        $this->toast('BOM saved.');
+        $this->toast('Bill of materials saved.');
 
         return back();
     }
