@@ -1,0 +1,1117 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between Illuminate\\Database\\Eloquent\\Model and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Actions/PostStockTake.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Data/ActivityData.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(int\|string\)\: mixed\)\|null, Closure\(string\)\: App\\Data\\ActivityChangeData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Data/ActivityData.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Data/ActivityData.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Data/BomItemData.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/StockMovementData.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Data/StockMovementData.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Data/StockMovementData.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Data/StockMovementData.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Data/StockTakeData.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Data/StockTakeData.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/StockTransferData.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Data/StockTransferData.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Data/StockTransferData.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Models\\Location\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Data/WarehouseData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$item\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$min_stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$on_hand\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$stockable_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$stockable_type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Data/WarehouseItemData.php
+
+		-
+			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: non\-falsy\-string\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\Tenant\)\: non\-falsy\-string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Central/DashboardController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Central\\TenantController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Central/TenantController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Central/TenantController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{slug\: mixed, name\: string, created_at\: Carbon\\Carbon\}, Closure\(App\\Models\\Tenant\)\: array\{slug\: mixed, name\: string, created_at\: Carbon\\Carbon\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Central/TenantController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{slug\: mixed, name\: string, deleted_at\: Carbon\\CarbonImmutable\|null\}, Closure\(App\\Models\\Tenant\)\: array\{slug\: mixed, name\: string, deleted_at\: Carbon\\CarbonImmutable\|null\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Central/TenantController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Central\\TenantController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 2
+			path: app/Http/Controllers/Central/TenantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\ActivityController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ActivityController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/ActivityController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\ActivityData, Closure\(Spatie\\Activitylog\\Models\\Activity\)\: App\\Data\\ActivityData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ActivityController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ActivityController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/ActivityController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/CategoryController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\CategoryController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/CategoryController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/CategoryController.php
+
+		-
+			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\CategoryController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\Category\)\: App\\Data\\CategoryData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/CategoryController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\CategoryController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/CategoryController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/CustomerController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\CustomerController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/CustomerController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/CustomerController.php
+
+		-
+			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\CustomerController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\Customer\)\: App\\Data\\CustomerData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/CustomerController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\CustomerController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/CustomerController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/LocationController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\LocationController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/LocationController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/LocationController.php
+
+		-
+			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\LocationController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\Location\)\: App\\Data\\LocationData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/LocationController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\LocationController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/LocationController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\ProductController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\ProductData, Closure\(App\\Models\\Product\)\: App\\Data\\ProductData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ProductController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductImageController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\ProductionOrderController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\ProductionOrderData, Closure\(App\\Models\\ProductionOrder\)\: App\\Data\\ProductionOrderData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^Parameter \#2 \$warehouse of method App\\Actions\\CompleteProductionOrder\:\:handle\(\) expects App\\Models\\Warehouse, App\\Models\\Warehouse\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Warehouse\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^Parameter \#3 \$user of method App\\Actions\\CompleteProductionOrder\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ProductionOrderController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/ProductionOrderController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\RawMaterial\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\RawMaterial\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\PurchaseOrderController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\PurchaseOrderData, Closure\(App\\Models\\PurchaseOrder\)\: App\\Data\\PurchaseOrderData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$model of static method App\\Models\\RawMaterial\:\:snapshotOf\(\) expects App\\Models\\RawMaterial\|null, App\\Models\\RawMaterial\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\RawMaterial\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Parameter \#2 \$warehouse of method App\\Actions\\ReceivePurchaseOrder\:\:handle\(\) expects App\\Models\\Warehouse, App\\Models\\Warehouse\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Warehouse\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Parameter \#3 \$user of method App\\Actions\\ReceivePurchaseOrder\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\PurchaseOrderController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\RawMaterial\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\RawMaterial\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\PurchaseReturnController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\PurchaseReturnData, Closure\(App\\Models\\PurchaseReturn\)\: App\\Data\\PurchaseReturnData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Parameter \#1 \$model of static method App\\Models\\RawMaterial\:\:snapshotOf\(\) expects App\\Models\\RawMaterial\|null, App\\Models\\RawMaterial\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\RawMaterial\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Parameter \#2 \$warehouse of method App\\Actions\\CompletePurchaseReturn\:\:handle\(\) expects App\\Models\\Warehouse, App\\Models\\Warehouse\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Warehouse\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Parameter \#3 \$user of method App\\Actions\\CompletePurchaseReturn\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\PurchaseReturnController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/RawMaterialController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\RawMaterialController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/RawMaterialController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/RawMaterialController.php
+
+		-
+			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\RawMaterialController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\RawMaterial\)\: App\\Data\\RawMaterialData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/RawMaterialController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\RawMaterialController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/RawMaterialController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\SalesOrderController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\SalesOrderData, Closure\(App\\Models\\SalesOrder\)\: App\\Data\\SalesOrderData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$model of static method App\\Models\\Product\:\:snapshotOf\(\) expects App\\Models\\Product\|null, App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Parameter \#2 \$warehouse of method App\\Actions\\FulfillSalesOrder\:\:handle\(\) expects App\\Models\\Warehouse, App\\Models\\Warehouse\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Warehouse\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Parameter \#3 \$user of method App\\Actions\\FulfillSalesOrder\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\SalesOrderController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesOrderController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\SalesReturnController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\SalesReturnData, Closure\(App\\Models\\SalesReturn\)\: App\\Data\\SalesReturnData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Parameter \#1 \$model of static method App\\Models\\Product\:\:snapshotOf\(\) expects App\\Models\\Product\|null, App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Parameter \#2 \$warehouse of method App\\Actions\\CompleteSalesReturn\:\:handle\(\) expects App\\Models\\Warehouse, App\\Models\\Warehouse\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Warehouse\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Parameter \#3 \$user of method App\\Actions\\CompleteSalesReturn\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\SalesReturnController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/SalesReturnController.php
+
+		-
+			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SettingsController.php
+
+		-
+			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:after\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SettingsFileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/StockLookupController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/StockLookupController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: mixed$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\StockMovementController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\StockMovementData, Closure\(App\\Models\\StockMovement\)\: App\\Data\\StockMovementData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Parameter \#4 \$user of method App\\Services\\StockService\:\:setLevel\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Parameter \#5 \$user of method App\\Services\\StockService\:\:record\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\StockMovementController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/StockMovementController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\StockTakeController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\StockTakeData, Closure\(App\\Models\\StockTake\)\: App\\Data\\StockTakeData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Parameter \#3 \$user of method App\\Actions\\PostStockTake\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Illuminate\\Database\\Eloquent\\Model and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\StockTakeController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTakeController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTransferController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\StockTransferController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTransferController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTransferController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\StockTransferData, Closure\(App\\Models\\StockTransfer\)\: App\\Data\\StockTransferData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTransferController.php
+
+		-
+			message: '#^Parameter \#5 \$user of method App\\Services\\StockService\:\:transfer\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTransferController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\StockTransferController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/StockTransferController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Tenant/SupplierController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\SupplierController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SupplierController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/SupplierController.php
+
+		-
+			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\SupplierController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\Supplier\)\: App\\Data\\SupplierData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/SupplierController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\SupplierController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/SupplierController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Tenant\\WarehouseController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Tenant/WarehouseController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Http/Controllers/Tenant/WarehouseController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\WarehouseData, Closure\(App\\Models\\Warehouse\)\: App\\Data\\WarehouseData given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/WarehouseController.php
+
+		-
+			message: '#^Parameter \#1 \$expression of method Illuminate\\Database\\Query\\Builder\:\:selectRaw\(\) expects literal\-string, non\-falsy\-string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Tenant/WarehouseController.php
+
+		-
+			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\WarehouseController\:\:paginateList\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: app/Http/Controllers/Tenant/WarehouseController.php
+
+		-
+			message: '#^Property App\\Models\\Category\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/Category.php
+
+		-
+			message: '#^Property App\\Models\\Category\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Category.php
+
+		-
+			message: '#^Property App\\Models\\Customer\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Property App\\Models\\Customer\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Property App\\Models\\Location\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Property App\\Models\\Location\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Method App\\Models\\Product\:\:imageUrl\(\) return type with generic class Illuminate\\Database\\Eloquent\\Casts\\Attribute does not specify its types\: TGet, TSet$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Property App\\Models\\Product\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Property App\\Models\\Product\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Property App\\Models\\ProductionOrder\:\:\$searchable \(array\<int, string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/ProductionOrder.php
+
+		-
+			message: '#^Property App\\Models\\ProductionOrder\:\:\$searchableRelations \(array\<string, array\<int, string\>\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/ProductionOrder.php
+
+		-
+			message: '#^Property App\\Models\\PurchaseOrder\:\:\$searchable \(array\<int, string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/PurchaseOrder.php
+
+		-
+			message: '#^Property App\\Models\\PurchaseOrder\:\:\$searchableRelations \(array\<string, array\<int, string\>\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/PurchaseOrder.php
+
+		-
+			message: '#^Property App\\Models\\PurchaseReturn\:\:\$searchable \(array\<int, string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/PurchaseReturn.php
+
+		-
+			message: '#^Property App\\Models\\PurchaseReturn\:\:\$searchableRelations \(array\<string, array\<int, string\>\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/PurchaseReturn.php
+
+		-
+			message: '#^Property App\\Models\\RawMaterial\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/RawMaterial.php
+
+		-
+			message: '#^Property App\\Models\\RawMaterial\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/RawMaterial.php
+
+		-
+			message: '#^Property App\\Models\\SalesOrder\:\:\$searchable \(array\<int, string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/SalesOrder.php
+
+		-
+			message: '#^Property App\\Models\\SalesOrder\:\:\$searchableRelations \(array\<string, array\<int, string\>\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/SalesOrder.php
+
+		-
+			message: '#^Property App\\Models\\SalesReturn\:\:\$searchable \(array\<int, string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/SalesReturn.php
+
+		-
+			message: '#^Property App\\Models\\SalesReturn\:\:\$searchableRelations \(array\<string, array\<int, string\>\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/SalesReturn.php
+
+		-
+			message: '#^Property App\\Models\\StockTake\:\:\$searchable \(array\<int, string\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/StockTake.php
+
+		-
+			message: '#^Property App\\Models\\StockTake\:\:\$searchableRelations \(array\<string, array\<int, string\>\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/StockTake.php
+
+		-
+			message: '#^Property App\\Models\\Supplier\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/Supplier.php
+
+		-
+			message: '#^Property App\\Models\\Supplier\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Supplier.php
+
+		-
+			message: '#^Property App\\Models\\Warehouse\:\:\$searchable \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: app/Models/Warehouse.php
+
+		-
+			message: '#^Property App\\Models\\Warehouse\:\:\$searchable type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Warehouse.php
+
+		-
+			message: '#^Cannot access offset ''Illuminate\\\\Contracts\\\\Http\\\\Kernel'' on Illuminate\\Contracts\\Foundation\\Application\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Providers/TenancyServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\TenancyServiceProvider\:\:boot\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Providers/TenancyServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\TenancyServiceProvider\:\:bootEvents\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Providers/TenancyServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\TenancyServiceProvider\:\:events\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Providers/TenancyServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\TenancyServiceProvider\:\:makeTenancyMiddlewareHighestPriority\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Providers/TenancyServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\TenancyServiceProvider\:\:mapRoutes\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Providers/TenancyServiceProvider.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WarehouseReorderLevel\:\:\$on_hand\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/StockReportService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WarehouseReorderLevel\:\:\$reorder_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/StockReportService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WarehouseReorderLevel\:\:\$wh_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/StockReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>quantity" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/StockService.php
+
+		-
+			message: '#^Method App\\Settings\\SettingsCategory\:\:encode\(\) should return string\|null but returns string\|false\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Settings/SettingsCategory.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Support/ExportRegistry.php
+
+		-
+			message: '#^PHPDoc tag @return contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<\*\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
+			identifier: generics.notGeneric
+			count: 1
+			path: app/Support/ExportRegistry.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 5
+			path: app/Support/ExportRegistry.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Models\\Location\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Support/ExportRegistry.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Models\\Warehouse\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Support/ExportRegistry.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type Illuminate\\Database\\Eloquent\\Model\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Support/ExportRegistry.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: database/seeders/DemoTenantSeeder.php
+
+		-
+			message: '#^Method Database\\Seeders\\DemoTenantSeeder\:\:pickProducts\(\) should return list\<App\\Models\\Product\> but returns array\<int, App\\Models\\Product\>\.$#'
+			identifier: return.type
+			count: 1
+			path: database/seeders/DemoTenantSeeder.php
+
+		-
+			message: '#^Method Database\\Seeders\\DemoTenantSeeder\:\:pickRawMaterials\(\) should return list\<App\\Models\\RawMaterial\> but returns array\<int, App\\Models\\RawMaterial\>\.$#'
+			identifier: return.type
+			count: 1
+			path: database/seeders/DemoTenantSeeder.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''SG'' and ''SG'' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: database/seeders/DemoTenantSeeder.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Illuminate\\Database\\Eloquent\\Model and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: database/seeders/DemoTenantSeeder.php

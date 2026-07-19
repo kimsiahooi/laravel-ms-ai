@@ -27,6 +27,9 @@ pre-commit:
 pre-push:
   parallel: false
   commands:
+    phpstan:
+      glob: "*.php"
+      run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
     vitest:
       run: bun run test:ci
     pest:

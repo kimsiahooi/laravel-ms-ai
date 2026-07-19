@@ -1,6 +1,10 @@
 includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/nesbot/carbon/extension.neon
+    # Pre-existing level-7 findings from before PHPStan was gated. This locks the
+    # current debt so the gate passes and catches only NEW issues; burn it down
+    # over time (regenerate: phpstan analyse --generate-baseline --memory-limit=1G).
+    - phpstan-baseline.neon
 
 parameters:
     paths:
