@@ -35,7 +35,8 @@ abstract class SettingsCategory
         $values = [];
         foreach ($this->fields() as $field) {
             if ($field->isFile()) {
-                // File fields expose only a has-file bool, from media existence.
+                // The upload lives in the media table (the KV `value` stays null),
+                // so a file field exposes only a has-file bool from media existence.
                 $values[$field->key] = $this->fileMedia($field->key) !== null;
 
                 continue;
@@ -199,6 +200,11 @@ abstract class SettingsCategory
         return null;
     }
 
+    /**
+     * Cast a stored raw string to its typed value. Only NON-file fields reach here:
+     * a file field's upload lives in the media table (its `value` stays null), and
+     * values() resolves it to a has-file bool before this is ever called.
+     */
     private function cast(Field $field, ?string $raw): mixed
     {
         if ($raw === null) {
@@ -209,7 +215,6 @@ abstract class SettingsCategory
             FieldType::Number => is_numeric($raw) ? $raw + 0 : $field->default,
             FieldType::Toggle => filter_var($raw, FILTER_VALIDATE_BOOL),
             FieldType::MultiCombobox => is_array($decoded = json_decode($raw, true)) ? $decoded : [],
-            FieldType::File => $raw !== '',
             default => $raw,
         };
     }
