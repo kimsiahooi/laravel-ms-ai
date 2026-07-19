@@ -1,5 +1,6 @@
 import { Moon, Sun } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { CommandPalette } from '@/components/tenant/command-palette';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
@@ -24,28 +25,31 @@ export function TenantSidebarHeader({
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                        onClick={() =>
-                            updateAppearance(isDark ? 'light' : 'dark')
-                        }
-                        aria-label="Toggle theme"
-                    >
-                        {/* Both icons render identically on server + client; the
+            <div className="flex items-center gap-2">
+                <CommandPalette />
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            onClick={() =>
+                                updateAppearance(isDark ? 'light' : 'dark')
+                            }
+                            aria-label="Toggle theme"
+                        >
+                            {/* Both icons render identically on server + client; the
                             `.dark` class (applied before hydration) decides which
                             one shows. No JS theme branch here means no hydration
                             mismatch — the server can't know the stored theme. */}
-                        <Sun className="hidden size-4 dark:block" />
-                        <Moon className="size-4 dark:hidden" />
-                        <span className="sr-only">Toggle theme</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>Toggle theme</TooltipContent>
-            </Tooltip>
+                            <Sun className="hidden size-4 dark:block" />
+                            <Moon className="size-4 dark:hidden" />
+                            <span className="sr-only">Toggle theme</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Toggle theme</TooltipContent>
+                </Tooltip>
+            </div>
         </header>
     );
 }

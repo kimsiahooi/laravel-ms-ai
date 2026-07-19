@@ -21,6 +21,12 @@ if (!('ResizeObserver' in globalThis)) {
     };
 }
 
+// cmdk (the ⌘K command palette) scrolls the active item into view on select;
+// jsdom has no layout, so stub it out.
+if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => {};
+}
+
 if (!window.matchMedia) {
     window.matchMedia = (query: string) => ({
         matches: false,
