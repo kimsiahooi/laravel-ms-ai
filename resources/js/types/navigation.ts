@@ -16,3 +16,9 @@ export type NavItem = {
     // hard refresh. Only enable on stable pages (e.g. the dashboard).
     prefetch?: boolean;
 };
+
+/** A labelled section of nav items (e.g. Catalog, Stock, Orders). */
+export type NavGroup = {
+    label?: string;
+    items: NavItem[];
+};

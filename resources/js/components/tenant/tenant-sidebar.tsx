@@ -51,7 +51,7 @@ import stockTakes from '@/routes/tenant/stock-takes';
 import stockTransfers from '@/routes/tenant/stock-transfers';
 import suppliers from '@/routes/tenant/suppliers';
 import warehouses from '@/routes/tenant/warehouses';
-import type { NavItem } from '@/types';
+import type { NavGroup } from '@/types';
 
 type TenantBrand = { slug: string; name: string } | null;
 
@@ -60,105 +60,134 @@ export function TenantSidebar() {
     const slug = tenant?.slug ?? '';
     const dashboardUrl = dashboard.url({ tenant: slug });
 
-    const mainNavItems: NavItem[] = [
+    const navGroups: NavGroup[] = [
         {
-            title: 'Dashboard',
-            href: dashboardUrl,
-            icon: LayoutGrid,
-            prefetch: true,
+            items: [
+                {
+                    title: 'Dashboard',
+                    href: dashboardUrl,
+                    icon: LayoutGrid,
+                    prefetch: true,
+                },
+            ],
         },
         {
-            title: 'Categories',
-            href: categories.index.url({ tenant: slug }),
-            icon: FolderTree,
+            label: 'Catalog',
+            items: [
+                {
+                    title: 'Categories',
+                    href: categories.index.url({ tenant: slug }),
+                    icon: FolderTree,
+                },
+                {
+                    title: 'Suppliers',
+                    href: suppliers.index.url({ tenant: slug }),
+                    icon: Truck,
+                },
+                {
+                    title: 'Customers',
+                    href: customers.index.url({ tenant: slug }),
+                    icon: Contact,
+                },
+                {
+                    title: 'Raw materials',
+                    href: rawMaterials.index.url({ tenant: slug }),
+                    icon: Boxes,
+                },
+                {
+                    title: 'Products',
+                    href: products.index.url({ tenant: slug }),
+                    icon: Package,
+                },
+            ],
         },
         {
-            title: 'Suppliers',
-            href: suppliers.index.url({ tenant: slug }),
-            icon: Truck,
+            label: 'Stock',
+            items: [
+                {
+                    title: 'Locations',
+                    href: locations.index.url({ tenant: slug }),
+                    icon: MapPin,
+                },
+                {
+                    title: 'Warehouses',
+                    href: warehouses.index.url({ tenant: slug }),
+                    icon: Warehouse,
+                },
+                {
+                    title: 'Stock movements',
+                    href: stockMovements.index.url({ tenant: slug }),
+                    icon: ArrowLeftRight,
+                },
+                {
+                    title: 'Stock transfers',
+                    href: stockTransfers.index.url({ tenant: slug }),
+                    icon: ArrowRightLeft,
+                },
+                {
+                    title: 'Stock takes',
+                    href: stockTakes.index.url({ tenant: slug }),
+                    icon: ClipboardCheck,
+                },
+            ],
         },
         {
-            title: 'Customers',
-            href: customers.index.url({ tenant: slug }),
-            icon: Contact,
+            label: 'Orders',
+            items: [
+                {
+                    title: 'Purchase orders',
+                    href: purchaseOrders.index.url({ tenant: slug }),
+                    icon: ShoppingCart,
+                },
+                {
+                    title: 'Purchase returns',
+                    href: purchaseReturns.index.url({ tenant: slug }),
+                    icon: Undo2,
+                },
+                {
+                    title: 'Sales orders',
+                    href: salesOrders.index.url({ tenant: slug }),
+                    icon: Receipt,
+                },
+                {
+                    title: 'Sales returns',
+                    href: salesReturns.index.url({ tenant: slug }),
+                    icon: RotateCcw,
+                },
+                {
+                    title: 'Production orders',
+                    href: productionOrders.index.url({ tenant: slug }),
+                    icon: Factory,
+                },
+            ],
         },
         {
-            title: 'Raw materials',
-            href: rawMaterials.index.url({ tenant: slug }),
-            icon: Boxes,
+            label: 'Insights',
+            items: [
+                {
+                    title: 'Reports',
+                    href: reports.index.url({ tenant: slug }),
+                    icon: BarChart3,
+                },
+                {
+                    title: 'Activity',
+                    href: activity.index.url({ tenant: slug }),
+                    icon: History,
+                },
+            ],
         },
         {
-            title: 'Products',
-            href: products.index.url({ tenant: slug }),
-            icon: Package,
-        },
-        {
-            title: 'Locations',
-            href: locations.index.url({ tenant: slug }),
-            icon: MapPin,
-        },
-        {
-            title: 'Warehouses',
-            href: warehouses.index.url({ tenant: slug }),
-            icon: Warehouse,
-        },
-        {
-            title: 'Stock movements',
-            href: stockMovements.index.url({ tenant: slug }),
-            icon: ArrowLeftRight,
-        },
-        {
-            title: 'Stock transfers',
-            href: stockTransfers.index.url({ tenant: slug }),
-            icon: ArrowRightLeft,
-        },
-        {
-            title: 'Stock takes',
-            href: stockTakes.index.url({ tenant: slug }),
-            icon: ClipboardCheck,
-        },
-        {
-            title: 'Purchase orders',
-            href: purchaseOrders.index.url({ tenant: slug }),
-            icon: ShoppingCart,
-        },
-        {
-            title: 'Purchase returns',
-            href: purchaseReturns.index.url({ tenant: slug }),
-            icon: Undo2,
-        },
-        {
-            title: 'Sales orders',
-            href: salesOrders.index.url({ tenant: slug }),
-            icon: Receipt,
-        },
-        {
-            title: 'Sales returns',
-            href: salesReturns.index.url({ tenant: slug }),
-            icon: RotateCcw,
-        },
-        {
-            title: 'Production orders',
-            href: productionOrders.index.url({ tenant: slug }),
-            icon: Factory,
-        },
-        {
-            title: 'Reports',
-            href: reports.index.url({ tenant: slug }),
-            icon: BarChart3,
-        },
-        {
-            title: 'Activity',
-            href: activity.index.url({ tenant: slug }),
-            icon: History,
-        },
-        {
-            title: 'Business settings',
-            href: settingsRoutes.edit.url({
-                tenant: slug,
-                category: 'business',
-            }),
-            icon: Building2,
+            label: 'Settings',
+            items: [
+                {
+                    title: 'Business settings',
+                    href: settingsRoutes.edit.url({
+                        tenant: slug,
+                        category: 'business',
+                    }),
+                    icon: Building2,
+                },
+            ],
         },
     ];
 
@@ -177,7 +206,7 @@ export function TenantSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain groups={navGroups} />
             </SidebarContent>
 
             <SidebarFooter>
