@@ -59,7 +59,9 @@ Three layers — run the ones your change touches:
 
 ## Architecture
 
-See `docs/superpowers/specs/` (master spec) and `docs/superpowers/plans/`.
+See `docs/superpowers/specs/` (master spec) and `docs/superpowers/plans/`. For a code-grounded map
+of how each route/table/flow actually works (CRUD → exact columns, the stock engine, observers),
+see [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md).
 
 - Multi-tenant manufacturing/inventory ERP: Laravel 13 + Inertia v3 + React 19 +
   TypeScript, Tailwind v4. `stancl/tenancy` in **multi-database** mode,
