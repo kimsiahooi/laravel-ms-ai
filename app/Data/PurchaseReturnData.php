@@ -20,10 +20,12 @@ class PurchaseReturnData extends Data
     public function __construct(
         public int $id,
         public ?string $supplier,
+        public ?int $supplier_id,
         public string $status,
         public string $status_label,
         public int $item_count,
         public float $total_quantity,
+        public ?string $notes,
         public ?string $completed_at,
         public string $created_at,
         #[DataCollectionOf(PurchaseReturnItemData::class)]
@@ -39,10 +41,12 @@ class PurchaseReturnData extends Data
         return new self(
             id: $return->id,
             supplier: $return->supplier?->name,
+            supplier_id: $return->supplier_id,
             status: $return->status->value,
             status_label: $return->status->label(),
             item_count: $items->count(),
             total_quantity: (float) $items->sum(fn (PurchaseReturnItemData $item): float => $item->quantity),
+            notes: $return->notes,
             completed_at: $return->completed_at?->toISOString(),
             created_at: $return->created_at->toISOString(),
             items: $items->all(),

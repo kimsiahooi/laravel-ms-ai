@@ -7,6 +7,15 @@ import { SignedQuantity } from '@/components/signed-quantity';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Table,
@@ -45,6 +54,8 @@ export default function StockTakeShow() {
         items: { id: number; counted_qty: string }[];
     }>({ items: [] });
     const cancelForm = useForm({});
+    const [confirmApply, setConfirmApply] = useState(false);
+    const [confirmCancel, setConfirmCancel] = useState(false);
 
     const variance = (item: StockTake['items'][number]) =>
         (Number(counts[item.id]) || 0) - item.system_qty;
@@ -66,7 +77,7 @@ export default function StockTakeShow() {
                 tenant: tenant.slug,
                 stockTake: take.id,
             }),
-            { preserveScroll: true },
+            { preserveScroll: true, onSuccess: () => setConfirmApply(false) },
         );
     };
 
@@ -76,7 +87,7 @@ export default function StockTakeShow() {
                 tenant: tenant.slug,
                 stockTake: take.id,
             }),
-            { preserveScroll: true },
+            { preserveScroll: true, onSuccess: () => setConfirmCancel(false) },
         );
     };
 
@@ -247,7 +258,7 @@ export default function StockTakeShow() {
                     <div className="flex gap-2">
                         <Button
                             variant="ghost"
-                            onClick={cancel}
+                            onClick={() => setConfirmCancel(true)}
                             disabled={
                                 cancelForm.processing || postForm.processing
                             }
@@ -256,11 +267,49 @@ export default function StockTakeShow() {
                             Cancel take
                         </Button>
                         <Button
-                            onClick={post}
+                            onClick={() => setConfirmApply(true)}
                             disabled={
                                 postForm.processing || take.items.length === 0
                             }
                         >
+                            <ClipboardCheck className="size-4" />
+                            Apply count
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            {/* Apply-count confirmation — permanently corrects stock */}
+            <Dialog
+                open={confirmApply}
+                onOpenChange={(next) =>
+                    !postForm.processing && setConfirmApply(next)
+                }
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Apply this count?</DialogTitle>
+                        <DialogDescription>
+                            This corrects the stock at{' '}
+                            {take.warehouse ?? 'this warehouse'} by the total
+                            difference of{' '}
+                            <SignedQuantity
+                                value={totalVariance}
+                                className="font-medium"
+                            />
+                            . It updates your inventory and can't be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button
+                                variant="ghost"
+                                disabled={postForm.processing}
+                            >
+                                Keep counting
+                            </Button>
+                        </DialogClose>
+                        <Button onClick={post} disabled={postForm.processing}>
                             {postForm.processing ? (
                                 <>
                                     <LoaderCircle className="size-4 animate-spin" />
@@ -273,9 +322,54 @@ export default function StockTakeShow() {
                                 </>
                             )}
                         </Button>
-                    </div>
-                )}
-            </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Cancel-take confirmation — voids the count */}
+            <Dialog
+                open={confirmCancel}
+                onOpenChange={(next) =>
+                    !cancelForm.processing && setConfirmCancel(next)
+                }
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cancel this stock take?</DialogTitle>
+                        <DialogDescription>
+                            This discards the count. Your stock levels are left
+                            unchanged — nothing is corrected.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button
+                                variant="ghost"
+                                disabled={cancelForm.processing}
+                            >
+                                Keep counting
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            variant="destructive"
+                            onClick={cancel}
+                            disabled={cancelForm.processing}
+                        >
+                            {cancelForm.processing ? (
+                                <>
+                                    <LoaderCircle className="size-4 animate-spin" />
+                                    Cancelling…
+                                </>
+                            ) : (
+                                <>
+                                    <Ban className="size-4" />
+                                    Cancel take
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </TenantLayout>
     );
 }

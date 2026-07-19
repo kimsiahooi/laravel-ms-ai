@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     Ban,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
@@ -35,6 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
@@ -74,6 +76,7 @@ export default function PurchaseReturnsIndex() {
     const [cancelling, setCancelling] = useState<PurchaseReturn | null>(null);
     const completeForm = useForm({ warehouse_id: '' });
     const cancelForm = useForm({});
+    const remove = useDelete<PurchaseReturn>({ baseUrl: base });
 
     const newLine = (): Line => ({
         key: lineKey.current++,
@@ -97,8 +100,8 @@ export default function PurchaseReturnsIndex() {
             setLines([newLine()]);
         },
         onEdit: (ret) => {
-            setSupplierId('');
-            setNotes('');
+            setSupplierId(ret.supplier_id ? String(ret.supplier_id) : '');
+            setNotes(ret.notes ?? '');
             setLines(
                 ret.items.map((item) => ({
                     key: lineKey.current++,
@@ -221,11 +224,7 @@ export default function PurchaseReturnsIndex() {
                             ) : (
                                 <DropdownMenuItem
                                     variant="destructive"
-                                    onSelect={() =>
-                                        router.delete(`${base}/${ret.id}`, {
-                                            preserveScroll: true,
-                                        })
-                                    }
+                                    onSelect={() => remove.request(ret)}
                                 >
                                     <Trash2 className="size-4" />
                                     Delete
@@ -536,6 +535,20 @@ export default function PurchaseReturnsIndex() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDeleteDialog
+                item={remove.deleting}
+                onOpenChange={(open) => !open && remove.cancel()}
+                onConfirm={remove.confirm}
+                title="Delete purchase return"
+                description={
+                    <>
+                        Delete purchase return #{remove.deleting?.id}? This
+                        permanently removes it and its line items — this can't
+                        be undone.
+                    </>
+                }
+            />
         </TenantLayout>
     );
 }

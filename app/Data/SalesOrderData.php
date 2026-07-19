@@ -20,11 +20,13 @@ class SalesOrderData extends Data
     public function __construct(
         public int $id,
         public ?string $customer,
+        public ?int $customer_id,
         public string $status,
         public string $status_label,
         public string $currency,
         public int $item_count,
         public float $total,
+        public ?string $notes,
         public ?string $fulfilled_at,
         public string $created_at,
         #[DataCollectionOf(SalesOrderItemData::class)]
@@ -40,11 +42,13 @@ class SalesOrderData extends Data
         return new self(
             id: $order->id,
             customer: $order->customer?->name,
+            customer_id: $order->customer_id,
             status: $order->status->value,
             status_label: $order->status->label(),
             currency: $order->currency,
             item_count: $items->count(),
             total: (float) $items->sum(fn (SalesOrderItemData $item): float => $item->quantity * $item->unit_price),
+            notes: $order->notes,
             fulfilled_at: $order->fulfilled_at?->toISOString(),
             created_at: $order->created_at->toISOString(),
             items: $items->all(),

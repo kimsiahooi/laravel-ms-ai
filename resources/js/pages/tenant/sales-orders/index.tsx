@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     Ban,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
@@ -36,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { salesOrderMeta } from '@/config/resources';
+import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
@@ -81,6 +83,7 @@ export default function SalesOrdersIndex() {
     const [cancelling, setCancelling] = useState<SalesOrder | null>(null);
     const fulfillForm = useForm({ warehouse_id: '' });
     const cancelForm = useForm({});
+    const remove = useDelete<SalesOrder>({ baseUrl: base });
 
     const newLine = (): Line => ({
         key: lineKey.current++,
@@ -106,9 +109,9 @@ export default function SalesOrdersIndex() {
             setLines([newLine()]);
         },
         onEdit: (order) => {
-            setCustomerId('');
+            setCustomerId(order.customer_id ? String(order.customer_id) : '');
             setCurrency(order.currency);
-            setNotes('');
+            setNotes(order.notes ?? '');
             setLines(
                 order.items.map((item) => ({
                     key: lineKey.current++,
@@ -249,11 +252,7 @@ export default function SalesOrdersIndex() {
                             ) : (
                                 <DropdownMenuItem
                                     variant="destructive"
-                                    onSelect={() =>
-                                        router.delete(`${base}/${order.id}`, {
-                                            preserveScroll: true,
-                                        })
-                                    }
+                                    onSelect={() => remove.request(order)}
                                 >
                                     <Trash2 className="size-4" />
                                     Delete
@@ -607,6 +606,20 @@ export default function SalesOrdersIndex() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDeleteDialog
+                item={remove.deleting}
+                onOpenChange={(open) => !open && remove.cancel()}
+                onConfirm={remove.confirm}
+                title="Delete sales order"
+                description={
+                    <>
+                        Delete sales order #{remove.deleting?.id}? This
+                        permanently removes it and its line items — this can't
+                        be undone.
+                    </>
+                }
+            />
         </TenantLayout>
     );
 }
