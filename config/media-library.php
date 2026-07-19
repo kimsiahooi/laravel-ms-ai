@@ -87,9 +87,13 @@ return [
     'queue_name' => env('MEDIA_QUEUE', ''),
 
     /*
-     * By default all conversions will be performed on a queue.
+     * By default all conversions will be performed on a queue. We default this to
+     * FALSE: this app runs no queue worker (see .env.example / the queue note), so a
+     * queued conversion would silently pile up in the `jobs` table and never run.
+     * Inline is safe here — no conversions are registered today, and if one is added
+     * later it processes during the request. Flip to true only alongside a worker.
      */
-    'queue_conversions_by_default' => env('QUEUE_CONVERSIONS_BY_DEFAULT', true),
+    'queue_conversions_by_default' => env('QUEUE_CONVERSIONS_BY_DEFAULT', false),
 
     /*
      * Should database transactions be run after database commits?

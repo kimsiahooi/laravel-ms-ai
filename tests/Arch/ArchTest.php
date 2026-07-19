@@ -44,7 +44,10 @@ it('points medialibrary at the private assets disk via the tenant path generator
     // generator — the whole tenant-isolation + teardown story depends on it.
     expect(config('media-library.disk_name'))->toBe('assets')
         ->and(config('media-library.path_generator'))
-        ->toBe(TenantPathGenerator::class);
+        ->toBe(TenantPathGenerator::class)
+        // No queue worker runs; conversions must stay inline or they'd silently
+        // pile up in the `jobs` table and never process.
+        ->and(config('media-library.queue_conversions_by_default'))->toBeFalse();
 });
 
 it('never defines a database connection named "tenant" (central is the landlord)', function () {
