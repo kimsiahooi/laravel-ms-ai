@@ -90,7 +90,7 @@ export default function AdminTenantsIndex() {
     const [slug, setSlug] = useState('');
     const [slugTouched, setSlugTouched] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [seedDemo, setSeedDemo] = useState(true);
+    const [seedDemo, setSeedDemo] = useState(false);
     const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
     const [deleting, setDeleting] = useState<Tenant | null>(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
@@ -155,7 +155,7 @@ export default function AdminTenantsIndex() {
         setSlug('');
         setSlugTouched(false);
         setShowPassword(false);
-        setSeedDemo(true);
+        setSeedDemo(false);
     };
 
     const columns: ColumnDef<Tenant>[] = [
