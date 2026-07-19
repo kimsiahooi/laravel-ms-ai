@@ -121,23 +121,21 @@ abstract class SettingsCategory
     }
 
     /**
-     * Seed each field's default into the settings table, additively: a value is
-     * written only when its (category, key) row doesn't exist yet, so stored /
-     * user-edited values are never overwritten and re-running only backfills newly
-     * added fields. Nullable + file fields (no meaningful default) are skipped, so
-     * identity fields stay blank. Idempotent — safe to run on every provision and as
-     * a sync tool via `tenants:seed --class=SettingsSeeder`.
+     * Seed a row for EVERY field so the settings table fully mirrors the schema —
+     * fields with a default get it; nullable ones (TIN, legal name, …) are seeded
+     * empty (null); a file field (logo) gets a null path (no upload yet). Additive:
+     * `firstOrCreate` only inserts a missing (category, key) row and never overwrites a
+     * stored / user-edited value, so re-running just backfills newly added fields.
+     * Idempotent — safe on every provision and as a sync tool via `tenants:seed`.
      */
     public function seedDefaults(): void
     {
         foreach ($this->fields() as $field) {
-            if ($field->isFile() || $field->default === null) {
-                continue;
-            }
+            $value = $field->isFile() ? null : $this->encode($field, $field->default);
 
             Setting::firstOrCreate(
                 ['category' => $this->key(), 'key' => $field->key],
-                ['value' => $this->encode($field, $field->default)],
+                ['value' => $value],
             );
         }
     }

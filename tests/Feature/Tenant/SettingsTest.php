@@ -45,9 +45,13 @@ it('seeds default business settings on tenant provision (form mirrors the DB)', 
             'invoice_prefix' => 'INV',
             'number_reset' => 'yearly',
         ])
-            // Nullable identity fields (and the logo) are NOT seeded — they stay blank.
-            ->and($values)->not->toHaveKey('legal_name')
-            ->and($values)->not->toHaveKey('logo');
+            // Every field is seeded — the nullable identity fields + logo exist as empty
+            // (null) rows, so the table fully mirrors the schema.
+            ->and($values)->toHaveKeys(['legal_name', 'tin', 'email', 'address', 'logo'])
+            ->and($values['legal_name'])->toBeNull()
+            ->and($values['tin'])->toBeNull()
+            ->and($values['logo'])->toBeNull()
+            ->and(count($values))->toBe(count(app(BusinessSettings::class)->fields()));
     });
 });
 
