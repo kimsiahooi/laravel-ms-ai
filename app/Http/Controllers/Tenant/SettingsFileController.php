@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\StreamsMedia;
 use App\Settings\SettingsRegistry;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -17,9 +18,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SettingsFileController
 {
+    use StreamsMedia;
+
     public function __construct(private readonly SettingsRegistry $registry) {}
 
-    public function __invoke(string $category, string $key): StreamedResponse
+    public function __invoke(Request $request, string $category, string $key): StreamedResponse
     {
         $provider = $this->registry->resolve($category);
 
@@ -31,10 +34,6 @@ class SettingsFileController
 
         abort_if($media === null, 404);
 
-        $path = $media->getPathRelativeToRoot();
-
-        abort_unless(Storage::disk($media->disk)->exists($path), 404);
-
-        return Storage::disk($media->disk)->response($path);
+        return $this->streamMedia($request, $media);
     }
 }

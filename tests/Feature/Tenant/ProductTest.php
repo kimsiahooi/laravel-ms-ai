@@ -286,9 +286,38 @@ it('serves a product image over HTTP', function () {
 
     $id = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->id);
 
-    $this->get("/acme/products/{$id}/image")
-        ->assertOk()
-        ->assertHeader('content-type', 'image/jpeg');
+    $response = $this->get("/acme/products/{$id}/image");
+    $response->assertOk()
+        ->assertHeader('content-type', 'image/jpeg')
+        ->assertHeader('etag'); // cache validator so a re-upload is never stale
+
+    expect($response->headers->get('cache-control'))->toContain('no-cache');
+});
+
+it('changes the image ETag when the image is replaced (no stale cache)', function () {
+    Storage::fake('assets');
+    $id = $this->tenant->run(function () {
+        $product = Product::create(['name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs']);
+        $product->addMedia(UploadedFile::fake()->image('a.jpg'))->toMediaCollection('image');
+
+        return $product->id;
+    });
+
+    loginAsAcmeUser();
+
+    $first = $this->get("/acme/products/{$id}/image")->headers->get('etag');
+
+    // Replacing the image makes a new media row (singleFile) -> new id -> new ETag.
+    $this->from('/acme/products')->put("/acme/products/{$id}", [
+        'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
+        'image' => UploadedFile::fake()->image('b.jpg'),
+    ])->assertRedirect('/acme/products');
+
+    $second = $this->get("/acme/products/{$id}/image")->headers->get('etag');
+
+    expect($first)->not->toBeNull()
+        ->and($second)->not->toBeNull()
+        ->and($second)->not->toBe($first);
 });
 
 it('returns 404 for the image route when a product has no image', function () {

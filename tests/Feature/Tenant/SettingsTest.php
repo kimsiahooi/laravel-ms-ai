@@ -217,7 +217,10 @@ it('streams the logo through the auth-gated file route but never a non-file fiel
         'logo' => UploadedFile::fake()->image('logo.png', 120, 120),
     ]);
 
-    $this->get('/acme/settings/business/file/logo')->assertOk();
+    $response = $this->get('/acme/settings/business/file/logo');
+    $response->assertOk()->assertHeader('etag'); // cache validator (StreamsMedia)
+    expect($response->headers->get('cache-control'))->toContain('no-cache');
+
     // Unknown key + a real NON-file key (whose value is user text, not a path) both 404.
     $this->get('/acme/settings/business/file/nope')->assertNotFound();
     $this->get('/acme/settings/business/file/legal_name')->assertNotFound();

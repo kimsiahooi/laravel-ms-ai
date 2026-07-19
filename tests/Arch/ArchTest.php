@@ -39,6 +39,13 @@ arch('the tenant media path generator implements the medialibrary contract')
     ->expect(TenantPathGenerator::class)
     ->toImplement(PathGenerator::class);
 
+// Media must be streamed through the StreamsMedia concern (which sets cache
+// validators so a re-upload is never stale), never raw Storage in a controller —
+// so future file/image endpoints stay fresh by construction.
+arch('tenant controllers never touch the Storage facade directly')
+    ->expect('App\Http\Controllers\Tenant')
+    ->not->toUse('Illuminate\Support\Facades\Storage');
+
 it('points medialibrary at the private assets disk via the tenant path generator', function () {
     // Files must land on the private `assets` disk and be slug-namespaced by our
     // generator — the whole tenant-isolation + teardown story depends on it.
