@@ -158,7 +158,7 @@ it('exposes saved values to the shared business document header', function () {
         $header = app(BusinessSettings::class)->documentHeader();
         expect($header->legal_name)->toBe('Acme Sdn Bhd')
             ->and($header->tax_registration_no)->toBe('W10-1808-32000123')
-            ->and($header->has_logo)->toBeFalse();
+            ->and($header->logo_url)->toBeNull();
     });
 });
 
@@ -186,9 +186,9 @@ it('uploads a logo (method-spoofed multipart POST) and then removes it', functio
     expect(str_starts_with($path, 'acme/'))->toBeTrue();
     Storage::disk('assets')->assertExists($path);
 
-    // The document header now reports a logo.
+    // The document header now exposes the content-addressed logo URL.
     $this->tenant->run(function () {
-        expect(app(BusinessSettings::class)->documentHeader()->has_logo)->toBeTrue();
+        expect(app(BusinessSettings::class)->documentHeader()->logo_url)->toContain('/acme/media/');
     });
 
     // Removing clears the media + deletes the file.
@@ -206,22 +206,38 @@ it('uploads a logo (method-spoofed multipart POST) and then removes it', functio
     Storage::disk('assets')->assertMissing($path);
 });
 
-it('streams the logo through the auth-gated file route but never a non-file field', function () {
+it('serves the logo by media id and 404s the old id after a re-upload (never stale)', function () {
     Storage::fake('assets');
 
     loginAsAcmeUser();
 
-    $this->post('/acme/settings/business', [
-        ...businessBase(['legal_name' => 'Acme Sdn Bhd']),
+    // Upload the first logo (method-spoofed multipart POST, like the browser).
+    $this->from('/acme/settings/business')->post('/acme/settings/business', [
+        ...businessBase(),
         '_method' => 'PUT',
-        'logo' => UploadedFile::fake()->image('logo.png', 120, 120),
-    ]);
+        'logo' => UploadedFile::fake()->image('one.png', 120, 120),
+    ])->assertRedirect('/acme/settings/business');
 
-    $response = $this->get('/acme/settings/business/file/logo');
+    $firstUrl = $this->tenant->run(fn () => app(BusinessSettings::class)->documentHeader()->logo_url);
+    expect($firstUrl)->toContain('/acme/media/');
+
+    $response = $this->get($firstUrl);
     $response->assertOk()->assertHeader('etag'); // cache validator (StreamsMedia)
     expect($response->headers->get('cache-control'))->toContain('no-cache');
 
-    // Unknown key + a real NON-file key (whose value is user text, not a path) both 404.
-    $this->get('/acme/settings/business/file/nope')->assertNotFound();
-    $this->get('/acme/settings/business/file/legal_name')->assertNotFound();
+    // Re-upload -> new media row (singleFile) -> new id -> new URL.
+    $this->from('/acme/settings/business')->post('/acme/settings/business', [
+        ...businessBase(),
+        '_method' => 'PUT',
+        'logo' => UploadedFile::fake()->image('two.png', 120, 120),
+    ])->assertRedirect('/acme/settings/business');
+
+    $secondUrl = $this->tenant->run(fn () => app(BusinessSettings::class)->documentHeader()->logo_url);
+
+    expect($secondUrl)->toContain('/acme/media/')
+        ->and($secondUrl)->not->toBe($firstUrl);
+
+    // The new logo serves; the old media id now shows nothing (404).
+    $this->get($secondUrl)->assertOk();
+    $this->get($firstUrl)->assertNotFound();
 });

@@ -217,7 +217,9 @@ class BusinessSettings extends SettingsCategory
             address: $values['address'] ?? null,
             tax_type: (string) ($values['tax_type'] ?? 'none'),
             tax_registration_no: $values['tax_registration_no'] ?? null,
-            has_logo: (bool) ($values['logo'] ?? false),
+            // Content-addressed URL (or null) — changes on every re-upload, so a
+            // document header never shows a stale logo. Typed ?string via fileUrl().
+            logo_url: $this->fileUrl('logo'),
         );
     }
 

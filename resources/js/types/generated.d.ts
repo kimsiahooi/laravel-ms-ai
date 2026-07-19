@@ -26,7 +26,7 @@ registration_no: string | null,
 address: string | null,
 tax_type: string,
 tax_registration_no: string | null,
-has_logo: boolean,
+logo_url: string | null,
 };
 export type CategoryData = {
 id: number,

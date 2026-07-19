@@ -2,13 +2,11 @@ import { usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import settingsRoutes from '@/routes/tenant/settings';
 
 type MetaRow = { label: string; value: ReactNode };
 
 type CompanyHeader = {
     business?: App.Data.BusinessSettingsData | null;
-    tenant?: { slug: string; name: string } | null;
 };
 
 const TAX_LABEL: Record<string, string> = { sst: 'SST No.', gst: 'GST No.' };
@@ -120,16 +118,10 @@ export function PrintDocument({
 }) {
     const { props } = usePage<CompanyHeader>();
     const business = props.business ?? null;
-    const slug = props.tenant?.slug;
     const companyName = business?.legal_name || org;
-    const logoUrl =
-        business?.has_logo && slug
-            ? settingsRoutes.file.url({
-                  tenant: slug,
-                  category: 'business',
-                  key: 'logo',
-              })
-            : null;
+    // Content-addressed media URL from the server — changes on every re-upload, so the
+    // header logo is never stale (no client-side URL building).
+    const logoUrl = business?.logo_url ?? null;
     const taxLabel = business ? TAX_LABEL[business.tax_type] : undefined;
     const taxLine =
         taxLabel && business?.tax_registration_no

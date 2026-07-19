@@ -42,6 +42,57 @@ const schema: SettingsFieldSchema[] = [
     },
 ];
 
+const fileSchema: SettingsFieldSchema[] = [
+    {
+        key: 'logo',
+        type: 'file',
+        label: 'Logo',
+        section: 'Company',
+        description: 'PNG or JPG.',
+        options: [],
+        placeholder: null,
+        required: false,
+    },
+];
+
+it('shows the stored file as a preview image from its server-provided URL', () => {
+    renderPage(
+        <SettingsForm
+            category="business"
+            tenantSlug="acme"
+            schema={fileSchema}
+            values={{ logo: '/acme/media/5' }}
+        />,
+        {},
+    );
+
+    // The preview <img> uses the content-addressed URL the server passed — never built
+    // on the client — so a re-upload (new id → new URL) always shows the latest file.
+    expect(screen.getByAltText('Logo')).toHaveAttribute('src', '/acme/media/5');
+    // A stored file can be removed.
+    expect(screen.getByRole('button', { name: /remove/i })).toBeInTheDocument();
+});
+
+it('shows no preview image when there is no stored file', () => {
+    renderPage(
+        <SettingsForm
+            category="business"
+            tenantSlug="acme"
+            schema={fileSchema}
+            values={{ logo: null }}
+        />,
+        {},
+    );
+
+    expect(screen.queryByAltText('Logo')).not.toBeInTheDocument();
+    // Upload is always offered (it's a <label>, not a button role); Remove is not,
+    // since there's no stored file to clear.
+    expect(screen.getByText('Upload')).toBeInTheDocument();
+    expect(
+        screen.queryByRole('button', { name: /remove/i }),
+    ).not.toBeInTheDocument();
+});
+
 it('renders each field type from the schema with its label + description', () => {
     renderPage(
         <SettingsForm

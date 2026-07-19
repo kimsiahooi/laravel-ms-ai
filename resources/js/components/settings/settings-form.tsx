@@ -148,9 +148,7 @@ export function SettingsForm({
                     field={field}
                     file={data[field.key] as File | null}
                     removed={Boolean(data[`remove_${field.key}`])}
-                    hasStored={Boolean(values[field.key])}
-                    category={category}
-                    tenantSlug={tenantSlug}
+                    storedUrl={(values[field.key] as string | null) ?? null}
                     error={error}
                     onPick={(next) =>
                         setData((current) => ({
@@ -317,9 +315,7 @@ function FileField({
     field,
     file,
     removed,
-    hasStored,
-    category,
-    tenantSlug,
+    storedUrl,
     error,
     onPick,
     onRemove,
@@ -327,9 +323,8 @@ function FileField({
     field: SettingsFieldSchema;
     file: File | null;
     removed: boolean;
-    hasStored: boolean;
-    category: string;
-    tenantSlug: string;
+    /** The stored file's content-addressed media URL (changes on every re-upload), or null. */
+    storedUrl: string | null;
     error?: string;
     onPick: (file: File | null) => void;
     onRemove: () => void;
@@ -346,15 +341,8 @@ function FileField({
         return () => URL.revokeObjectURL(url);
     }, [file]);
 
-    const storedUrl =
-        hasStored && !removed
-            ? settingsRoutes.file.url({
-                  tenant: tenantSlug,
-                  category,
-                  key: field.key,
-              })
-            : null;
-    const previewSrc = filePreview ?? storedUrl;
+    // The freshly-picked file wins; otherwise the stored URL unless the user cleared it.
+    const previewSrc = filePreview ?? (removed ? null : storedUrl);
 
     return (
         <div className="grid gap-2">

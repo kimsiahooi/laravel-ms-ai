@@ -91,20 +91,23 @@ class Product extends Model implements HasMedia
     }
 
     /**
-     * Public URL for the stored image, served through the per-product image route
-     * (extension-less so nginx routes it to Laravel; tenant_asset() can't be used —
-     * its route is domain-identified, but this app is path/slug-identified). Null
-     * when no image is set. Only valid inside a tenant context (all product routes are).
+     * Public URL for the stored image, served through the content-addressed media route
+     * (`/{tenant}/media/{id}`, extension-less so nginx routes it to Laravel; tenant_asset()
+     * can't be used — its route is domain-identified, but this app is path/slug-identified).
+     * The URL carries the media id, so a re-upload (new id) yields a new URL — never stale.
+     * Null when no image is set. Only valid inside a tenant context (all product routes are).
      */
     protected function imageUrl(): Attribute
     {
-        return Attribute::get(
-            fn (): ?string => $this->getFirstMedia('image') === null
+        return Attribute::get(function (): ?string {
+            $media = $this->getFirstMedia('image');
+
+            return $media === null
                 ? null
-                : route('tenant.products.image', [
+                : route('tenant.media', [
                     'tenant' => tenant('id'),
-                    'product' => $this->id,
-                ]),
-        );
+                    'media' => $media->getKey(),
+                ]);
+        });
     }
 }

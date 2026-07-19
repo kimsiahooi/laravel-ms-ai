@@ -275,7 +275,7 @@ it('soft-deletes a product', function () {
     });
 });
 
-it('serves a product image over HTTP', function () {
+it('serves a product image over the content-addressed media route', function () {
     Storage::fake('assets');
     loginAsAcmeUser();
 
@@ -284,9 +284,16 @@ it('serves a product image over HTTP', function () {
         'image' => UploadedFile::fake()->image('widget.jpg', 80, 80),
     ])->assertRedirect('/acme/products');
 
-    $id = $this->tenant->run(fn () => Product::firstWhere('sku', 'P-001')->id);
+    [$url, $mediaId] = $this->tenant->run(function () {
+        $product = Product::firstWhere('sku', 'P-001');
 
-    $response = $this->get("/acme/products/{$id}/image");
+        return [$product->image_url, $product->getFirstMedia('image')->getKey()];
+    });
+
+    // The image URL is content-addressed: /{tenant}/media/{id}.
+    expect($url)->toContain("/acme/media/{$mediaId}");
+
+    $response = $this->get($url);
     $response->assertOk()
         ->assertHeader('content-type', 'image/jpeg')
         ->assertHeader('etag'); // cache validator so a re-upload is never stale
@@ -294,7 +301,7 @@ it('serves a product image over HTTP', function () {
     expect($response->headers->get('cache-control'))->toContain('no-cache');
 });
 
-it('changes the image ETag when the image is replaced (no stale cache)', function () {
+it('gives a new image URL on replace and 404s the old media id (never stale)', function () {
     Storage::fake('assets');
     $id = $this->tenant->run(function () {
         $product = Product::create(['name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs']);
@@ -305,36 +312,38 @@ it('changes the image ETag when the image is replaced (no stale cache)', functio
 
     loginAsAcmeUser();
 
-    $first = $this->get("/acme/products/{$id}/image")->headers->get('etag');
+    $firstUrl = $this->tenant->run(fn () => Product::find($id)->image_url);
+    $this->get($firstUrl)->assertOk();
 
-    // Replacing the image makes a new media row (singleFile) -> new id -> new ETag.
+    // Replacing the image makes a new media row (singleFile) -> new id -> new URL.
     $this->from('/acme/products')->put("/acme/products/{$id}", [
         'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
         'image' => UploadedFile::fake()->image('b.jpg'),
     ])->assertRedirect('/acme/products');
 
-    $second = $this->get("/acme/products/{$id}/image")->headers->get('etag');
+    $secondUrl = $this->tenant->run(fn () => Product::find($id)->image_url);
 
-    expect($first)->not->toBeNull()
-        ->and($second)->not->toBeNull()
-        ->and($second)->not->toBe($first);
+    expect($firstUrl)->not->toBeNull()
+        ->and($secondUrl)->not->toBeNull()
+        ->and($secondUrl)->not->toBe($firstUrl);
+
+    // The new URL serves; the old media id is gone -> 404 (accessing it shows nothing).
+    $this->get($secondUrl)->assertOk();
+    $this->get($firstUrl)->assertNotFound();
 });
 
-it('returns 404 for the image route when a product has no image', function () {
-    Storage::fake('assets');
+it('has a null image URL when a product has no image', function () {
     $id = $this->tenant->run(fn () => Product::create([
         'name' => 'Widget', 'sku' => 'P-001', 'unit' => 'pcs',
     ])->id);
 
-    loginAsAcmeUser();
-
-    $this->get("/acme/products/{$id}/image")->assertNotFound();
+    expect($this->tenant->run(fn () => Product::find($id)->image_url))->toBeNull();
 });
 
-it('404s the image route for a product not in the current tenant', function () {
-    // Route-model binding resolves {product} in the ACTIVE tenant's DB, so a
-    // product id that isn't acme's (e.g. another tenant's) can't be reached.
+it('404s the media route for an id not in the current tenant', function () {
+    // Route-model binding resolves {media} in the ACTIVE tenant's DB, so a media id
+    // that isn't acme's (another tenant's, or a deleted one) can't be reached.
     loginAsAcmeUser();
 
-    $this->get('/acme/products/999999/image')->assertNotFound();
+    $this->get('/acme/media/999999')->assertNotFound();
 });

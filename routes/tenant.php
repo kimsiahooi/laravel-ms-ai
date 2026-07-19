@@ -8,8 +8,8 @@ use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\ExportController;
 use App\Http\Controllers\Tenant\LocationController;
+use App\Http\Controllers\Tenant\MediaController;
 use App\Http\Controllers\Tenant\ProductController;
-use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProductionOrderController;
 use App\Http\Controllers\Tenant\PurchaseOrderController;
 use App\Http\Controllers\Tenant\PurchaseReturnController;
@@ -19,7 +19,6 @@ use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SalesReturnController;
 use App\Http\Controllers\Tenant\SessionController;
 use App\Http\Controllers\Tenant\SettingsController;
-use App\Http\Controllers\Tenant\SettingsFileController;
 use App\Http\Controllers\Tenant\StockLookupController;
 use App\Http\Controllers\Tenant\StockMovementController;
 use App\Http\Controllers\Tenant\StockTakeController;
@@ -170,12 +169,14 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::post('production-orders/{productionOrder}/cancel', [ProductionOrderController::class, 'cancel'])
                 ->name('production-orders.cancel');
 
-            // Serve a product's image at an extension-less URL (ends in `/image`,
-            // not `.png`/`.jpg`/…). Some nginx setups (e.g. CloudPanel) serve
-            // extension URLs straight from the docroot with `try_files $uri =404`
-            // and never reach Laravel; an extension-less path avoids that.
-            Route::get('products/{product}/image', ProductImageController::class)
-                ->name('products.image');
+            // Serve any tenant media by id at one content-addressed, extension-less URL
+            // (ends in `/media/{id}`, not `.png`/`.jpg`/…). Some nginx setups (e.g.
+            // CloudPanel) serve extension URLs straight from the docroot with
+            // `try_files $uri =404` and never reach Laravel; an extension-less path avoids
+            // that. The id changes on every re-upload (singleFile → new row → new id), so a
+            // stored URL is never stale and a deleted id 404s. Every media <img> in the app
+            // (product images, the settings logo) is served here.
+            Route::get('media/{media}', MediaController::class)->name('media');
 
             // Traceability — a read-only history of catalog/order changes.
             Route::get('activity', [ActivityController::class, 'index'])
@@ -195,10 +196,8 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('settings.edit');
             Route::put('settings/{category}', [SettingsController::class, 'update'])
                 ->name('settings.update');
-            // Stream a file-typed setting (e.g. the logo) at an extension-less,
-            // auth-gated URL (see ProductImageController for the nginx rationale).
-            Route::get('settings/{category}/file/{key}', SettingsFileController::class)
-                ->name('settings.file');
+            // The logo (a file-typed setting) streams through the generic media route
+            // above — no per-setting file endpoint.
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

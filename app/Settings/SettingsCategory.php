@@ -23,8 +23,8 @@ abstract class SettingsCategory
 
     /**
      * Current stored values merged over each field's default and cast by type (numbers
-     * to numeric, toggles to bool, multi to array, files to a has-file bool — the raw
-     * stored path is never exposed here). Read-only.
+     * to numeric, toggles to bool, multi to array, files to their content-addressed media
+     * URL or null — the raw stored path is never exposed here). Read-only.
      *
      * @return array<string, mixed>
      */
@@ -35,9 +35,11 @@ abstract class SettingsCategory
         $values = [];
         foreach ($this->fields() as $field) {
             if ($field->isFile()) {
-                // The upload lives in the media table (the KV `value` stays null),
-                // so a file field exposes only a has-file bool from media existence.
-                $values[$field->key] = $this->fileMedia($field->key) !== null;
+                // The upload lives in the media table (the KV `value` stays null), so a
+                // file field exposes the content-addressed media URL (or null). The id
+                // changes on every re-upload, so the form/header never show a stale file;
+                // `Boolean(value)` still reads as "has a file" on the frontend.
+                $values[$field->key] = $this->fileUrl($field->key);
 
                 continue;
             }
@@ -178,6 +180,23 @@ abstract class SettingsCategory
     public function fileMedia(string $key): ?Media
     {
         return $this->settingRow($key)?->getFirstMedia(self::FILE_COLLECTION);
+    }
+
+    /**
+     * The content-addressed URL for a file field's media (or null). The id is the version
+     * — a re-upload makes a new media row → a new id → a new URL — so a stored URL is never
+     * stale. Only valid inside a tenant context (all settings routes are).
+     */
+    public function fileUrl(string $key): ?string
+    {
+        $media = $this->fileMedia($key);
+
+        return $media === null
+            ? null
+            : route('tenant.media', [
+                'tenant' => tenant('id'),
+                'media' => $media->getKey(),
+            ]);
     }
 
     /** The existing (category, key) row, or null — never creates it. */
