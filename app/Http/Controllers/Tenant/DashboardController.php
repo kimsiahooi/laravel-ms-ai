@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Models\Location;
+use App\Models\Product;
+use App\Models\PurchaseOrder;
+use App\Models\RawMaterial;
+use App\Models\SalesOrder;
+use App\Models\StockMovement;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\StockReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -53,6 +60,17 @@ class DashboardController
                     'low_stock' => $reports->lowStockCount(),
                 ];
             },
+            // Setup progress for the first-run onboarding checklist. Cheap EXISTS
+            // probes, and a closure so the date-range partial reload never reruns
+            // them — they only matter on a full page load.
+            'onboarding' => fn (): array => [
+                'location' => Location::query()->exists(),
+                'warehouse' => Warehouse::query()->exists(),
+                'catalog' => RawMaterial::query()->exists() && Product::query()->exists(),
+                'bom' => Product::query()->has('bomItems')->exists(),
+                'stock' => StockMovement::query()->exists(),
+                'order' => PurchaseOrder::query()->exists() || SalesOrder::query()->exists(),
+            ],
             'series' => fn () => $reports->dailySalesPurchases($from, $to),
             'movements' => fn () => array_map(
                 fn (array $movement): array => [

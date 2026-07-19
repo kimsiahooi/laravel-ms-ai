@@ -11,6 +11,10 @@ import {
 } from 'recharts';
 import { ChartCard } from '@/components/chart-card';
 import { DateRangePicker } from '@/components/date-range-picker';
+import {
+    OnboardingChecklist,
+    type OnboardingStep,
+} from '@/components/onboarding-checklist';
 import { StatCard } from '@/components/stat-card';
 import {
     type ChartConfig,
@@ -26,6 +30,12 @@ import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatCompact, formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
+import locations from '@/routes/tenant/locations';
+import products from '@/routes/tenant/products';
+import purchaseOrders from '@/routes/tenant/purchase-orders';
+import rawMaterials from '@/routes/tenant/raw-materials';
+import stockMovements from '@/routes/tenant/stock-movements';
+import warehouses from '@/routes/tenant/warehouses';
 import type { TenantBrand, User } from '@/types';
 
 type Kpis = {
@@ -52,6 +62,14 @@ type PageProps = {
     kpis: Kpis;
     series: TrendPoint[];
     movements: Movement[];
+    onboarding: {
+        location: boolean;
+        warehouse: boolean;
+        catalog: boolean;
+        bom: boolean;
+        stock: boolean;
+        order: boolean;
+    };
 };
 
 // Sales vs Purchases share one measure (amount) so they sit on a single axis;
@@ -67,8 +85,16 @@ const movementsConfig = {
 } satisfies ChartConfig;
 
 export default function TenantDashboard() {
-    const { auth, tenant, organization, filters, kpis, series, movements } =
-        usePageProps<PageProps>();
+    const {
+        auth,
+        tenant,
+        organization,
+        filters,
+        kpis,
+        series,
+        movements,
+        onboarding,
+    } = usePageProps<PageProps>();
 
     const greeting = useTimeOfDayGreeting();
     const greeterName = firstName(auth.user?.name, 'there');
@@ -82,6 +108,49 @@ export default function TenantDashboard() {
     ]);
 
     const hasTrend = series.some((d) => d.sales > 0 || d.purchases > 0);
+
+    // First-run setup chain: location → warehouse → catalog → BOM → stock → order.
+    // Each step links to the page that completes it; the card hides once all done.
+    const slug = tenant.slug;
+    const onboardingSteps: OnboardingStep[] = [
+        {
+            title: 'Add a location',
+            description: 'Create the site or branch your warehouses sit in.',
+            href: locations.index.url({ tenant: slug }),
+            done: onboarding.location,
+        },
+        {
+            title: 'Add a warehouse',
+            description: 'Set up a place inside that location to hold stock.',
+            href: warehouses.index.url({ tenant: slug }),
+            done: onboarding.warehouse,
+        },
+        {
+            title: 'Build your catalog',
+            description:
+                'Add the raw materials you buy and the products you make or sell.',
+            href: rawMaterials.index.url({ tenant: slug }),
+            done: onboarding.catalog,
+        },
+        {
+            title: 'Set a bill of materials',
+            description: 'List the raw materials each product is built from.',
+            href: products.index.url({ tenant: slug }),
+            done: onboarding.bom,
+        },
+        {
+            title: 'Record stock in',
+            description: 'Log your opening stock with a stock movement.',
+            href: stockMovements.index.url({ tenant: slug }),
+            done: onboarding.stock,
+        },
+        {
+            title: 'Create your first order',
+            description: 'Raise a purchase or sales order to start trading.',
+            href: purchaseOrders.index.url({ tenant: slug }),
+            done: onboarding.order,
+        },
+    ];
 
     return (
         <TenantLayout>
@@ -105,6 +174,8 @@ export default function TenantDashboard() {
                     onChange={applyRange}
                 />
             </div>
+
+            <OnboardingChecklist steps={onboardingSteps} />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard

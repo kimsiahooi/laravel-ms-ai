@@ -49,9 +49,27 @@ describe('stock movements index', () => {
     it('shows the empty state when there are no movements', () => {
         renderPage(
             <StockMovementsIndex />,
-            props({ movements: paginator([]) }),
+            props({
+                movements: paginator([]),
+                warehouses: [{ id: 1, name: 'Main Store' }],
+                items: [{ value: 'product:1', label: 'Widget' }],
+            }),
         );
 
         expect(screen.getByText(/no stock movements yet/i)).toBeInTheDocument();
+    });
+
+    it('guides you to add prerequisites and disables New when none exist', () => {
+        renderPage(
+            <StockMovementsIndex />,
+            props({ movements: paginator([]), warehouses: [], items: [] }),
+        );
+
+        expect(
+            screen.getByText(/before you can create a stock movement/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /add a warehouse/i }),
+        ).toBeInTheDocument();
     });
 });

@@ -51,8 +51,29 @@ describe('purchase orders index', () => {
     });
 
     it('shows the empty state when there are no orders', () => {
-        renderPage(<PurchaseOrdersIndex />, props({ orders: paginator([]) }));
+        renderPage(
+            <PurchaseOrdersIndex />,
+            props({
+                orders: paginator([]),
+                suppliers: [{ id: 1, name: 'Acme Metals' }],
+                rawMaterials: [{ id: 2, name: 'Steel sheet' }],
+            }),
+        );
 
         expect(screen.getByText(/no purchase orders yet/i)).toBeInTheDocument();
+    });
+
+    it('guides you to add prerequisites and disables New when none exist', () => {
+        renderPage(
+            <PurchaseOrdersIndex />,
+            props({ orders: paginator([]), suppliers: [], rawMaterials: [] }),
+        );
+
+        expect(
+            screen.getByText(/before you can create a purchase order/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /add a supplier/i }),
+        ).toBeInTheDocument();
     });
 });

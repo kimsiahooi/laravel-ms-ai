@@ -7,7 +7,14 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
+import { NewResourceButton } from '@/components/new-resource-button';
 import { OnHandHint } from '@/components/on-hand-hint';
+import {
+    PrereqEmptyState,
+    type Prerequisite,
+    prerequisiteReason,
+    unmetPrerequisites,
+} from '@/components/prerequisites';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { SignedQuantity } from '@/components/signed-quantity';
 import { Button } from '@/components/ui/button';
@@ -22,7 +29,9 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
+import rawMaterialRoutes from '@/routes/tenant/raw-materials';
 import stockMovementsRoutes from '@/routes/tenant/stock-movements';
+import warehouseRoutes from '@/routes/tenant/warehouses';
 import type { TenantPageProps } from '@/types';
 
 type StockMovement = App.Data.StockMovementData;
@@ -48,6 +57,21 @@ export default function StockMovementsIndex() {
     const base = stockMovementsRoutes.index.url({ tenant: tenant.slug });
 
     const warehouseOptions = toOptions(warehouses);
+
+    // Nothing to move without a warehouse to hold it and an item to count.
+    const prerequisites: Prerequisite[] = [
+        {
+            label: 'a warehouse',
+            href: warehouseRoutes.index.url({ tenant: tenant.slug }),
+            met: warehouses.length > 0,
+        },
+        {
+            label: 'a product or raw material',
+            href: rawMaterialRoutes.index.url({ tenant: tenant.slug }),
+            met: items.length > 0,
+        },
+    ];
+    const missingPrereqs = unmetPrerequisites(prerequisites);
 
     const [warehouseId, setWarehouseId] = useState('');
     const [stockable, setStockable] = useState('');
@@ -169,23 +193,33 @@ export default function StockMovementsIndex() {
                 getRowId={(movement) => String(movement.id)}
                 title={stockMovementMeta.plural}
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {stockMovementMeta.singular}
-                    </Button>
+                    <NewResourceButton
+                        label={stockMovementMeta.singular}
+                        onClick={dialog.openCreate}
+                        disabledReason={prerequisiteReason(missingPrereqs)}
+                        className="shrink-0"
+                    />
                 }
                 emptyState={
-                    <EmptyState
-                        icon={stockMovementMeta.icon}
-                        title={`No ${stockMovementMeta.plural.toLowerCase()} yet`}
-                        description="Record your first movement to start tracking your stock levels."
-                        action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {stockMovementMeta.singular}
-                            </Button>
-                        }
-                    />
+                    missingPrereqs.length > 0 ? (
+                        <PrereqEmptyState
+                            icon={stockMovementMeta.icon}
+                            entity="stock movement"
+                            missing={missingPrereqs}
+                        />
+                    ) : (
+                        <EmptyState
+                            icon={stockMovementMeta.icon}
+                            title={`No ${stockMovementMeta.plural.toLowerCase()} yet`}
+                            description="Record your first movement to start tracking your stock levels."
+                            action={
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {stockMovementMeta.singular}
+                                </Button>
+                            }
+                        />
+                    )
                 }
             />
 

@@ -15,6 +15,13 @@ import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import { NewResourceButton } from '@/components/new-resource-button';
+import {
+    PrereqEmptyState,
+    type Prerequisite,
+    prerequisiteReason,
+    unmetPrerequisites,
+} from '@/components/prerequisites';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -45,6 +52,8 @@ import { formatMoney } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import poRoutes from '@/routes/tenant/purchase-orders';
+import rawMaterialRoutes from '@/routes/tenant/raw-materials';
+import supplierRoutes from '@/routes/tenant/suppliers';
 import type { TenantPageProps } from '@/types';
 
 type PurchaseOrder = App.Data.PurchaseOrderData;
@@ -72,6 +81,22 @@ export default function PurchaseOrdersIndex() {
     const supplierOptions = toOptions(suppliers);
     const rawMaterialOptions = toOptions(rawMaterials);
     const warehouseOptions = toOptions(warehouses);
+
+    // You can't order what you can't reference: a purchase order needs a supplier
+    // to buy from and a raw material to buy. Guide the user to add those first.
+    const prerequisites: Prerequisite[] = [
+        {
+            label: 'a supplier',
+            href: supplierRoutes.index.url({ tenant: tenant.slug }),
+            met: suppliers.length > 0,
+        },
+        {
+            label: 'a raw material',
+            href: rawMaterialRoutes.index.url({ tenant: tenant.slug }),
+            met: rawMaterials.length > 0,
+        },
+    ];
+    const missingPrereqs = unmetPrerequisites(prerequisites);
 
     const [supplierId, setSupplierId] = useState('');
     const [currency, setCurrency] = useState('USD');
@@ -213,55 +238,81 @@ export default function PurchaseOrdersIndex() {
                 const pending = order.status === 'pending';
 
                 return (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                    <div className="flex items-center justify-end gap-1">
+                        {/* Inline shortcut for the next step, so the lifecycle
+                            isn't hidden behind the "…" menu on pending rows. */}
+                        {pending ? (
                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8"
-                                aria-label={`Actions for order #${order.id}`}
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                aria-label={`Receive order #${order.id}`}
+                                onClick={() => {
+                                    receiveForm.reset();
+                                    receiveForm.clearErrors();
+                                    setReceiving(order);
+                                }}
                             >
-                                <MoreHorizontal className="size-4" />
+                                <PackageCheck className="size-4" />
+                                <span className="hidden sm:inline">
+                                    Receive
+                                </span>
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                            {pending ? (
-                                <>
-                                    <DropdownMenuItem
-                                        onSelect={() => dialog.openEdit(order)}
-                                    >
-                                        <Pencil className="size-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onSelect={() => {
-                                            receiveForm.reset();
-                                            receiveForm.clearErrors();
-                                            setReceiving(order);
-                                        }}
-                                    >
-                                        <PackageCheck className="size-4" />
-                                        Receive
-                                    </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8"
+                                    aria-label={`Actions for order #${order.id}`}
+                                >
+                                    <MoreHorizontal className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                                {pending ? (
+                                    <>
+                                        <DropdownMenuItem
+                                            onSelect={() =>
+                                                dialog.openEdit(order)
+                                            }
+                                        >
+                                            <Pencil className="size-4" />
+                                            Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onSelect={() => {
+                                                receiveForm.reset();
+                                                receiveForm.clearErrors();
+                                                setReceiving(order);
+                                            }}
+                                        >
+                                            <PackageCheck className="size-4" />
+                                            Receive
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            onSelect={() =>
+                                                setCancelling(order)
+                                            }
+                                        >
+                                            <Ban className="size-4" />
+                                            Cancel
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : (
                                     <DropdownMenuItem
                                         variant="destructive"
-                                        onSelect={() => setCancelling(order)}
+                                        onSelect={() => remove.request(order)}
                                     >
-                                        <Ban className="size-4" />
-                                        Cancel
+                                        <Trash2 className="size-4" />
+                                        Delete
                                     </DropdownMenuItem>
-                                </>
-                            ) : (
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() => remove.request(order)}
-                                >
-                                    <Trash2 className="size-4" />
-                                    Delete
-                                </DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 );
             },
         },
@@ -299,23 +350,33 @@ export default function PurchaseOrdersIndex() {
                 getRowId={(order) => String(order.id)}
                 title={purchaseOrderMeta.plural}
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {purchaseOrderMeta.singular}
-                    </Button>
+                    <NewResourceButton
+                        label={purchaseOrderMeta.singular}
+                        onClick={dialog.openCreate}
+                        disabledReason={prerequisiteReason(missingPrereqs)}
+                        className="shrink-0"
+                    />
                 }
                 emptyState={
-                    <EmptyState
-                        icon={purchaseOrderMeta.icon}
-                        title={`No ${purchaseOrderMeta.plural.toLowerCase()} yet`}
-                        description="Create your first purchase order to start receiving stock."
-                        action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {purchaseOrderMeta.singular}
-                            </Button>
-                        }
-                    />
+                    missingPrereqs.length > 0 ? (
+                        <PrereqEmptyState
+                            icon={purchaseOrderMeta.icon}
+                            entity="purchase order"
+                            missing={missingPrereqs}
+                        />
+                    ) : (
+                        <EmptyState
+                            icon={purchaseOrderMeta.icon}
+                            title={`No ${purchaseOrderMeta.plural.toLowerCase()} yet`}
+                            description="Create your first purchase order to start receiving stock."
+                            action={
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {purchaseOrderMeta.singular}
+                                </Button>
+                            }
+                        />
+                    )
                 }
             />
 

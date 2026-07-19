@@ -14,6 +14,7 @@ import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import { HowItWorks } from '@/components/how-it-works';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -239,6 +240,27 @@ export default function ProductionOrdersIndex() {
                     products to stock.
                 </p>
             </div>
+
+            <HowItWorks
+                title="How production works"
+                steps={[
+                    {
+                        title: 'Give a product a bill of materials',
+                        description:
+                            'List the raw materials — and how much of each — that go into one unit.',
+                    },
+                    {
+                        title: 'Create a production order',
+                        description:
+                            'Pick the product and how many to build. The bill of materials is snapshotted onto the order.',
+                    },
+                    {
+                        title: 'Complete the order',
+                        description:
+                            'We deduct the raw materials it used and add the finished products into a warehouse.',
+                    },
+                ]}
+            />
 
             <DataTable
                 columns={columns}

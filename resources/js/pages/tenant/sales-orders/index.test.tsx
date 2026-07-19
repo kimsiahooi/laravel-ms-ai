@@ -51,8 +51,29 @@ describe('sales orders index', () => {
     });
 
     it('shows the empty state when there are no orders', () => {
-        renderPage(<SalesOrdersIndex />, props({ orders: paginator([]) }));
+        renderPage(
+            <SalesOrdersIndex />,
+            props({
+                orders: paginator([]),
+                customers: [{ id: 1, name: 'Globex Retail' }],
+                products: [{ id: 2, name: 'Widget' }],
+            }),
+        );
 
         expect(screen.getByText(/no sales orders yet/i)).toBeInTheDocument();
+    });
+
+    it('guides you to add prerequisites and disables New when none exist', () => {
+        renderPage(
+            <SalesOrdersIndex />,
+            props({ orders: paginator([]), customers: [], products: [] }),
+        );
+
+        expect(
+            screen.getByText(/before you can create a sales order/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /add a customer/i }),
+        ).toBeInTheDocument();
     });
 });

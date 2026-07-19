@@ -33,6 +33,16 @@ function props(overrides: Record<string, unknown> = {}) {
         movements: [
             { reason: 'sales_fulfillment', label: 'Sales fulfilment', net: -5 },
         ],
+        // Fully onboarded by default, so the checklist stays hidden and the KPI
+        // assertions aren't competing with setup nudges.
+        onboarding: {
+            location: true,
+            warehouse: true,
+            catalog: true,
+            bom: true,
+            stock: true,
+            order: true,
+        },
         ...overrides,
     };
 }
@@ -70,5 +80,26 @@ describe('tenant dashboard', () => {
         expect(
             screen.getByText('No stock movements in this range.'),
         ).toBeInTheDocument();
+    });
+
+    it('shows the onboarding checklist until setup is complete', () => {
+        renderPage(
+            <Dashboard />,
+            props({
+                onboarding: {
+                    location: true,
+                    warehouse: false,
+                    catalog: false,
+                    bom: false,
+                    stock: false,
+                    order: false,
+                },
+            }),
+        );
+
+        expect(
+            screen.getByText('Get your workspace ready'),
+        ).toBeInTheDocument();
+        expect(screen.getByText(/1 of 6 done/)).toBeInTheDocument();
     });
 });

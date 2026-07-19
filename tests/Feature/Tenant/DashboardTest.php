@@ -2,6 +2,7 @@
 
 use App\Actions\ProvisionTenant;
 use App\Enums\SalesOrderStatus;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use Illuminate\Support\Carbon;
@@ -56,7 +57,30 @@ it('renders the organization header, KPI tiles and chart series', function () {
             ->where('kpis.low_stock', 0)
             ->has('series')   // one point per day in range
             ->has('movements')
+            ->has('onboarding')
+            ->where('onboarding.location', false) // a fresh tenant has nothing set up
+            ->where('onboarding.order', false)
             ->where('auth.user.email', 'ada@acme.test')
+        );
+});
+
+it('reports onboarding progress from real data', function () {
+    loginAsAcmeUser();
+
+    // A fresh tenant: every step outstanding.
+    $this->get('/acme/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('onboarding.location', false)
+            ->where('onboarding.warehouse', false)
+        );
+
+    // Add a location and the first step flips, the rest stay outstanding.
+    $this->tenant->run(fn () => Location::create(['name' => 'KL HQ']));
+
+    $this->get('/acme/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('onboarding.location', true)
+            ->where('onboarding.warehouse', false)
         );
 });
 

@@ -15,6 +15,13 @@ import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import { NewResourceButton } from '@/components/new-resource-button';
+import {
+    PrereqEmptyState,
+    type Prerequisite,
+    prerequisiteReason,
+    unmetPrerequisites,
+} from '@/components/prerequisites';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +51,8 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { formatMoney } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
+import customerRoutes from '@/routes/tenant/customers';
+import productRoutes from '@/routes/tenant/products';
 import soRoutes from '@/routes/tenant/sales-orders';
 import type { TenantPageProps } from '@/types';
 
@@ -72,6 +81,22 @@ export default function SalesOrdersIndex() {
     const customerOptions = toOptions(customers);
     const productOptions = toOptions(products);
     const warehouseOptions = toOptions(warehouses);
+
+    // A sales order needs a customer to sell to and a product to sell. Point the
+    // user at whichever is still missing before they hit a dead "New" button.
+    const prerequisites: Prerequisite[] = [
+        {
+            label: 'a customer',
+            href: customerRoutes.index.url({ tenant: tenant.slug }),
+            met: customers.length > 0,
+        },
+        {
+            label: 'a product',
+            href: productRoutes.index.url({ tenant: tenant.slug }),
+            met: products.length > 0,
+        },
+    ];
+    const missingPrereqs = unmetPrerequisites(prerequisites);
 
     const [customerId, setCustomerId] = useState('');
     const [currency, setCurrency] = useState('USD');
@@ -211,55 +236,81 @@ export default function SalesOrdersIndex() {
                 const pending = order.status === 'pending';
 
                 return (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                    <div className="flex items-center justify-end gap-1">
+                        {/* Inline shortcut for the next step, so the lifecycle
+                            isn't hidden behind the "…" menu on pending rows. */}
+                        {pending ? (
                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8"
-                                aria-label={`Actions for order #${order.id}`}
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                aria-label={`Fulfill order #${order.id}`}
+                                onClick={() => {
+                                    fulfillForm.reset();
+                                    fulfillForm.clearErrors();
+                                    setFulfilling(order);
+                                }}
                             >
-                                <MoreHorizontal className="size-4" />
+                                <PackageCheck className="size-4" />
+                                <span className="hidden sm:inline">
+                                    Fulfill
+                                </span>
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                            {pending ? (
-                                <>
-                                    <DropdownMenuItem
-                                        onSelect={() => dialog.openEdit(order)}
-                                    >
-                                        <Pencil className="size-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onSelect={() => {
-                                            fulfillForm.reset();
-                                            fulfillForm.clearErrors();
-                                            setFulfilling(order);
-                                        }}
-                                    >
-                                        <PackageCheck className="size-4" />
-                                        Fulfill
-                                    </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8"
+                                    aria-label={`Actions for order #${order.id}`}
+                                >
+                                    <MoreHorizontal className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                                {pending ? (
+                                    <>
+                                        <DropdownMenuItem
+                                            onSelect={() =>
+                                                dialog.openEdit(order)
+                                            }
+                                        >
+                                            <Pencil className="size-4" />
+                                            Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onSelect={() => {
+                                                fulfillForm.reset();
+                                                fulfillForm.clearErrors();
+                                                setFulfilling(order);
+                                            }}
+                                        >
+                                            <PackageCheck className="size-4" />
+                                            Fulfill
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            onSelect={() =>
+                                                setCancelling(order)
+                                            }
+                                        >
+                                            <Ban className="size-4" />
+                                            Cancel
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : (
                                     <DropdownMenuItem
                                         variant="destructive"
-                                        onSelect={() => setCancelling(order)}
+                                        onSelect={() => remove.request(order)}
                                     >
-                                        <Ban className="size-4" />
-                                        Cancel
+                                        <Trash2 className="size-4" />
+                                        Delete
                                     </DropdownMenuItem>
-                                </>
-                            ) : (
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() => remove.request(order)}
-                                >
-                                    <Trash2 className="size-4" />
-                                    Delete
-                                </DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 );
             },
         },
@@ -297,23 +348,33 @@ export default function SalesOrdersIndex() {
                 getRowId={(order) => String(order.id)}
                 title={salesOrderMeta.plural}
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {salesOrderMeta.singular}
-                    </Button>
+                    <NewResourceButton
+                        label={salesOrderMeta.singular}
+                        onClick={dialog.openCreate}
+                        disabledReason={prerequisiteReason(missingPrereqs)}
+                        className="shrink-0"
+                    />
                 }
                 emptyState={
-                    <EmptyState
-                        icon={salesOrderMeta.icon}
-                        title={`No ${salesOrderMeta.plural.toLowerCase()} yet`}
-                        description="Create your first sales order to start shipping stock."
-                        action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {salesOrderMeta.singular}
-                            </Button>
-                        }
-                    />
+                    missingPrereqs.length > 0 ? (
+                        <PrereqEmptyState
+                            icon={salesOrderMeta.icon}
+                            entity="sales order"
+                            missing={missingPrereqs}
+                        />
+                    ) : (
+                        <EmptyState
+                            icon={salesOrderMeta.icon}
+                            title={`No ${salesOrderMeta.plural.toLowerCase()} yet`}
+                            description="Create your first sales order to start shipping stock."
+                            action={
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {salesOrderMeta.singular}
+                                </Button>
+                            }
+                        />
+                    )
                 }
             />
 

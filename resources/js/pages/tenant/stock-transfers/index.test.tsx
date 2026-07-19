@@ -49,9 +49,30 @@ describe('stock transfers index', () => {
     it('shows the empty state when there are no transfers', () => {
         renderPage(
             <StockTransfersIndex />,
-            props({ transfers: paginator([]) }),
+            props({
+                transfers: paginator([]),
+                warehouses: [
+                    { id: 1, name: 'Main Store' },
+                    { id: 2, name: 'Penang Store' },
+                ],
+                items: [{ value: 'product:1', label: 'Widget' }],
+            }),
         );
 
         expect(screen.getByText(/no stock transfers yet/i)).toBeInTheDocument();
+    });
+
+    it('guides you to add prerequisites and disables New when none exist', () => {
+        renderPage(
+            <StockTransfersIndex />,
+            props({ transfers: paginator([]), warehouses: [], items: [] }),
+        );
+
+        expect(
+            screen.getByText(/before you can create a stock transfer/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /add two warehouses/i }),
+        ).toBeInTheDocument();
     });
 });

@@ -7,7 +7,14 @@ import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
+import { NewResourceButton } from '@/components/new-resource-button';
 import { OnHandHint } from '@/components/on-hand-hint';
+import {
+    PrereqEmptyState,
+    type Prerequisite,
+    prerequisiteReason,
+    unmetPrerequisites,
+} from '@/components/prerequisites';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +28,9 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity, timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
+import rawMaterialRoutes from '@/routes/tenant/raw-materials';
 import stockTransfersRoutes from '@/routes/tenant/stock-transfers';
+import warehouseRoutes from '@/routes/tenant/warehouses';
 import type { TenantPageProps } from '@/types';
 
 type StockTransfer = App.Data.StockTransferData;
@@ -40,6 +49,22 @@ export default function StockTransfersIndex() {
     const base = stockTransfersRoutes.index.url({ tenant: tenant.slug });
 
     const warehouseOptions = toOptions(warehouses);
+
+    // A transfer moves stock from one warehouse to another — so you need at least
+    // two — and there has to be an item to move.
+    const prerequisites: Prerequisite[] = [
+        {
+            label: 'two warehouses',
+            href: warehouseRoutes.index.url({ tenant: tenant.slug }),
+            met: warehouses.length >= 2,
+        },
+        {
+            label: 'a product or raw material',
+            href: rawMaterialRoutes.index.url({ tenant: tenant.slug }),
+            met: items.length > 0,
+        },
+    ];
+    const missingPrereqs = unmetPrerequisites(prerequisites);
 
     const [stockable, setStockable] = useState('');
     const [fromWarehouseId, setFromWarehouseId] = useState('');
@@ -149,23 +174,33 @@ export default function StockTransfersIndex() {
                 getRowId={(transfer) => String(transfer.id)}
                 title={stockTransferMeta.plural}
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {stockTransferMeta.singular}
-                    </Button>
+                    <NewResourceButton
+                        label={stockTransferMeta.singular}
+                        onClick={dialog.openCreate}
+                        disabledReason={prerequisiteReason(missingPrereqs)}
+                        className="shrink-0"
+                    />
                 }
                 emptyState={
-                    <EmptyState
-                        icon={stockTransferMeta.icon}
-                        title={`No ${stockTransferMeta.plural.toLowerCase()} yet`}
-                        description="Move stock between warehouses to see transfers here."
-                        action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {stockTransferMeta.singular}
-                            </Button>
-                        }
-                    />
+                    missingPrereqs.length > 0 ? (
+                        <PrereqEmptyState
+                            icon={stockTransferMeta.icon}
+                            entity="stock transfer"
+                            missing={missingPrereqs}
+                        />
+                    ) : (
+                        <EmptyState
+                            icon={stockTransferMeta.icon}
+                            title={`No ${stockTransferMeta.plural.toLowerCase()} yet`}
+                            description="Move stock between warehouses to see transfers here."
+                            action={
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {stockTransferMeta.singular}
+                                </Button>
+                            }
+                        />
+                    )
                 }
             />
 
