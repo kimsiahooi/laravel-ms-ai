@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ReservedSlugs;
 use Database\Seeders\DemoTenantSeeder;
+use Database\Seeders\TenantDatabaseSeeder;
 use Illuminate\Validation\ValidationException;
 
 class ProvisionTenant
@@ -49,6 +50,9 @@ class ProvisionTenant
                 'email' => $adminEmail,
                 'password' => $adminPassword,
             ]);
+
+            // Baseline tenant data (default settings) — always, and additive/idempotent.
+            app(TenantDatabaseSeeder::class)->run();
 
             if ($seedDemoData) {
                 app(DemoTenantSeeder::class)->run();

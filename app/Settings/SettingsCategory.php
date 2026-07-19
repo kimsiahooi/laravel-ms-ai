@@ -120,6 +120,28 @@ abstract class SettingsCategory
         Setting::putMany($this->key(), $encoded);
     }
 
+    /**
+     * Seed each field's default into the settings table, additively: a value is
+     * written only when its (category, key) row doesn't exist yet, so stored /
+     * user-edited values are never overwritten and re-running only backfills newly
+     * added fields. Nullable + file fields (no meaningful default) are skipped, so
+     * identity fields stay blank. Idempotent — safe to run on every provision and as
+     * a sync tool via `tenants:seed --class=SettingsSeeder`.
+     */
+    public function seedDefaults(): void
+    {
+        foreach ($this->fields() as $field) {
+            if ($field->isFile() || $field->default === null) {
+                continue;
+            }
+
+            Setting::firstOrCreate(
+                ['category' => $this->key(), 'key' => $field->key],
+                ['value' => $this->encode($field, $field->default)],
+            );
+        }
+    }
+
     /** Write a raw string value for one key (used for file paths). */
     public function putRaw(string $key, ?string $value): void
     {

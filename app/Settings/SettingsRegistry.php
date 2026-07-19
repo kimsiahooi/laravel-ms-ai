@@ -28,6 +28,16 @@ class SettingsRegistry
     }
 
     /**
+     * Every registered category provider (for seeding / bulk operations).
+     *
+     * @return list<SettingsCategory>
+     */
+    public function all(): array
+    {
+        return array_map(fn (string $slug): SettingsCategory => $this->resolve($slug), $this->slugs());
+    }
+
+    /**
      * @return list<string>
      */
     public function slugs(): array

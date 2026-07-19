@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Tenancy\SessionTenancyBootstrapper;
+use Database\Seeders\TenantDatabaseSeeder;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -204,7 +205,9 @@ return [
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class
-        // '--force' => true, // This needs to be true to seed tenant databases in production
+        // The TENANT root seeder (baseline per-tenant data) — NOT the central
+        // DatabaseSeeder, which seeds the super-admin and must never run in a tenant DB.
+        '--class' => TenantDatabaseSeeder::class,
+        '--force' => true, // required to seed tenant databases in production
     ],
 ];
