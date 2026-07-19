@@ -35,6 +35,9 @@ createInertiaApp({
             // render their own full-page layout, so they get no shared app shell
             // (no sidebar). A dedicated central/tenant shell comes in the UI phase.
             case name === 'welcome':
+            // Legacy starter route — it immediately redirects to the console, so
+            // it renders standalone rather than flashing the starter shell.
+            case name === 'dashboard':
             case name.startsWith('admin/'):
             case name.startsWith('tenant/'):
                 return null;
@@ -56,7 +59,8 @@ createInertiaApp({
         );
     },
     progress: {
-        color: '#4B5563',
+        // The top loading bar uses the indigo brand token, not a raw literal.
+        color: 'var(--primary)',
     },
 });
 
