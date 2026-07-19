@@ -66,5 +66,25 @@
             "jsxQuoteStyle": "double",
             "semicolons": "always"
         }
-    }
+    },
+    "overrides": [
+        {
+            "includes": ["resources/js/pages/**", "resources/js/components/**"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noPositiveTabindex": "error",
+                        "noSvgWithoutTitle": "error",
+                        "useAriaPropsSupportedByRole": "error",
+                        "useButtonType": "error",
+                        "useSemanticElements": "error"
+                    },
+                    "suspicious": {
+                        "noArrayIndexKey": "error",
+                        "useIterableCallbackReturn": "error"
+                    }
+                }
+            }
+        }
+    ]
 }

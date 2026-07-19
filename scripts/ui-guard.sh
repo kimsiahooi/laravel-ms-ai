@@ -28,7 +28,11 @@ if [ -n "$blocked" ]; then
 fi
 
 # 2) Design tokens: no raw colour literals in component TSX (tests excluded).
+# 3) SSR determinism: no Date.now()/Math.random() in render output (a React #418
+#    hydration mismatch). Compute in useEffect or pin it (see NUMBER_LOCALE in
+#    resources/js/lib/format.ts). Same `ui-allow` escape for the rare legit case.
 color_re='#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\('
+ssr_re='Date\.now\(|Math\.random\('
 touched_ui=0
 for f in $(printf '%s\n' "$staged" | grep -E '\.tsx$' | grep -v '\.test\.tsx$' || true); do
     [ -f "$f" ] || continue
@@ -37,6 +41,12 @@ for f in $(printf '%s\n' "$staged" | grep -E '\.tsx$' | grep -v '\.test\.tsx$' |
     if [ -n "$hits" ]; then
         echo "✗ $f uses a raw colour literal — use the design tokens (or mark the line 'ui-allow'):" >&2
         printf '%s\n' "$hits" | sed 's/^/     /' >&2
+        fail=1
+    fi
+    ssr_hits=$(grep -nE "$ssr_re" "$f" | grep -v 'ui-allow' || true)
+    if [ -n "$ssr_hits" ]; then
+        echo "✗ $f has a nondeterministic value in render (Date.now/Math.random) — compute it in useEffect or pin it, or mark the line 'ui-allow':" >&2
+        printf '%s\n' "$ssr_hits" | sed 's/^/     /' >&2
         fail=1
     fi
 done
