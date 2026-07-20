@@ -195,3 +195,67 @@ general 80% manufacturing; costing+COGS yes; multi-user roles; BOM terminology; 
 - **D) Platform:** multi-user + Owner/Manager/Store roles; wire up password reset + 2FA (Fortify routes are stripped).
 - **E) Traceability + QR + batch:** (activity log now done in item 1); QR-code labels + phone-camera scan; optional batch/lot + expiry.
 - **Don't build:** native e-invoicing/tax filing, full MRP shop-floor, multi-level BOM, serial numbers, bin sub-locations.
+
+---
+
+## Market research — MY/SG SME manufacturing inventory (round 1, Jul 2026)
+
+Deep-research round 1 (24 sources → 120 claims → 25 adversarially verified → **8 survived**).
+Round 2 (gap-fill) was **cancelled mid-run** at low quota and must be **re-run from scratch**
+(workflow resume is same-session only). Treat everything below as the verified baseline.
+
+### Verified conclusions (act on these)
+- **#1 gap = costing.** Weighted-average cost + COGS is incumbent table-stakes: AutoCount defaults
+  new stock items to weighted average at **base tier** (FIFO switchable), COGS derived from it; its
+  assembly module yields a **costed** finished good. We have *no* costing at all. Workflow-neutral →
+  violates no "don't assume a factory's process" constraint. **Highest-priority build.** (high conf.)
+- **Production order is more rigid than the incumbent.** AutoCount also materialises the BOM at
+  creation, so freezing isn't the differentiator — the gap is **post-creation editability**: it allows
+  line-level editing of actual consumption *and* material substitution before posting. Ours is
+  all-or-nothing. Generalising this **reduces** workflow opinion (yield loss in food, offcuts in
+  metal/textiles, shortage substitution everywhere). (medium conf.)
+- **The line sits at BOM + production order + costed output, BELOW MRP.** Unleashed sells MRP as a
+  $149/mo add-on *and* basic Production/BOM as a separate $69/mo add-on; AutoCount unbundles
+  multi-level assembly. Vendors treat manufacturing depth as an **upsell to a subset**, not a
+  baseline. → **Keep the existing non-goals** (full MRP, shop-floor, routings, work centres,
+  capacity planning). (medium conf.)
+- **Multi-level BOM = should-have / paid tier**, not table-stakes — AutoCount charges extra for it
+  while bundling single-level. Our recorded non-goal is partially vindicated. (medium conf.)
+- **Singapore InvoiceNow: safely deferred, but build the hooks.** No *existing* GST-registered
+  business faces any 2026 obligation. Ramp: **1 Apr 2028** (≤S$200k) → **2029** (≤S$1m) → **2030**
+  (≤S$4m) → **2031** (>S$4m). New **voluntary** registrants are caught from **1 Apr 2026** — and a
+  multi-tenant SaaS will acquire those tenants. So build document numbering + structured tax fields +
+  export/API surface now; native InvoiceNow later. (high conf.)
+
+### Open questions (round 2 targets — re-run required)
+1. **🔴 Malaysia MyInvois — completely unanswered.** Zero claims survived. It is the larger market
+   with the more advanced mandate. **Do not assume the SG "deferrable" verdict transfers.** Need: 2026
+   phase/turnover bands, any relaxation or exemption-threshold change, and whether an *inventory*
+   system is expected to be MyInvois-ready vs the accounting package owning it.
+2. **Unranked features** — lot/batch + expiry, multi-UOM, landed cost, subcontracting/toll
+   manufacturing, consignment, barcode/QR, serial, multi-currency. Strong priors, **zero evidence**.
+   Each needs classifying table-stakes vs industry-specific (and which industries drive it).
+3. **"What to remove" — never probed.** All 8 findings pointed at *adding*. "Nothing to remove" is an
+   untested default, NOT a finding. Hypotheses to test: does the two-level location→warehouse
+   hierarchy add setup friction for single-factory SMEs, and are the period reports actually used?
+4. **Pricing/deployment/churn** — no MY/SG price band in MYR/SGD, no cloud-vs-on-prem norm, no churn
+   drivers. Only USD global pricing surfaced, far above plausible MY/SG SME budgets.
+
+### Caveat that governs all of the above
+**The "MY/SG baseline" rests on ONE vendor.** Only AutoCount and Unleashed produced verifiable
+evidence. Every SQL Account claim and most QNE claims were refuted because their pages could not be
+read — their content is **unknown, not disproven**. Million, Info-Tech, Zoho, Katana, MRPeasy, Cin7,
+Odoo, Fishbowl were never successfully sourced. Round 2 must broaden this.
+(Vendor domains: autocountsoft.com / autocountsoft.com.sg — *autocountsystem.com is a reseller*.)
+
+### Round-2 research tactics (learned the hard way in round 1)
+Round 1 lost 17 of 25 claims largely to **source-access failures, not to being wrong**. Bake these in:
+- `docs.sql.com.my` **was** fetchable — use it instead of the `sql.com.my` marketing pages (which
+  failed verification). Same idea for QNE: prefer docs/PDF/brochure/webinar over the marketing page.
+- IRAS pages are **JS-rendered** — fetch raw HTML and corroborate row-for-row (PwC, EY, Hawksford,
+  RTC Suite, Comarch all worked).
+- `wiki.autocountsoft.com` returns **HTTP 403** — don't rely on it.
+- For Malaysia: go to **hasil.gov.my** primary PDFs (e-Invoice Guideline + Specific Guideline, incl.
+  version history) plus Big-4/tax-tech alerts (Sovos, VATupdate). Two such sources were fetched in
+  round 1 but produced no surviving claims — they need direct, careful verification.
+- Never present paraphrase as a verbatim quote; label reseller/blog sources explicitly.
