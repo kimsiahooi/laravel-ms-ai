@@ -259,3 +259,42 @@ Round 1 lost 17 of 25 claims largely to **source-access failures, not to being w
   version history) plus Big-4/tax-tech alerts (Sovos, VATupdate). Two such sources were fetched in
   round 1 but produced no surviving claims — they need direct, careful verification.
 - Never present paraphrase as a verbatim quote; label reseller/blog sources explicitly.
+
+### Round 2 (2026-07-21) — gap-fill results
+Verify phase confirmed 22/25 claims (mostly 3-0); the final synthesis step died on a token limit but
+the verified claims were salvaged. Highlights:
+
+- **Malaysia MyInvois → VERDICT: hooks-only, do NOT build native (evidence-backed).**
+  - Timeline: RM100m+ since 1 Aug 2024 · RM25m+ from 1 Jan 2025 · RM5m+ from 1 Jul 2025 · **RM1–5m
+    mandatory from 1 Jan 2026** (unchanged). Exemption threshold **raised RM500k → RM1m** — under
+    RM1m turnover is exempt in 2026. Phase 4 (RM1–5m) **penalty-free until 31 Dec 2027** (monthly
+    consolidated e-invoices allowed); full enforcement 1 Jan 2028. Guideline v4.7 issued 20 Apr 2026.
+  - CORRECTION: "RM1–5m deferred to 2027" was **refuted** — the mandate stays 2026; only *penalties*
+    relax to end-2027.
+  - Ownership: an inventory/ERP system *can* integrate directly (LHDN publishes an ERP SDK/API), but
+    for SMEs the **accounting package owns it** — SQL bundles e-invoice compliance into its base
+    plan; "for 90% of MY businesses, choosing accounting software is the only technical decision";
+    direct API is aimed at large enterprises with dev teams; Peppol Access Points route invoices with
+    no direct integration. → Build **hooks** (document numbering, structured buyer tax fields,
+    export/API); let accounting/Access-Point own compliance. Vindicates "integrate-not-build". No
+    urgency (penalty-free to 2028).
+
+- **Pricing (headline commercial finding): MY SME band is ~RM80–150/month.** SQL Account cloud =
+  **RM79/mo Essential, RM109/mo Pro, +RM60/user** [3-0]; RM79 already bundles LHDN e-invoice + SST.
+  Round 1's global SaaS (USD $299–729/mo) is 5–10× too expensive for this market — pricing constrains
+  what the product can be more than any single feature.
+
+- **Costing is foundational, confirmed again.** Landed cost lives in the *inventory* layer (Odoo) and
+  *requires* a real costing engine (AVCO/FIFO) [3-0] — so weighted-average cost + COGS is the
+  prerequisite for landed cost, valuation, and a credible manufacturing story. Both rounds converge
+  on it as the **#1 build**. Manufacturing depth remains an upsell (Katana +$199/mo) → "line below
+  MRP" holds.
+
+- **Still unanswered after 2 rounds** (do not treat as evidenced): lot/batch + expiry, multi-UOM,
+  subcontracting/toll, consignment, barcode/serial, multi-currency classification; the over-build
+  probe (location→warehouse hierarchy, report usage); and a full cross-vendor base-vs-add-on matrix
+  (only SQL/Katana/Odoo signals landed; QNE/Million/Info-Tech/Zoho/MRPeasy/Cin7 still unestablished).
+
+Raw verified claims + sources: workflow output `result.confirmed` (run wf_3693578f-91c). Several
+MyInvois sources are secondary/blog; the LHDN SDK (sdk.myinvois.hasil.gov.my) and MDEC pages are the
+primary ones.
