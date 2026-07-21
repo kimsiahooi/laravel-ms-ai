@@ -133,6 +133,25 @@ it('rejects an invalid tax type and financial-year month from the schema rules',
         ->assertSessionHasErrors(['tax_type', 'financial_year_start_month']);
 });
 
+it('rejects empty required fields through the settings form request', function () {
+    loginAsAcmeUser();
+
+    // country + tax_type are `required` in the schema; empty values must fail via the
+    // SettingsUpdateRequest (not silently save).
+    $this->from('/acme/settings/business')
+        ->put('/acme/settings/business', businessBase(['country' => '', 'tax_type' => '']))
+        ->assertRedirect('/acme/settings/business')
+        ->assertSessionHasErrors(['country', 'tax_type']);
+});
+
+it('404s a settings update for an unknown category', function () {
+    loginAsAcmeUser();
+
+    // The form request resolves the category via SettingsRegistry, which 404s an
+    // unknown slug — same as the GET route.
+    $this->put('/acme/settings/nope', businessBase())->assertNotFound();
+});
+
 it('updates a key in place — no duplicate rows (unique category,key)', function () {
     loginAsAcmeUser();
 

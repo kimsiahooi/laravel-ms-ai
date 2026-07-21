@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Requests\Tenant\SettingsUpdateRequest;
 use App\Settings\SettingsRegistry;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,11 +35,11 @@ class SettingsController
         ]);
     }
 
-    public function update(Request $request, string $category): RedirectResponse
+    public function update(SettingsUpdateRequest $request): RedirectResponse
     {
-        $provider = $this->registry->resolve($category);
+        $provider = $request->provider();
 
-        $validated = $request->validate([...$provider->rules(), ...$provider->fileRules()]);
+        $validated = $request->validated();
 
         foreach ($provider->fileFields() as $field) {
             // A newly uploaded file wins over the remove flag; putFile replaces
