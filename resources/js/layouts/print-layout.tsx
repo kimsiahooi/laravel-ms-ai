@@ -16,7 +16,7 @@ export default function PrintLayout({
     children: ReactNode;
 }) {
     return (
-        <div className="min-h-screen bg-muted/40 print:bg-white">
+        <div className="min-h-screen bg-muted/40 print:min-h-0 print:bg-white">
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-4 print:hidden">
                 <Button variant="ghost" asChild>
                     <Link href={backHref}>
@@ -29,7 +29,11 @@ export default function PrintLayout({
                     Print
                 </Button>
             </div>
-            <div className="mx-auto max-w-3xl px-4 pb-12">{children}</div>
+            {/* On paper the 14mm margin comes from body padding (see app.css @page),
+                so drop this wrapper's screen padding when printing. */}
+            <div className="mx-auto max-w-3xl px-4 pb-12 print:p-0">
+                {children}
+            </div>
         </div>
     );
 }

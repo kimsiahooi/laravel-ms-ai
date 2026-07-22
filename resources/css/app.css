@@ -170,12 +170,19 @@
    pin the document body. `@page` sets the paper margins. */
 @media print {
     @page {
-        margin: 14mm;
+        /* No @page margin, so the browser can't draw its own header/footer (the page
+           URL, date, page number) in it — that removes the web-host link from printed
+           documents (R08a). The paper margin is restored as body padding below. */
+        margin: 0;
     }
 
     html,
     body {
         background: #fff !important;
+    }
+
+    body {
+        padding: 14mm;
     }
 }
 
