@@ -305,7 +305,7 @@ export default function PurchaseReturnsIndex() {
                 editing={dialog.editing}
                 entityLabel="purchase return"
                 baseUrl={base}
-                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+                contentClassName="sm:max-w-2xl"
                 description={{
                     create: 'Return raw materials to a supplier.',
                     edit: 'Update this pending return.',
@@ -447,7 +447,7 @@ export default function PurchaseReturnsIndex() {
                     if (!next) setCompleting(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Complete return #{completing?.id}
@@ -507,7 +507,7 @@ export default function PurchaseReturnsIndex() {
                     if (!next) setCancelling(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel purchase return</DialogTitle>
                         <DialogDescription>

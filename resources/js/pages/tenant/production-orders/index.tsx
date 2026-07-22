@@ -308,7 +308,7 @@ export default function ProductionOrdersIndex() {
                 editing={dialog.editing}
                 entityLabel={productionOrderMeta.singular}
                 baseUrl={base}
-                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+                contentClassName="sm:max-w-lg"
                 description={{
                     create: "Pick a product and how many to build. The bill of materials is saved with the order, so changing it later won't affect this one.",
                     edit: 'Update this production order.',
@@ -419,7 +419,7 @@ export default function ProductionOrdersIndex() {
                     if (!next) setCompleting(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Complete production order #{completing?.id}
@@ -483,7 +483,7 @@ export default function ProductionOrdersIndex() {
                     if (!next) setCancelling(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel production order</DialogTitle>
                         <DialogDescription>

@@ -386,7 +386,7 @@ export default function PurchaseOrdersIndex() {
                 editing={dialog.editing}
                 entityLabel={purchaseOrderMeta.singular}
                 baseUrl={base}
-                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+                contentClassName="sm:max-w-2xl"
                 description={{
                     create: 'Order raw materials from a supplier.',
                     edit: 'Update this pending purchase order.',
@@ -581,7 +581,7 @@ export default function PurchaseOrdersIndex() {
                     if (!next) setReceiving(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Receive purchase order #{receiving?.id}
@@ -641,7 +641,7 @@ export default function PurchaseOrdersIndex() {
                     if (!next) setCancelling(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel purchase order</DialogTitle>
                         <DialogDescription>

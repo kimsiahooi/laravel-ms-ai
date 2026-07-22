@@ -286,7 +286,7 @@ export default function StockTakeShow() {
                     !postForm.processing && setConfirmApply(next)
                 }
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Apply this count?</DialogTitle>
                         <DialogDescription>
@@ -333,7 +333,7 @@ export default function StockTakeShow() {
                     !cancelForm.processing && setConfirmCancel(next)
                 }
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel this stock take?</DialogTitle>
                         <DialogDescription>

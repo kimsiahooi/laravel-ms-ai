@@ -250,7 +250,7 @@ function PurchaseOrderDetail({
             />
 
             <Dialog open={receiveOpen} onOpenChange={setReceiveOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Receive purchase order #{order.id}
@@ -304,7 +304,7 @@ function PurchaseOrderDetail({
             </Dialog>
 
             <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel purchase order</DialogTitle>
                         <DialogDescription>

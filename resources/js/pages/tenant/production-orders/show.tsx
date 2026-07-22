@@ -234,7 +234,7 @@ function ProductionOrderDetail({
             />
 
             <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Complete production order #{order.id}
@@ -292,7 +292,7 @@ function ProductionOrderDetail({
             </Dialog>
 
             <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel production order</DialogTitle>
                         <DialogDescription>

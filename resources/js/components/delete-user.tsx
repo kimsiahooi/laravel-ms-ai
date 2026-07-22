@@ -43,7 +43,7 @@ export default function DeleteUser() {
                             Delete account
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-h-[90dvh] overflow-y-auto">
                         <DialogTitle>
                             Are you sure you want to delete your account?
                         </DialogTitle>

@@ -757,7 +757,7 @@ export default function AdminTenantsIndex() {
                     }
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Delete tenant</DialogTitle>
                         <DialogDescription>

@@ -230,7 +230,7 @@ function SalesReturnDetail({
             />
 
             <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Complete return #{ret.id}</DialogTitle>
                         <DialogDescription>
@@ -282,7 +282,7 @@ function SalesReturnDetail({
             </Dialog>
 
             <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel sales return</DialogTitle>
                         <DialogDescription>

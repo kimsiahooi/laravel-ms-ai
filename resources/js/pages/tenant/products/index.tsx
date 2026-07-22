@@ -486,7 +486,7 @@ export default function ProductsIndex() {
                 editing={dialog.editing}
                 entityLabel={productMeta.singular}
                 baseUrl={base}
-                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+                contentClassName="sm:max-w-lg"
                 description={{
                     create: 'Add a finished item you make or sell. You can set its bill of materials afterwards to build it from raw materials.',
                     edit: "Update this product's details.",

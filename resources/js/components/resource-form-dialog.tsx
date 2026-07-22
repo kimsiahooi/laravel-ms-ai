@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 type FormRender = {
     processing: boolean;
@@ -85,7 +86,14 @@ export function ResourceFormDialog<T extends { id: number }>({
                 }
             >
                 <DialogContent
-                    className={contentClassName}
+                    // A flex column capped at 90dvh: the header + Cancel/Create footer
+                    // stay pinned while only the fields (in a ScrollArea) scroll, so the
+                    // submit button is always visible no matter how long a field (e.g.
+                    // Notes) gets. Callers extend via contentClassName (e.g. a wider width).
+                    className={cn(
+                        'flex max-h-[90dvh] flex-col',
+                        contentClassName,
+                    )}
                     onEscapeKeyDown={(event) => {
                         event.preventDefault();
                         attemptClose();
@@ -116,14 +124,21 @@ export function ResourceFormDialog<T extends { id: number }>({
                             onOpenChange(false);
                             onSuccess?.(page);
                         }}
-                        className="space-y-4"
+                        className="flex min-h-0 flex-1 flex-col gap-4"
                     >
                         {({ processing, errors, isDirty }) => {
                             dirtyRef.current = isDirty;
                             processingRef.current = processing;
                             return (
                                 <>
-                                    {children({ processing, errors })}
+                                    {/* Only the fields scroll; header + footer stay pinned.
+                                        A plain overflow container bounds reliably inside the
+                                        flex column — Radix ScrollArea's inner display:table
+                                        viewport doesn't respect the height cap here, so a long
+                                        auto-growing textarea would overflow it. */}
+                                    <div className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto px-6">
+                                        {children({ processing, errors })}
+                                    </div>
                                     <DialogFooter>
                                         <DialogClose asChild>
                                             <Button

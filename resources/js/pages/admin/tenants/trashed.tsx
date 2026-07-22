@@ -267,7 +267,7 @@ export default function AdminTenantsTrashed() {
                     }
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Restore tenant</DialogTitle>
                         <DialogDescription>
@@ -313,7 +313,7 @@ export default function AdminTenantsTrashed() {
                     }
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Delete tenant permanently</DialogTitle>
                         <DialogDescription>

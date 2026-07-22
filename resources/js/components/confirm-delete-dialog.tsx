@@ -32,7 +32,7 @@ export function ConfirmDeleteDialog<T>({
 }: ConfirmDeleteDialogProps<T>) {
     return (
         <Dialog open={item !== null} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="max-h-[90dvh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>

@@ -384,7 +384,7 @@ export default function SalesOrdersIndex() {
                 editing={dialog.editing}
                 entityLabel={salesOrderMeta.singular}
                 baseUrl={base}
-                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+                contentClassName="sm:max-w-2xl"
                 description={{
                     create: 'Sell products to a customer.',
                     edit: 'Update this pending sales order.',
@@ -579,7 +579,7 @@ export default function SalesOrdersIndex() {
                     if (!next) setFulfilling(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Fulfill sales order #{fulfilling?.id}
@@ -639,7 +639,7 @@ export default function SalesOrdersIndex() {
                     if (!next) setCancelling(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel sales order</DialogTitle>
                         <DialogDescription>

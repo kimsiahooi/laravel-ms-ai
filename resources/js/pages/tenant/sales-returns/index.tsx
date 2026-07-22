@@ -303,7 +303,7 @@ export default function SalesReturnsIndex() {
                 editing={dialog.editing}
                 entityLabel="sales return"
                 baseUrl={base}
-                contentClassName="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+                contentClassName="sm:max-w-2xl"
                 description={{
                     create: 'Log products a customer returned.',
                     edit: 'Update this pending return.',
@@ -445,7 +445,7 @@ export default function SalesReturnsIndex() {
                     if (!next) setCompleting(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Complete return #{completing?.id}
@@ -505,7 +505,7 @@ export default function SalesReturnsIndex() {
                     if (!next) setCancelling(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel sales return</DialogTitle>
                         <DialogDescription>

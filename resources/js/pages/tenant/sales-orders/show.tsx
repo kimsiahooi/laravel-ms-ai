@@ -250,7 +250,7 @@ function SalesOrderDetail({
             />
 
             <Dialog open={fulfillOpen} onOpenChange={setFulfillOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Fulfill sales order #{order.id}
@@ -304,7 +304,7 @@ function SalesOrderDetail({
             </Dialog>
 
             <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Cancel sales order</DialogTitle>
                         <DialogDescription>
