@@ -298,3 +298,61 @@ the verified claims were salvaged. Highlights:
 Raw verified claims + sources: workflow output `result.confirmed` (run wf_3693578f-91c). Several
 MyInvois sources are secondary/blog; the LHDN SDK (sdk.myinvois.hasil.gov.my) and MDEC pages are the
 primary ones.
+
+### Round 3 (light pass, 2026-07-21) — feature classification
+Cheap 3-agent web pass (~117k tokens, Sonnet; vendor docs + trade data, NO adversarial verify and NO
+MY/SG survey stats — medium confidence, fine for backlog ranking). Classified the features the two
+heavy rounds left unranked:
+
+- **Multi-UOM → MUST-HAVE (universal).** Every industry (kg↔g, roll↔m, carton↔pc); incumbents treat
+  as base. Build into the core item model (base unit + conversion table). [high]
+- **Barcode / QR scanning → MUST-HAVE (universal).** Phone-camera scanning removed the cost barrier;
+  incumbents bundle it. [medium]
+- **Multi-currency purchasing → MUST-HAVE.** MY/SG import-heavy (USD/CNH suppliers); MY e-invoice
+  self-billing for imports pushes it toward compliance. Threads with landed cost → costing. [med-high]
+- **Lot/batch + expiry → SHOULD-HAVE, opt-in per tenant.** Regulatory-forced for food (MY GMP
+  MS 1514) + pharma/cosmetics; irrelevant to metal/plastics/furniture; incumbents sell it as a paid
+  add-on. [med-high]
+- **Consignment stock → SHOULD-HAVE (→ must for MY).** SQL Account ships it as a BASE feature, so its
+  absence is a direct gap for FMCG/pharma/distributor-channel sellers. [medium]
+- **Subcontracting / toll → SHOULD-HAVE (differentiator).** Concentrated in EMS/precision, metal
+  plating/finishing, textile CMT; Odoo native but AutoCount/SQL weak → potential edge, not parity. [medium]
+- **Serial numbers → SHOULD-HAVE, opt-in per item type.** Electronics/machinery/automotive;
+  food/textiles use batch instead; Zoho gates it to a paid tier. [medium]
+
+Nothing ranked "skip". Every should-have is naturally an OPT-IN module/toggle → fits the "general
+product, don't force one workflow" rule. Caveat: medium confidence throughout; AutoCount/SQL/QNE
+internals were thin; no MY/SG adoption statistics — a firm go/no-go on any single feature would want
+a vendor inquiry or an SME survey.
+
+---
+
+## Candidate features — pick from these (rounds 1–3 consolidated)
+A menu, not a commitment. Ranked by evidence + dependency; build order should respect the
+dependencies (costing underpins the money features). Price ceiling over everything: **~RM80–150/mo**.
+
+**Tier 0 — foundation (build first; everything money-related needs it)**
+- [ ] **Weighted-average cost + COGS** — the #1; unlocks landed cost, valuation, a credible costing story
+
+**Tier 1 — core plumbing (must-have, universal; pairs with Tier 0)**
+- [ ] **Multi-UOM** (base unit + conversion) — into the core item model
+- [ ] **Multi-currency purchasing** — foreign purchase cost → landed cost → costing
+- [ ] **Barcode / QR scanning** (receive / pick / stock-take / transfer)
+- [ ] **Document numbering + structured tax fields** — the e-invoice HOOKS (not native e-invoicing)
+
+**Tier 2 — optional industry modules (should-have; ship as per-tenant toggles, opt-in)**
+- [ ] **Landed cost** (needs Tier 0) — import freight/duty into stock cost
+- [ ] **Lot/batch + expiry** — food / pharma / cosmetics (regulatory: MY GMP MS 1514)
+- [ ] **Consignment stock** — FMCG / pharma / distributor channels (SQL parity gap for MY)
+- [ ] **Subcontracting / toll manufacturing** — EMS / metal-finishing / textile CMT (differentiator)
+- [ ] **Serial numbers** — electronics / machinery / automotive
+- [ ] **Editable production consumption + material substitution** — generalises the production order
+
+**Tier 3 — paid upsell (a subset of customers)**
+- [ ] **Multi-level BOM** — electronics / furniture / complex assemblies
+
+**Out of scope — do NOT build**
+- Full MRP / routings / work centres / capacity planning / shop-floor terminals
+- Native e-invoicing / tax filing (the accounting package or a Peppol Access Point owns it)
+
+Evidence + caveats for each: see the round 1–3 sections above.
