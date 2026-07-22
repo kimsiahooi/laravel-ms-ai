@@ -3,6 +3,7 @@
 use App\Actions\ProvisionTenant;
 use App\Enums\StockMovementReason;
 use App\Models\Location;
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
 use App\Models\StockMovement;
@@ -55,6 +56,21 @@ function makePendingPurchaseReturn(int $supplierId, int $rmId, float $qty = 3): 
         ]);
 
         return $return->id;
+    });
+}
+
+/** Record a received purchase order for $rmId from $supplierId, so returning it is valid (R11). */
+function receivePurchaseFrom(int $supplierId, int $rmId): void
+{
+    test()->tenant->run(function () use ($supplierId, $rmId): void {
+        $po = PurchaseOrder::create(['supplier_id' => $supplierId, 'status' => 'received']);
+        $rm = RawMaterial::find($rmId);
+        $po->items()->create([
+            'raw_material_id' => $rmId,
+            'raw_material_snapshot' => ['name' => $rm->name, 'sku' => $rm->sku, 'unit' => $rm->unit],
+            'quantity' => 100,
+            'unit_cost' => 1,
+        ]);
     });
 }
 
@@ -123,6 +139,7 @@ it('updates a pending purchase return but rejects updating a non-pending one', f
     $returnId = makePendingPurchaseReturn($supplier, $rm, 3);
 
     loginAsAcmeUser();
+    receivePurchaseFrom($supplier, $rm); // R11: the item must have been received from the supplier
 
     $this->from('/acme/purchase-returns')
         ->put("/acme/purchase-returns/{$returnId}", [
@@ -172,9 +189,26 @@ it('deletes a purchase return', function () {
     $this->tenant->run(fn () => expect(PurchaseReturn::find($returnId))->toBeNull());
 });
 
+it('rejects a purchase return for an item never received from the supplier', function () {
+    ['supplier' => $sup, 'raw_material' => $rm] = seedPurchaseReturnFixture();
+    loginAsAcmeUser();
+
+    // No received purchase order for $rm from $sup → the item is rejected (R11).
+    $this->from('/acme/purchase-returns')
+        ->post('/acme/purchase-returns', [
+            'supplier_id' => $sup,
+            'items' => [['raw_material_id' => $rm, 'quantity' => 1]],
+        ])
+        ->assertRedirect('/acme/purchase-returns')
+        ->assertSessionHasErrors('items.0.raw_material_id');
+
+    $this->tenant->run(fn () => expect(PurchaseReturn::count())->toBe(0));
+});
+
 it('creates a purchase return and completes it, posting stock OUT', function () {
     ['warehouse' => $wh, 'raw_material' => $rm, 'supplier' => $sup] = seedPurchaseReturnFixture();
     loginAsAcmeUser();
+    receivePurchaseFrom($sup, $rm); // R11: only items received from the supplier can be returned
 
     $this->post('/acme/purchase-returns', [
         'supplier_id' => $sup,
@@ -202,10 +236,12 @@ it('creates a purchase return and completes it, posting stock OUT', function () 
 });
 
 it('cannot return more raw material than is on hand', function () {
-    ['warehouse' => $wh, 'raw_material' => $rm] = seedPurchaseReturnFixture();
+    ['warehouse' => $wh, 'raw_material' => $rm, 'supplier' => $sup] = seedPurchaseReturnFixture();
     loginAsAcmeUser();
+    receivePurchaseFrom($sup, $rm); // R11 precondition; creates no stock, so on-hand stays 20
 
     $this->post('/acme/purchase-returns', [
+        'supplier_id' => $sup,
         'items' => [['raw_material_id' => $rm, 'quantity' => 50]],
     ]);
     $returnId = $this->tenant->run(fn () => PurchaseReturn::first()->id);

@@ -322,7 +322,7 @@ export default function PurchaseReturnsIndex() {
                             <ComboboxField
                                 id="supplier"
                                 label="Supplier"
-                                hint="Who you're returning to (optional)."
+                                hint="Who you're returning to. Only items received from this supplier can be returned."
                                 options={supplierOptions}
                                 value={supplierId}
                                 onChange={setSupplierId}
