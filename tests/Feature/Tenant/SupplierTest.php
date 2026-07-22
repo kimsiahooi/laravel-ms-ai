@@ -39,7 +39,9 @@ it('creates a supplier', function () {
     $this->from('/acme/suppliers')
         ->post('/acme/suppliers', [
             'name' => 'Acme Metals',
+            'contact_person' => 'Jane Tan',
             'email' => 'metals@acme.test',
+            'tax_id' => 'C1234567890',
             'phone' => '+60 12-345 6789',
             'address' => '1 Foundry Rd',
             'notes' => 'Primary steel supplier',
@@ -48,7 +50,10 @@ it('creates a supplier', function () {
         ->assertToast('Supplier created.');
 
     $this->tenant->run(function () {
-        expect(Supplier::where('name', 'Acme Metals')->exists())->toBeTrue();
+        $supplier = Supplier::firstWhere('name', 'Acme Metals');
+        expect($supplier)->not->toBeNull()
+            ->and($supplier->contact_person)->toBe('Jane Tan')
+            ->and($supplier->tax_id)->toBe('C1234567890');
     });
 });
 

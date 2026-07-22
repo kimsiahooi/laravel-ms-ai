@@ -19,7 +19,9 @@ class CustomerData extends Data
     public function __construct(
         public int $id,
         public string $name,
+        public ?string $contact_person,
         public ?string $email,
+        public ?string $tax_id,
         public ?string $phone,
         public ?string $address,
         public ?string $notes,
@@ -31,7 +33,9 @@ class CustomerData extends Data
         return new self(
             id: $customer->id,
             name: $customer->name,
+            contact_person: $customer->contact_person,
             email: $customer->email,
+            tax_id: $customer->tax_id,
             phone: $customer->phone,
             address: $customer->address,
             notes: $customer->notes,

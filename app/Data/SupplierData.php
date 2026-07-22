@@ -19,7 +19,9 @@ class SupplierData extends Data
     public function __construct(
         public int $id,
         public string $name,
+        public ?string $contact_person,
         public ?string $email,
+        public ?string $tax_id,
         public ?string $phone,
         public ?string $address,
         public ?string $notes,
@@ -31,7 +33,9 @@ class SupplierData extends Data
         return new self(
             id: $supplier->id,
             name: $supplier->name,
+            contact_person: $supplier->contact_person,
             email: $supplier->email,
+            tax_id: $supplier->tax_id,
             phone: $supplier->phone,
             address: $supplier->address,
             notes: $supplier->notes,

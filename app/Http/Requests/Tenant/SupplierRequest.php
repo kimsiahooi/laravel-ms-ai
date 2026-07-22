@@ -19,11 +19,13 @@ class SupplierRequest extends TenantFormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'nullable', 'string', 'email', 'max:255',
                 // Unique within this tenant's database (ignore self on update).
                 Rule::unique('suppliers', 'email')->ignore($ignoreId),
             ],
+            'tax_id' => ['nullable', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],

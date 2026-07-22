@@ -39,7 +39,9 @@ it('creates a customer', function () {
     $this->from('/acme/customers')
         ->post('/acme/customers', [
             'name' => 'Globex',
+            'contact_person' => 'John Lee',
             'email' => 'buyer@globex.test',
+            'tax_id' => 'C9876543210',
             'phone' => '+60 12-000 0000',
             'address' => '5 Market St',
             'notes' => 'Wholesale account',
@@ -48,7 +50,10 @@ it('creates a customer', function () {
         ->assertToast('Customer created.');
 
     $this->tenant->run(function () {
-        expect(Customer::where('name', 'Globex')->exists())->toBeTrue();
+        $customer = Customer::firstWhere('name', 'Globex');
+        expect($customer)->not->toBeNull()
+            ->and($customer->contact_person)->toBe('John Lee')
+            ->and($customer->tax_id)->toBe('C9876543210');
     });
 });
 

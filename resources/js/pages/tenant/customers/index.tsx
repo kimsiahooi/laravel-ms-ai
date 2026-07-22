@@ -32,14 +32,18 @@ export default function CustomersIndex() {
     const base = customersRoutes.index.url({ tenant: tenant.slug });
 
     const [name, setName] = useState('');
+    const [contactPerson, setContactPerson] = useState('');
     const [email, setEmail] = useState('');
+    const [taxId, setTaxId] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
     const [notes, setNotes] = useState('');
 
     const resetForm = () => {
         setName('');
+        setContactPerson('');
         setEmail('');
+        setTaxId('');
         setPhone('');
         setAddress('');
         setNotes('');
@@ -49,7 +53,9 @@ export default function CustomersIndex() {
         onCreate: resetForm,
         onEdit: (customer) => {
             setName(customer.name);
+            setContactPerson(customer.contact_person ?? '');
             setEmail(customer.email ?? '');
+            setTaxId(customer.tax_id ?? '');
             setPhone(customer.phone ?? '');
             setAddress(customer.address ?? '');
             setNotes(customer.notes ?? '');
@@ -188,6 +194,34 @@ export default function CustomersIndex() {
                             />
                         </div>
                         <div className="space-y-2">
+                            <Label htmlFor="contact_person">
+                                Contact person{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </Label>
+                            <Input
+                                id="contact_person"
+                                name="contact_person"
+                                value={contactPerson}
+                                onChange={(event) =>
+                                    setContactPerson(event.target.value)
+                                }
+                                placeholder="e.g. Jane Tan"
+                                aria-invalid={!!errors.contact_person}
+                                aria-describedby={
+                                    errors.contact_person
+                                        ? 'contact_person-error'
+                                        : undefined
+                                }
+                            />
+                            <InputError
+                                id="contact_person-error"
+                                role="alert"
+                                message={errors.contact_person}
+                            />
+                        </div>
+                        <div className="space-y-2">
                             <Label htmlFor="email">
                                 Email{' '}
                                 <span className="font-normal text-muted-foreground">
@@ -212,6 +246,32 @@ export default function CustomersIndex() {
                                 id="email-error"
                                 role="alert"
                                 message={errors.email}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="tax_id">
+                                Tax ID{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </Label>
+                            <Input
+                                id="tax_id"
+                                name="tax_id"
+                                value={taxId}
+                                onChange={(event) =>
+                                    setTaxId(event.target.value)
+                                }
+                                placeholder="SST / GST / TIN"
+                                aria-invalid={!!errors.tax_id}
+                                aria-describedby={
+                                    errors.tax_id ? 'tax_id-error' : undefined
+                                }
+                            />
+                            <InputError
+                                id="tax_id-error"
+                                role="alert"
+                                message={errors.tax_id}
                             />
                         </div>
                         <div className="space-y-2">

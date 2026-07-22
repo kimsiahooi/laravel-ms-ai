@@ -16,17 +16,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * @property int $id
  * @property string $name
+ * @property string|null $contact_person
  * @property string|null $email
+ * @property string|null $tax_id
  * @property string|null $phone
  * @property string|null $address
  * @property string|null $notes
  */
-#[Fillable(['name', 'email', 'phone', 'address', 'notes'])]
+#[Fillable(['name', 'contact_person', 'email', 'tax_id', 'phone', 'address', 'notes'])]
 class Supplier extends Model
 {
     use RecordsActivity;
     use Searchable;
     use SoftDeletes;
 
-    protected array $searchable = ['name', 'email'];
+    protected array $searchable = ['name', 'contact_person', 'email'];
 }
