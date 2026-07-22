@@ -13,6 +13,13 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 abstract class TenantFormRequest extends FormRequest
 {
+    /**
+     * Upper bound for decimal(15,4) quantity/price inputs. The column stores at most
+     * 99,999,999,999.9999, so a larger value overflows it and returns a 500 — capping the
+     * input turns that into a clean validation error instead. Use on every numeric rule.
+     */
+    protected const DECIMAL_MAX = 99999999999;
+
     public function authorize(): bool
     {
         return $this->user() !== null;

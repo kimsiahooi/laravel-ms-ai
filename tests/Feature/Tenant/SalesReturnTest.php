@@ -162,6 +162,23 @@ it('deletes a sales return', function () {
     $this->tenant->run(fn () => expect(SalesReturn::find($returnId))->toBeNull());
 });
 
+it('rejects an over-large return quantity as a validation error, not a 500', function () {
+    ['product' => $p, 'customer' => $c] = seedSalesReturnFixture();
+    loginAsAcmeUser();
+
+    // A value beyond decimal(15,4) used to overflow the column and throw a 500;
+    // it's now capped to a clean validation error.
+    $this->from('/acme/sales-returns')
+        ->post('/acme/sales-returns', [
+            'customer_id' => $c,
+            'items' => [['product_id' => $p, 'quantity' => 999999999999999]],
+        ])
+        ->assertRedirect('/acme/sales-returns')
+        ->assertSessionHasErrors('items.0.quantity');
+
+    $this->tenant->run(fn () => expect(SalesReturn::count())->toBe(0));
+});
+
 it('creates a sales return and completes it, posting stock IN', function () {
     ['warehouse' => $wh, 'product' => $p, 'customer' => $c] = seedSalesReturnFixture();
     loginAsAcmeUser();

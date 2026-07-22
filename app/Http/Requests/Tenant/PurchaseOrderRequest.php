@@ -25,8 +25,8 @@ class PurchaseOrderRequest extends TenantFormRequest
                 'required',
                 ActiveExists::of('raw_materials'),
             ],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
-            'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
+            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
+            'items.*.unit_cost' => ['required', 'numeric', 'min:0', 'max:'.self::DECIMAL_MAX],
         ];
     }
 }

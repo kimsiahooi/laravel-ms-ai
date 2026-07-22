@@ -27,7 +27,7 @@ class StockTransferRequest extends TenantFormRequest
                 ActiveExists::of('warehouses'),
             ],
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],
-            'quantity' => ['required', 'numeric', 'gt:0'],
+            'quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

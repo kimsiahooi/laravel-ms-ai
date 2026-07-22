@@ -20,7 +20,7 @@ class ProductionOrderRequest extends TenantFormRequest
                 'required',
                 ActiveExists::of('products'),
             ],
-            'quantity' => ['required', 'numeric', 'gt:0'],
+            'quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

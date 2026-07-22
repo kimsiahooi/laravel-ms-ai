@@ -21,7 +21,7 @@ class BomRequest extends TenantFormRequest
                 'distinct',
                 ActiveExists::of('raw_materials'),
             ],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
         ];
     }
 }

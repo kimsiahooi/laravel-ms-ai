@@ -25,8 +25,8 @@ class SalesOrderRequest extends TenantFormRequest
                 'required',
                 ActiveExists::of('products'),
             ],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0', 'max:'.self::DECIMAL_MAX],
         ];
     }
 }

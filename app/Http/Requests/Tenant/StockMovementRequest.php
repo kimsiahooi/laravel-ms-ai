@@ -26,7 +26,7 @@ class StockMovementRequest extends TenantFormRequest
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],
             'type' => ['required', Rule::in(['in', 'out', 'adjustment'])],
             // Magnitude for in/out; the absolute target for adjustment.
-            'quantity' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'numeric', 'min:0', 'max:'.self::DECIMAL_MAX],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

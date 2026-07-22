@@ -19,7 +19,7 @@ class PurchaseReturnRequest extends TenantFormRequest
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.raw_material_id' => ['required', ActiveExists::of('raw_materials')],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
         ];
     }
 }
