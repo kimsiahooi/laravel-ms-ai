@@ -338,7 +338,7 @@ export default function SalesReturnsIndex() {
                             <ComboboxField
                                 id="customer"
                                 label="Customer"
-                                hint="Who returned these (optional)."
+                                hint="Who returned these. Only products sold to this customer can be returned."
                                 options={customerOptions}
                                 value={customerId}
                                 onChange={setCustomerId}

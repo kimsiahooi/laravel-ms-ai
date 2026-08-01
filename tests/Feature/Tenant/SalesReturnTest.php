@@ -4,6 +4,7 @@ use App\Actions\ProvisionTenant;
 use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\SalesOrder;
 use App\Models\SalesReturn;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
@@ -46,6 +47,25 @@ function makePendingSalesReturn(int $customerId, int $productId, float $qty = 3)
         ]);
 
         return $return->id;
+    });
+}
+
+/** Fulfil a sales order of $productId to $customerId, so it can be returned (R12). */
+function sellToCustomer(int $customerId, int $productId): void
+{
+    test()->tenant->run(function () use ($customerId, $productId): void {
+        $so = SalesOrder::create([
+            'customer_id' => $customerId,
+            'currency' => 'MYR',
+            'status' => 'fulfilled',
+        ]);
+        $product = Product::find($productId);
+        $so->items()->create([
+            'product_id' => $productId,
+            'product_snapshot' => ['name' => $product->name, 'sku' => $product->sku, 'unit' => $product->unit],
+            'quantity' => 100,
+            'unit_price' => 1,
+        ]);
     });
 }
 
@@ -111,6 +131,7 @@ it('shows a sales return', function () {
 
 it('updates a pending sales return but rejects updating a non-pending one', function () {
     ['product' => $product, 'customer' => $customer] = seedSalesReturnFixture();
+    sellToCustomer($customer, $product); // R12: the product must have been sold to the customer
     $returnId = makePendingSalesReturn($customer, $product, 3);
 
     loginAsAcmeUser();
@@ -164,6 +185,7 @@ it('deletes a sales return', function () {
 
 it('rejects an over-large return quantity as a validation error, not a 500', function () {
     ['product' => $p, 'customer' => $c] = seedSalesReturnFixture();
+    sellToCustomer($c, $p); // R12 precondition so only the quantity error remains
     loginAsAcmeUser();
 
     // A value beyond decimal(15,4) used to overflow the column and throw a 500;
@@ -181,6 +203,7 @@ it('rejects an over-large return quantity as a validation error, not a 500', fun
 
 it('creates a sales return and completes it, posting stock IN', function () {
     ['warehouse' => $wh, 'product' => $p, 'customer' => $c] = seedSalesReturnFixture();
+    sellToCustomer($c, $p); // R12: only products sold to the customer can be returned
     loginAsAcmeUser();
 
     $this->post('/acme/sales-returns', [
@@ -206,4 +229,32 @@ it('creates a sales return and completes it, posting stock IN', function () {
         expect($movement)->not->toBeNull()
             ->and((float) $movement->quantity)->toBe(4.0);
     });
+});
+
+it('rejects returning a product that was never sold to the customer (R12)', function () {
+    ['product' => $p, 'customer' => $c] = seedSalesReturnFixture();
+    // No fulfilled sale to this customer — the return must be rejected.
+    loginAsAcmeUser();
+
+    $this->from('/acme/sales-returns')
+        ->post('/acme/sales-returns', [
+            'customer_id' => $c,
+            'items' => [['product_id' => $p, 'quantity' => 1]],
+        ])
+        ->assertRedirect('/acme/sales-returns')
+        ->assertSessionHasErrors('items.0.product_id');
+
+    $this->tenant->run(fn () => expect(SalesReturn::count())->toBe(0));
+});
+
+it('rejects a sales return with no customer selected (R12)', function () {
+    ['product' => $p] = seedSalesReturnFixture();
+    loginAsAcmeUser();
+
+    $this->from('/acme/sales-returns')
+        ->post('/acme/sales-returns', [
+            'items' => [['product_id' => $p, 'quantity' => 1]],
+        ])
+        ->assertRedirect('/acme/sales-returns')
+        ->assertSessionHasErrors('customer_id');
 });
