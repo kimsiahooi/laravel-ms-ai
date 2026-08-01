@@ -26,6 +26,7 @@ class CustomerData extends Data
         public ?string $address,
         public ?string $notes,
         public string $created_at,
+        public ?string $creator,
     ) {}
 
     public static function fromCustomer(Customer $customer): self
@@ -40,6 +41,7 @@ class CustomerData extends Data
             address: $customer->address,
             notes: $customer->notes,
             created_at: $customer->created_at->toISOString(),
+            creator: $customer->creator?->name,
         );
     }
 }

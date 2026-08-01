@@ -29,6 +29,7 @@ class SupplierController
             'suppliers',
             fn (Supplier $supplier): SupplierData => SupplierData::from($supplier),
             ['name', 'email', 'created_at'],
+            ['creator'],
         );
     }
 

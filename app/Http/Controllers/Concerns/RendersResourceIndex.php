@@ -23,6 +23,7 @@ trait RendersResourceIndex
      * @param  class-string<Model>  $model  the Eloquent model (must have a `search` scope)
      * @param  callable(Model): mixed  $toData  maps each row to its Data object
      * @param  array<int, string>  $sortable  real columns the UI may sort by (default: created_at desc)
+     * @param  array<int, string>  $with  relations to eager-load (e.g. ['creator'])
      */
     protected function resourceIndex(
         Request $request,
@@ -31,13 +32,14 @@ trait RendersResourceIndex
         string $key,
         callable $toData,
         array $sortable = [],
+        array $with = [],
         string $defaultSort = 'created_at',
         string $defaultDirection = 'desc',
     ): Response {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $query = $model::query()->search($search);
+        $query = $model::query()->with($with)->search($search);
         $sort = $this->applySort($query, $request, $sortable, $defaultSort, $defaultDirection);
 
         $rows = $this->paginateList($query, $perPage)->through($toData);

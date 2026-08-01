@@ -31,6 +31,7 @@ class WarehouseData extends Data
         public int $low_stock = 0,
         /** Items with a reorder level set but nothing on hand (red). */
         public int $out_of_stock = 0,
+        public ?string $creator = null,
     ) {}
 
     public static function fromWarehouse(Warehouse $warehouse): self
@@ -43,6 +44,7 @@ class WarehouseData extends Data
             code: $warehouse->code,
             address: $warehouse->address,
             created_at: $warehouse->created_at->toISOString(),
+            creator: $warehouse->creator?->name,
         );
     }
 }

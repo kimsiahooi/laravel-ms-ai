@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\RecordsCreator;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -17,11 +18,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property string $name
  * @property string|null $description
+ * @property int|null $created_by
+ * @property-read User|null $creator
  */
 #[Fillable(['name', 'description'])]
 class Category extends Model
 {
     use RecordsActivity;
+    use RecordsCreator;
     use Searchable;
     use SoftDeletes;
 

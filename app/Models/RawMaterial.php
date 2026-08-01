@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasSnapshot;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\RecordsCreator;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -19,12 +20,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string $sku
  * @property string $unit
+ * @property int|null $created_by
+ * @property-read User|null $creator
  */
 #[Fillable(['name', 'sku', 'unit'])]
 class RawMaterial extends Model
 {
     use HasSnapshot;
     use RecordsActivity;
+    use RecordsCreator;
     use Searchable;
     use SoftDeletes;
 

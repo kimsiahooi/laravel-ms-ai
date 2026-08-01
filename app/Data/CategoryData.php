@@ -21,6 +21,7 @@ class CategoryData extends Data
         public string $name,
         public ?string $description,
         public string $created_at,
+        public ?string $creator,
     ) {}
 
     public static function fromCategory(Category $category): self
@@ -30,6 +31,7 @@ class CategoryData extends Data
             name: $category->name,
             description: $category->description,
             created_at: $category->created_at->toISOString(),
+            creator: $category->creator?->name,
         );
     }
 }

@@ -26,6 +26,7 @@ class SupplierData extends Data
         public ?string $address,
         public ?string $notes,
         public string $created_at,
+        public ?string $creator,
     ) {}
 
     public static function fromSupplier(Supplier $supplier): self
@@ -40,6 +41,7 @@ class SupplierData extends Data
             address: $supplier->address,
             notes: $supplier->notes,
             created_at: $supplier->created_at->toISOString(),
+            creator: $supplier->creator?->name,
         );
     }
 }

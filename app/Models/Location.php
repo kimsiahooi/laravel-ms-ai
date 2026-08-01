@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Exceptions\BlockedByDependentsException;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\RecordsCreator;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -25,11 +26,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
+ * @property int|null $created_by
+ * @property-read User|null $creator
  */
 #[Fillable(['name', 'code', 'address'])]
 class Location extends Model
 {
     use RecordsActivity;
+    use RecordsCreator;
     use Searchable;
     use SoftDeletes;
 

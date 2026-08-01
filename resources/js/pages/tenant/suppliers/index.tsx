@@ -111,6 +111,12 @@ export default function SuppliersIndex() {
             },
         },
         {
+            accessorKey: 'creator',
+            header: 'Created by',
+            cell: ({ row }) => row.original.creator ?? '—',
+            meta: { className: 'hidden text-muted-foreground xl:table-cell' },
+        },
+        {
             id: 'actions',
             header: () => <span className="sr-only">Actions</span>,
             meta: { className: 'text-right' },

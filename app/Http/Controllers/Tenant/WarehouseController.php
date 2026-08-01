@@ -33,7 +33,7 @@ class WarehouseController
         $perPage = $this->perPage($request);
 
         $query = Warehouse::query()
-            ->with('location')
+            ->with(['location', 'creator'])
             ->search($search);
         $sort = $this->applySort($query, $request, ['name', 'code', 'created_at']);
 

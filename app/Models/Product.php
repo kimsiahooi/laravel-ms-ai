@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasSnapshot;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\RecordsCreator;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -29,8 +30,10 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property int|null $category_id
  * @property int|null $supplier_id
  * @property string $unit
+ * @property int|null $created_by
  * @property-read string|null $image_url
  * @property-read Collection<int, BomItem> $bomItems
+ * @property-read User|null $creator
  */
 #[Fillable([
     'name', 'sku', 'barcode', 'description',
@@ -41,6 +44,7 @@ class Product extends Model implements HasMedia
     use HasSnapshot;
     use InteractsWithMedia;
     use RecordsActivity;
+    use RecordsCreator;
     use Searchable;
     use SoftDeletes;
 

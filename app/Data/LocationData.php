@@ -22,6 +22,7 @@ class LocationData extends Data
         public ?string $code,
         public ?string $address,
         public string $created_at,
+        public ?string $creator,
     ) {}
 
     public static function fromLocation(Location $location): self
@@ -32,6 +33,7 @@ class LocationData extends Data
             code: $location->code,
             address: $location->address,
             created_at: $location->created_at->toISOString(),
+            creator: $location->creator?->name,
         );
     }
 }

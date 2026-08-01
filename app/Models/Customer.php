@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\RecordsCreator;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -22,11 +23,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $phone
  * @property string|null $address
  * @property string|null $notes
+ * @property int|null $created_by
+ * @property-read User|null $creator
  */
 #[Fillable(['name', 'contact_person', 'email', 'tax_id', 'phone', 'address', 'notes'])]
 class Customer extends Model
 {
     use RecordsActivity;
+    use RecordsCreator;
     use Searchable;
     use SoftDeletes;
 

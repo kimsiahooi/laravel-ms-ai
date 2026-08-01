@@ -36,6 +36,7 @@ class ProductData extends Data
         public string $created_at,
         #[DataCollectionOf(BomItemData::class)]
         public array $bom,
+        public ?string $creator,
     ) {}
 
     public static function fromProduct(Product $product): self
@@ -56,6 +57,7 @@ class ProductData extends Data
             bom: $product->relationLoaded('bomItems')
                 ? $product->bomItems->map(fn (BomItem $item): BomItemData => BomItemData::from($item))->all()
                 : [],
+            creator: $product->creator?->name,
         );
     }
 }

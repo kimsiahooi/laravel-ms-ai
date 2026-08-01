@@ -33,6 +33,7 @@ id: number,
 name: string,
 description: string | null,
 created_at: string,
+creator: string | null,
 };
 export type CustomerData = {
 id: number,
@@ -44,6 +45,7 @@ phone: string | null,
 address: string | null,
 notes: string | null,
 created_at: string,
+creator: string | null,
 };
 export type LocationData = {
 id: number,
@@ -51,6 +53,7 @@ name: string,
 code: string | null,
 address: string | null,
 created_at: string,
+creator: string | null,
 };
 export type OptionData = {
 id: number,
@@ -70,6 +73,7 @@ supplier: string | null,
 unit: string,
 created_at: string,
 bom: App.Data.BomItemData[],
+creator: string | null,
 };
 export type ProductionOrderData = {
 id: number,
@@ -137,6 +141,7 @@ name: string,
 sku: string,
 unit: string,
 created_at: string,
+creator: string | null,
 };
 export type SalesOrderData = {
 id: number,
@@ -233,6 +238,7 @@ phone: string | null,
 address: string | null,
 notes: string | null,
 created_at: string,
+creator: string | null,
 };
 export type WarehouseData = {
 id: number,
@@ -245,6 +251,7 @@ created_at: string,
 items_in_stock: number,
 low_stock: number,
 out_of_stock: number,
+creator: string | null,
 };
 export type WarehouseItemData = {
 stockable_type: string,

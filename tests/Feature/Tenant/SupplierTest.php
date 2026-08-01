@@ -174,3 +174,22 @@ it('ignores an unknown sort column, falling back to the default (R06)', function
             ->where('filters.sort', 'created_at')
         );
 });
+
+it('stamps the creator on a new supplier and shows it on the list (R06b)', function () {
+    loginAsAcmeUser();
+
+    $this->post('/acme/suppliers', ['name' => 'Acme Metals'])
+        ->assertRedirect();
+
+    $this->tenant->run(function () {
+        $supplier = Supplier::with('creator')->firstOrFail();
+        expect($supplier->created_by)->not->toBeNull()
+            ->and($supplier->creator?->name)->toBe('Ada');
+    });
+
+    $this->get('/acme/suppliers')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('suppliers.data.0.creator', 'Ada')
+        );
+});

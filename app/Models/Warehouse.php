@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Exceptions\BlockedByDependentsException;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\RecordsCreator;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,12 +24,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string|null $code
  * @property string|null $address
+ * @property int|null $created_by
  * @property-read Location $location
+ * @property-read User|null $creator
  */
 #[Fillable(['location_id', 'name', 'code', 'address'])]
 class Warehouse extends Model
 {
     use RecordsActivity;
+    use RecordsCreator;
     use Searchable;
     use SoftDeletes;
 

@@ -29,6 +29,7 @@ class CustomerController
             'customers',
             fn (Customer $customer): CustomerData => CustomerData::from($customer),
             ['name', 'email', 'created_at'],
+            ['creator'],
         );
     }
 

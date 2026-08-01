@@ -35,7 +35,7 @@ class ProductController
         $perPage = $this->perPage($request);
 
         $query = Product::query()
-            ->with(['category', 'supplier', 'bomItems.rawMaterial', 'media'])
+            ->with(['category', 'supplier', 'bomItems.rawMaterial', 'media', 'creator'])
             ->search($search);
         $sort = $this->applySort($query, $request, ['name', 'sku', 'created_at']);
 

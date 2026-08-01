@@ -23,6 +23,7 @@ class RawMaterialData extends Data
         public string $sku,
         public string $unit,
         public string $created_at,
+        public ?string $creator,
     ) {}
 
     public static function fromRawMaterial(RawMaterial $rawMaterial): self
@@ -33,6 +34,7 @@ class RawMaterialData extends Data
             sku: $rawMaterial->sku,
             unit: $rawMaterial->unit,
             created_at: $rawMaterial->created_at->toISOString(),
+            creator: $rawMaterial->creator?->name,
         );
     }
 }
