@@ -101,6 +101,7 @@ export default function PurchaseOrdersIndex() {
     const [supplierId, setSupplierId] = useState('');
     const [currency, setCurrency] = useState('USD');
     const [notes, setNotes] = useState('');
+    const [expectedDate, setExpectedDate] = useState('');
     const [lines, setLines] = useState<Line[]>([]);
     const lineKey = useRef(0);
 
@@ -131,12 +132,16 @@ export default function PurchaseOrdersIndex() {
             setSupplierId('');
             setCurrency('USD');
             setNotes('');
+            setExpectedDate('');
             setLines([newLine()]);
         },
         onEdit: (order) => {
             setSupplierId(order.supplier_id ? String(order.supplier_id) : '');
             setCurrency(order.currency);
             setNotes(order.notes ?? '');
+            setExpectedDate(
+                order.expected_date ? order.expected_date.slice(0, 10) : '',
+            );
             setLines(
                 order.items.map((item) => ({
                     key: lineKey.current++,
@@ -435,6 +440,37 @@ export default function PurchaseOrdersIndex() {
                                     aria-invalid={!!errors.currency}
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <FieldLabel
+                                htmlFor="expected_date"
+                                hint="When you expect the supplier to deliver these materials. Used for lead-time planning."
+                            >
+                                Expected delivery{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </FieldLabel>
+                            <input
+                                type="hidden"
+                                name="expected_date"
+                                value={
+                                    expectedDate
+                                        ? new Date(expectedDate).toISOString()
+                                        : ''
+                                }
+                            />
+                            <Input
+                                id="expected_date"
+                                type="date"
+                                value={expectedDate}
+                                onChange={(event) =>
+                                    setExpectedDate(event.target.value)
+                                }
+                                className="sm:w-56"
+                                aria-invalid={!!errors.expected_date}
+                            />
                         </div>
 
                         <div className="space-y-2">

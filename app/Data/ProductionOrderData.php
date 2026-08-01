@@ -25,6 +25,7 @@ class ProductionOrderData extends Data
         public string $status,
         public string $status_label,
         public int $item_count,
+        public ?string $expected_date,
         public ?string $completed_at,
         public string $created_at,
         #[DataCollectionOf(ProductionOrderItemData::class)]
@@ -44,6 +45,7 @@ class ProductionOrderData extends Data
             status: $order->status->value,
             status_label: $order->status->label(),
             item_count: $items->count(),
+            expected_date: $order->expected_date?->toISOString(),
             completed_at: $order->completed_at?->toISOString(),
             created_at: $order->created_at->toISOString(),
             items: $items->all(),

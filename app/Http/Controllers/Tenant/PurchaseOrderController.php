@@ -73,6 +73,7 @@ class PurchaseOrderController
                 'supplier_id' => $request->integer('supplier_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
                 'notes' => $request->input('notes'),
+                'expected_date' => $request->date('expected_date'),
                 'user_id' => $request->user()?->id,
                 'status' => PurchaseOrderStatus::Pending,
             ]);
@@ -94,6 +95,7 @@ class PurchaseOrderController
                 'supplier_id' => $request->integer('supplier_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
                 'notes' => $request->input('notes'),
+                'expected_date' => $request->date('expected_date'),
             ]);
 
             $purchaseOrder->items()->delete();

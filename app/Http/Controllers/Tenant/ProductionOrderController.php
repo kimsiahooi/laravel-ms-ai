@@ -108,6 +108,7 @@ class ProductionOrderController
                 ],
                 'quantity' => $quantity,
                 'notes' => $request->input('notes'),
+                'expected_date' => $request->date('expected_date'),
                 'user_id' => $request->user()?->id,
                 'status' => ProductionOrderStatus::Pending,
             ]);

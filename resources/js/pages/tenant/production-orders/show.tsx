@@ -161,6 +161,18 @@ function ProductionOrderDetail({
                 </span>
             ),
         },
+        ...(order.expected_date
+            ? [
+                  {
+                      label: 'Expected completion',
+                      value: (
+                          <span suppressHydrationWarning>
+                              {formatDate(order.expected_date)}
+                          </span>
+                      ),
+                  },
+              ]
+            : []),
         ...(order.completed_at
             ? [
                   {

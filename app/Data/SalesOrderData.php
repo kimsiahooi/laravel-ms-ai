@@ -27,6 +27,7 @@ class SalesOrderData extends Data
         public int $item_count,
         public float $total,
         public ?string $notes,
+        public ?string $expected_date,
         public ?string $fulfilled_at,
         public string $created_at,
         #[DataCollectionOf(SalesOrderItemData::class)]
@@ -49,6 +50,7 @@ class SalesOrderData extends Data
             item_count: $items->count(),
             total: (float) $items->sum(fn (SalesOrderItemData $item): float => $item->quantity * $item->unit_price),
             notes: $order->notes,
+            expected_date: $order->expected_date?->toISOString(),
             fulfilled_at: $order->fulfilled_at?->toISOString(),
             created_at: $order->created_at->toISOString(),
             items: $items->all(),

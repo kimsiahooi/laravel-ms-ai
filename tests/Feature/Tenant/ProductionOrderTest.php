@@ -114,6 +114,7 @@ it('creates a production order, exploding the BOM into snapshotted items', funct
         ->post('/acme/production-orders', [
             'product_id' => $widget,
             'quantity' => 3,
+            'expected_date' => '2026-08-15T00:00:00.000Z',
         ])
         ->assertRedirect('/acme/production-orders')
         ->assertToast('Production order created.');
@@ -123,7 +124,8 @@ it('creates a production order, exploding the BOM into snapshotted items', funct
         expect($order->status->value)->toBe('pending')
             ->and($order->product_snapshot['name'])->toBe('Widget')
             ->and((float) $order->quantity)->toBe(3.0)
-            ->and($order->items)->toHaveCount(2);
+            ->and($order->items)->toHaveCount(2)
+            ->and($order->expected_date?->toDateString())->toBe('2026-08-15');
 
         // quantity_required = per-unit BOM quantity × order quantity.
         $steelLine = $order->items->firstWhere('raw_material_id', $steel);

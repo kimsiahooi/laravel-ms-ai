@@ -168,6 +168,18 @@ function SalesOrderDetail({
                 </span>
             ),
         },
+        ...(order.expected_date
+            ? [
+                  {
+                      label: 'Expected delivery',
+                      value: (
+                          <span suppressHydrationWarning>
+                              {formatDate(order.expected_date)}
+                          </span>
+                      ),
+                  },
+              ]
+            : []),
         ...(order.fulfilled_at
             ? [
                   {

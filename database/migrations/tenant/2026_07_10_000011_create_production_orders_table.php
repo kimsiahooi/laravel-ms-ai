@@ -25,6 +25,7 @@ return new class extends Migration
             $table->decimal('quantity', 15, 4);
             $table->string('status', 20)->default('pending');
             $table->text('notes')->nullable();
+            $table->timestamp('expected_date')->nullable();
             $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
             $table->timestamp('completed_at')->nullable();
             $table->foreignIdFor(Warehouse::class, 'completed_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();

@@ -100,6 +100,7 @@ it('creates a sales order with line items and snapshots', function () {
         ->post('/acme/sales-orders', [
             'customer_id' => $customer,
             'currency' => 'USD',
+            'expected_date' => '2026-08-15T00:00:00.000Z',
             'items' => [
                 ['product_id' => $widget, 'quantity' => 5, 'unit_price' => 9.99],
             ],
@@ -111,7 +112,8 @@ it('creates a sales order with line items and snapshots', function () {
         $order = SalesOrder::with('items')->first();
         expect($order->status->value)->toBe('pending')
             ->and($order->items)->toHaveCount(1)
-            ->and($order->items->first()->product_snapshot['name'])->toBe('Widget');
+            ->and($order->items->first()->product_snapshot['name'])->toBe('Widget')
+            ->and($order->expected_date?->toDateString())->toBe('2026-08-15');
     });
 });
 

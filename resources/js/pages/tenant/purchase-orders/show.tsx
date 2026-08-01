@@ -168,6 +168,18 @@ function PurchaseOrderDetail({
                 </span>
             ),
         },
+        ...(order.expected_date
+            ? [
+                  {
+                      label: 'Expected delivery',
+                      value: (
+                          <span suppressHydrationWarning>
+                              {formatDate(order.expected_date)}
+                          </span>
+                      ),
+                  },
+              ]
+            : []),
         ...(order.received_at
             ? [
                   {

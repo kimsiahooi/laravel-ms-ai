@@ -71,6 +71,7 @@ export default function ProductionOrdersIndex() {
     const [productId, setProductId] = useState('');
     const [quantity, setQuantity] = useState('1');
     const [notes, setNotes] = useState('');
+    const [expectedDate, setExpectedDate] = useState('');
 
     const [completing, setCompleting] = useState<ProductionOrder | null>(null);
     const [cancelling, setCancelling] = useState<ProductionOrder | null>(null);
@@ -83,6 +84,7 @@ export default function ProductionOrdersIndex() {
             setProductId('');
             setQuantity('1');
             setNotes('');
+            setExpectedDate('');
         },
     });
 
@@ -391,6 +393,37 @@ export default function ProductionOrdersIndex() {
                                 </ul>
                             </div>
                         ) : null}
+
+                        <div className="space-y-2">
+                            <FieldLabel
+                                htmlFor="expected_date"
+                                hint="When you expect this production run to finish. Used for lead-time planning."
+                            >
+                                Expected completion{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </FieldLabel>
+                            <input
+                                type="hidden"
+                                name="expected_date"
+                                value={
+                                    expectedDate
+                                        ? new Date(expectedDate).toISOString()
+                                        : ''
+                                }
+                            />
+                            <Input
+                                id="expected_date"
+                                type="date"
+                                value={expectedDate}
+                                onChange={(event) =>
+                                    setExpectedDate(event.target.value)
+                                }
+                                className="sm:w-56"
+                                aria-invalid={!!errors.expected_date}
+                            />
+                        </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="notes">

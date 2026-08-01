@@ -22,6 +22,7 @@ class ProductionOrderRequest extends TenantFormRequest
             ],
             'quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'expected_date' => ['nullable', 'date'],
         ];
     }
 }

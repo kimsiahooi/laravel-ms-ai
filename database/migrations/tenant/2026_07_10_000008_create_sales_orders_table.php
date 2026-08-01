@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('status', 20)->default('pending');
             $table->string('currency', 3)->default('USD');
             $table->text('notes')->nullable();
+            $table->timestamp('expected_date')->nullable();
             $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
             $table->timestamp('fulfilled_at')->nullable();
             $table->foreignIdFor(Warehouse::class, 'fulfilled_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();

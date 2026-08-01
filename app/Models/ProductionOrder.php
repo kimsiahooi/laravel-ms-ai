@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string $quantity
  * @property ProductionOrderStatus $status
  * @property string|null $notes
+ * @property Carbon|null $expected_date
  * @property int|null $user_id
  * @property Carbon|null $completed_at
  * @property int|null $completed_warehouse_id
@@ -36,7 +37,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $user
  * @property-read Warehouse|null $completedWarehouse
  */
-#[Fillable(['product_id', 'product_snapshot', 'quantity', 'status', 'notes', 'user_id', 'completed_at', 'completed_warehouse_id'])]
+#[Fillable(['product_id', 'product_snapshot', 'quantity', 'status', 'notes', 'expected_date', 'user_id', 'completed_at', 'completed_warehouse_id'])]
 class ProductionOrder extends Model
 {
     use RecordsActivity;
@@ -59,6 +60,7 @@ class ProductionOrder extends Model
             'quantity' => 'decimal:4',
             'status' => ProductionOrderStatus::class,
             'completed_at' => 'datetime',
+            'expected_date' => 'datetime',
         ];
     }
 

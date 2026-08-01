@@ -100,6 +100,7 @@ it('creates a purchase order with line items and snapshots', function () {
         ->post('/acme/purchase-orders', [
             'supplier_id' => $supplier,
             'currency' => 'USD',
+            'expected_date' => '2026-08-15T00:00:00.000Z',
             'items' => [
                 ['raw_material_id' => $steel, 'quantity' => 10, 'unit_cost' => 2.5],
                 ['raw_material_id' => $bolt, 'quantity' => 100, 'unit_cost' => 0.1],
@@ -112,7 +113,8 @@ it('creates a purchase order with line items and snapshots', function () {
         $order = PurchaseOrder::with('items')->first();
         expect($order->status->value)->toBe('pending')
             ->and($order->items)->toHaveCount(2)
-            ->and($order->items->first()->raw_material_snapshot['name'])->toBe('Steel');
+            ->and($order->items->first()->raw_material_snapshot['name'])->toBe('Steel')
+            ->and($order->expected_date?->toDateString())->toBe('2026-08-15');
     });
 });
 

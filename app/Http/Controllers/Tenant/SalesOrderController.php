@@ -75,6 +75,7 @@ class SalesOrderController
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
                 'notes' => $request->input('notes'),
+                'expected_date' => $request->date('expected_date'),
                 'user_id' => $request->user()?->id,
                 'status' => SalesOrderStatus::Pending,
             ]);
@@ -96,6 +97,7 @@ class SalesOrderController
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
                 'notes' => $request->input('notes'),
+                'expected_date' => $request->date('expected_date'),
             ]);
 
             $salesOrder->items()->delete();

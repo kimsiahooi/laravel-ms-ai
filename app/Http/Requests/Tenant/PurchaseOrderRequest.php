@@ -20,6 +20,7 @@ class PurchaseOrderRequest extends TenantFormRequest
             ],
             'currency' => ['required', 'string', 'size:3'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'expected_date' => ['nullable', 'date'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.raw_material_id' => [
                 'required',
