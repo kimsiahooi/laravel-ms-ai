@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\PurchaseOrderItem;
 use App\Models\RawMaterial;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -17,6 +19,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 class RawMaterialData extends Data
 {
+    /**
+     * @param  array<int, RawMaterialPurchaseData>  $purchase_history
+     */
     public function __construct(
         public int $id,
         public string $name,
@@ -24,6 +29,8 @@ class RawMaterialData extends Data
         public string $unit,
         public string $created_at,
         public ?string $creator,
+        #[DataCollectionOf(RawMaterialPurchaseData::class)]
+        public array $purchase_history,
     ) {}
 
     public static function fromRawMaterial(RawMaterial $rawMaterial): self
@@ -35,6 +42,11 @@ class RawMaterialData extends Data
             unit: $rawMaterial->unit,
             created_at: $rawMaterial->created_at->toISOString(),
             creator: $rawMaterial->creator?->name,
+            purchase_history: $rawMaterial->receivedPurchases
+                ->sortByDesc(fn (PurchaseOrderItem $item): ?string => $item->purchaseOrder->received_at?->toISOString())
+                ->map(fn (PurchaseOrderItem $item): RawMaterialPurchaseData => RawMaterialPurchaseData::from($item))
+                ->values()
+                ->all(),
         );
     }
 }

@@ -142,6 +142,16 @@ sku: string,
 unit: string,
 created_at: string,
 creator: string | null,
+purchase_history: App.Data.RawMaterialPurchaseData[],
+};
+export type RawMaterialPurchaseData = {
+id: number,
+po_id: number,
+supplier: string | null,
+received_at: string | null,
+quantity: number,
+unit_cost: number,
+currency: string,
 };
 export type SalesOrderData = {
 id: number,

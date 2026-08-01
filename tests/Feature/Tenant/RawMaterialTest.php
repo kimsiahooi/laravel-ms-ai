@@ -1,7 +1,10 @@
 <?php
 
 use App\Actions\ProvisionTenant;
+use App\Enums\PurchaseOrderStatus;
+use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
+use App\Models\Supplier;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -112,5 +115,64 @@ it('searches raw materials by name or sku', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('rawMaterials.data', 1)
             ->where('rawMaterials.data.0.sku', 'RM-002')
+        );
+});
+
+it('shows a raw material’s purchase history from received POs (R10)', function () {
+    loginAsAcmeUser();
+
+    $this->tenant->run(function () {
+        $supplier = Supplier::create(['name' => 'Acme Steel']);
+        $material = RawMaterial::create(['name' => 'Steel sheet', 'sku' => 'RM-STEEL', 'unit' => 'kg']);
+
+        $order = PurchaseOrder::create([
+            'supplier_id' => $supplier->id,
+            'currency' => 'MYR',
+            'status' => PurchaseOrderStatus::Received,
+            'received_at' => now(),
+        ]);
+        $order->items()->create([
+            'raw_material_id' => $material->id,
+            'raw_material_snapshot' => RawMaterial::snapshotOf($material),
+            'quantity' => 500,
+            'unit_cost' => 2.5,
+        ]);
+    });
+
+    $this->get('/acme/raw-materials')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('rawMaterials.data', 1)
+            ->has('rawMaterials.data.0.purchase_history', 1)
+            ->where('rawMaterials.data.0.purchase_history.0.supplier', 'Acme Steel')
+            ->where('rawMaterials.data.0.purchase_history.0.currency', 'MYR')
+        );
+});
+
+it('excludes not-yet-received POs from the purchase history (R10)', function () {
+    loginAsAcmeUser();
+
+    $this->tenant->run(function () {
+        $supplier = Supplier::create(['name' => 'Pending Co']);
+        $material = RawMaterial::create(['name' => 'Bolt', 'sku' => 'RM-BOLT', 'unit' => 'pcs']);
+
+        // A pending (never received) PO is not a confirmed source.
+        $order = PurchaseOrder::create([
+            'supplier_id' => $supplier->id,
+            'currency' => 'MYR',
+            'status' => PurchaseOrderStatus::Pending,
+        ]);
+        $order->items()->create([
+            'raw_material_id' => $material->id,
+            'raw_material_snapshot' => RawMaterial::snapshotOf($material),
+            'quantity' => 10,
+            'unit_cost' => 0.5,
+        ]);
+    });
+
+    $this->get('/acme/raw-materials')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('rawMaterials.data.0.purchase_history', 0)
         );
 });

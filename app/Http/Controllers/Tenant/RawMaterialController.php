@@ -29,7 +29,7 @@ class RawMaterialController
             'rawMaterials',
             fn (RawMaterial $rawMaterial): RawMaterialData => RawMaterialData::from($rawMaterial),
             ['name', 'sku', 'created_at'],
-            ['creator'],
+            ['creator', 'receivedPurchases.purchaseOrder.supplier'],
         );
     }
 

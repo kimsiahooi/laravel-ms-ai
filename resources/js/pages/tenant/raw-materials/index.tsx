@@ -18,7 +18,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import rawMaterialsRoutes from '@/routes/tenant/raw-materials';
 import type { TenantPageProps } from '@/types';
@@ -156,6 +156,66 @@ export default function RawMaterialsIndex() {
                 getRowId={(rawMaterial) => String(rawMaterial.id)}
                 title={rawMaterialMeta.plural}
                 searchPlaceholder="Search name or SKU…"
+                renderExpanded={(rawMaterial) => (
+                    <div className="px-4 py-3">
+                        {rawMaterial.purchase_history.length > 0 ? (
+                            <div className="space-y-2">
+                                <p className="font-medium text-sm">
+                                    Purchased from
+                                    <span className="ml-1 font-normal text-muted-foreground">
+                                        · received purchase orders
+                                    </span>
+                                </p>
+                                <ul className="divide-y rounded-md border bg-background">
+                                    {rawMaterial.purchase_history.map(
+                                        (entry) => (
+                                            <li
+                                                key={entry.id}
+                                                className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 text-sm"
+                                            >
+                                                <span className="text-foreground">
+                                                    {entry.supplier ?? '—'}
+                                                    <span className="ml-2 font-normal text-muted-foreground">
+                                                        PO #{entry.po_id}
+                                                    </span>
+                                                </span>
+                                                <span className="flex items-center gap-4 text-muted-foreground tabular-nums">
+                                                    <span
+                                                        suppressHydrationWarning
+                                                    >
+                                                        {entry.received_at
+                                                            ? formatDate(
+                                                                  entry.received_at,
+                                                              )
+                                                            : '—'}
+                                                    </span>
+                                                    <span>
+                                                        {formatQuantity(
+                                                            entry.quantity,
+                                                        )}{' '}
+                                                        {rawMaterial.unit}
+                                                    </span>
+                                                    <span>
+                                                        {formatMoney(
+                                                            entry.unit_cost,
+                                                            entry.currency,
+                                                        )}
+                                                    </span>
+                                                </span>
+                                            </li>
+                                        ),
+                                    )}
+                                </ul>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">
+                                Never purchased yet — receive a purchase order
+                                that includes this material to see its supplier
+                                here.
+                            </p>
+                        )}
+                    </div>
+                )}
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />
