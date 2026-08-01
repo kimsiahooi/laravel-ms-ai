@@ -53,7 +53,7 @@ export default function SalesOrderShow() {
                 <PrintDocument
                     org={tenant.name}
                     docType="Sales Order"
-                    number={`SO #${order.id}`}
+                    number={order.number ?? `SO #${order.id}`}
                     statusLabel={order.status_label}
                     statusVariant={statusVariant(order.status)}
                     party={{ heading: 'Customer', name: order.customer ?? '—' }}
@@ -160,6 +160,9 @@ function SalesOrderDetail({
 
     const facts: Fact[] = [
         { label: 'Customer', value: order.customer ?? '—' },
+        ...(order.number
+            ? [{ label: 'Order number', value: order.number }]
+            : []),
         {
             label: 'Order date',
             value: (

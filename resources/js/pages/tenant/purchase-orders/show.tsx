@@ -53,7 +53,7 @@ export default function PurchaseOrderShow() {
                 <PrintDocument
                     org={tenant.name}
                     docType="Purchase Order"
-                    number={`PO #${order.id}`}
+                    number={order.number ?? `PO #${order.id}`}
                     statusLabel={order.status_label}
                     statusVariant={statusVariant(order.status)}
                     party={{ heading: 'Supplier', name: order.supplier ?? '—' }}
@@ -160,6 +160,9 @@ function PurchaseOrderDetail({
 
     const facts: Fact[] = [
         { label: 'Supplier', value: order.supplier ?? '—' },
+        ...(order.number
+            ? [{ label: 'Order number', value: order.number }]
+            : []),
         {
             label: 'Order date',
             value: (

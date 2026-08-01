@@ -77,6 +77,7 @@ class SalesOrderController
             $order = SalesOrder::create([
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
+                'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
                 'user_id' => $request->user()?->id,
@@ -99,6 +100,7 @@ class SalesOrderController
             $salesOrder->update([
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
+                'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
             ]);

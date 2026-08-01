@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use App\Support\ActiveExists;
+use Illuminate\Validation\Rule;
 
 class SalesOrderRequest extends TenantFormRequest
 {
@@ -19,6 +20,15 @@ class SalesOrderRequest extends TenantFormRequest
                 ActiveExists::of('customers'),
             ],
             'currency' => ['required', 'string', 'size:3'],
+            // Optional user-entered document number; unique among live orders.
+            'number' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('sales_orders', 'number')
+                    ->whereNull('deleted_at')
+                    ->ignore($this->route('salesOrder')),
+            ],
             'notes' => ['nullable', 'string', 'max:1000'],
             'expected_date' => ['nullable', 'date'],
             'items' => ['required', 'array', 'min:1'],

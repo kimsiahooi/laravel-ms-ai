@@ -75,6 +75,7 @@ class PurchaseOrderController
             $order = PurchaseOrder::create([
                 'supplier_id' => $request->integer('supplier_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
+                'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
                 'user_id' => $request->user()?->id,
@@ -97,6 +98,7 @@ class PurchaseOrderController
             $purchaseOrder->update([
                 'supplier_id' => $request->integer('supplier_id'),
                 'currency' => strtoupper((string) $request->input('currency')),
+                'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
             ]);

@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $customer_id
  * @property SalesOrderStatus $status
  * @property string $currency
+ * @property string|null $number
  * @property string|null $notes
  * @property Carbon|null $expected_date
  * @property int|null $user_id
@@ -36,7 +37,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $user
  * @property-read Warehouse|null $fulfilledWarehouse
  */
-#[Fillable(['customer_id', 'status', 'currency', 'notes', 'expected_date', 'user_id', 'fulfilled_at', 'fulfilled_warehouse_id'])]
+#[Fillable(['customer_id', 'status', 'currency', 'number', 'notes', 'expected_date', 'user_id', 'fulfilled_at', 'fulfilled_warehouse_id'])]
 class SalesOrder extends Model
 {
     use RecordsActivity;

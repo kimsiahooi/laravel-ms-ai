@@ -319,3 +319,30 @@ it('deletes a purchase order', function () {
 
     $this->tenant->run(fn () => expect(PurchaseOrder::find($poId))->toBeNull());
 });
+
+it('accepts a unique order number and rejects a duplicate (R08b)', function () {
+    ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
+    loginAsAcmeUser();
+
+    $this->post('/acme/purchase-orders', [
+        'supplier_id' => $supplier,
+        'currency' => 'USD',
+        'number' => 'PO-2026-014',
+        'items' => [['raw_material_id' => $steel, 'quantity' => 1, 'unit_cost' => 1]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->tenant->run(fn () => expect(PurchaseOrder::first()->number)->toBe('PO-2026-014'));
+
+    // Reusing the same number on another order is rejected.
+    $this->from('/acme/purchase-orders')
+        ->post('/acme/purchase-orders', [
+            'supplier_id' => $supplier,
+            'currency' => 'USD',
+            'number' => 'PO-2026-014',
+            'items' => [['raw_material_id' => $steel, 'quantity' => 1, 'unit_cost' => 1]],
+        ])
+        ->assertRedirect('/acme/purchase-orders')
+        ->assertSessionHasErrors('number');
+
+    $this->tenant->run(fn () => expect(PurchaseOrder::count())->toBe(1));
+});

@@ -18,6 +18,7 @@ return new class extends Migration
     {
         Schema::create('sales_orders', function (Blueprint $table) {
             $table->id();
+            $table->string('number', 50)->nullable();
             $table->foreignIdFor(Customer::class)->nullable()->constrained()->nullOnDelete();
             $table->string('status', 20)->default('pending');
             $table->string('currency', 3)->default('USD');

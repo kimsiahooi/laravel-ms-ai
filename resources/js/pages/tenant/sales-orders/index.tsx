@@ -102,6 +102,7 @@ export default function SalesOrdersIndex() {
     const [currency, setCurrency] = useState('USD');
     const [notes, setNotes] = useState('');
     const [expectedDate, setExpectedDate] = useState('');
+    const [orderNumber, setOrderNumber] = useState('');
     const [lines, setLines] = useState<Line[]>([]);
     const lineKey = useRef(0);
 
@@ -133,6 +134,7 @@ export default function SalesOrdersIndex() {
             setCurrency('USD');
             setNotes('');
             setExpectedDate('');
+            setOrderNumber('');
             setLines([newLine()]);
         },
         onEdit: (order) => {
@@ -142,6 +144,7 @@ export default function SalesOrdersIndex() {
             setExpectedDate(
                 order.expected_date ? order.expected_date.slice(0, 10) : '',
             );
+            setOrderNumber(order.number ?? '');
             setLines(
                 order.items.map((item) => ({
                     key: lineKey.current++,
@@ -196,7 +199,7 @@ export default function SalesOrdersIndex() {
                     })}
                     className="font-medium text-primary tabular-nums hover:underline"
                 >
-                    #{row.original.id}
+                    {row.original.number ?? `#${row.original.id}`}
                 </Link>
             ),
             meta: { sortKey: 'id' },
@@ -456,6 +459,34 @@ export default function SalesOrdersIndex() {
                                     aria-invalid={!!errors.currency}
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2 sm:max-w-xs">
+                            <FieldLabel
+                                htmlFor="number"
+                                hint="Your own SO number for this order. Optional — blank uses the system number (#id). Must be unique."
+                            >
+                                Order number{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </FieldLabel>
+                            <Input
+                                id="number"
+                                name="number"
+                                value={orderNumber}
+                                onChange={(event) =>
+                                    setOrderNumber(event.target.value)
+                                }
+                                maxLength={50}
+                                placeholder="e.g. SO-2026-014"
+                                aria-invalid={!!errors.number}
+                            />
+                            {errors.number ? (
+                                <p className="text-destructive text-sm">
+                                    {errors.number}
+                                </p>
+                            ) : null}
                         </div>
 
                         <div className="space-y-2">

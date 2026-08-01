@@ -306,3 +306,30 @@ it('deletes a sales order', function () {
 
     $this->tenant->run(fn () => expect(SalesOrder::find($soId))->toBeNull());
 });
+
+it('accepts a unique order number and rejects a duplicate (R08b)', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    loginAsAcmeUser();
+
+    $this->post('/acme/sales-orders', [
+        'customer_id' => $customer,
+        'currency' => 'USD',
+        'number' => 'SO-2026-014',
+        'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 1]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->tenant->run(fn () => expect(SalesOrder::first()->number)->toBe('SO-2026-014'));
+
+    // Reusing the same number on another order is rejected.
+    $this->from('/acme/sales-orders')
+        ->post('/acme/sales-orders', [
+            'customer_id' => $customer,
+            'currency' => 'USD',
+            'number' => 'SO-2026-014',
+            'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 1]],
+        ])
+        ->assertRedirect('/acme/sales-orders')
+        ->assertSessionHasErrors('number');
+
+    $this->tenant->run(fn () => expect(SalesOrder::count())->toBe(1));
+});
