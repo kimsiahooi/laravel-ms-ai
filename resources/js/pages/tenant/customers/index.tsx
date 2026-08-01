@@ -135,7 +135,7 @@ export default function CustomersIndex() {
                 only={['customers', 'filters']}
                 getRowId={(customer) => String(customer.id)}
                 title={customerMeta.plural}
-                searchPlaceholder="Search name or email…"
+                searchPlaceholder="Search name, email, or notes…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />

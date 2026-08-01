@@ -125,3 +125,19 @@ it('searches suppliers by name or email', function () {
             ->where('suppliers.data.0.name', 'Bolt Co')
         );
 });
+
+it('searches suppliers by their notes (R04)', function () {
+    $this->tenant->run(function () {
+        Supplier::create(['name' => 'Acme Metals', 'notes' => 'Bought TV brackets, kettles, air fryers']);
+        Supplier::create(['name' => 'Bolt Co', 'notes' => 'Fasteners only']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/suppliers?search=kettle')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('suppliers.data', 1)
+            ->where('suppliers.data.0.name', 'Acme Metals')
+        );
+});

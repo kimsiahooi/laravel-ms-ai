@@ -125,3 +125,19 @@ it('searches customers by name or email', function () {
             ->where('customers.data.0.name', 'Initech')
         );
 });
+
+it('searches customers by their notes (R04)', function () {
+    $this->tenant->run(function () {
+        Customer::create(['name' => 'Globex', 'notes' => 'Prefers pallet delivery on Fridays']);
+        Customer::create(['name' => 'Initech', 'notes' => 'Net 30 terms']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/customers?search=pallet')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('customers.data', 1)
+            ->where('customers.data.0.name', 'Globex')
+        );
+});

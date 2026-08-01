@@ -135,7 +135,7 @@ export default function SuppliersIndex() {
                 only={['suppliers', 'filters']}
                 getRowId={(supplier) => String(supplier.id)}
                 title={supplierMeta.plural}
-                searchPlaceholder="Search by name or email…"
+                searchPlaceholder="Search by name, email, or notes…"
                 toolbar={
                     <Button onClick={dialog.openCreate} className="shrink-0">
                         <Plus className="size-4" />

@@ -30,5 +30,5 @@ class Customer extends Model
     use Searchable;
     use SoftDeletes;
 
-    protected array $searchable = ['name', 'contact_person', 'email'];
+    protected array $searchable = ['name', 'contact_person', 'email', 'notes'];
 }
