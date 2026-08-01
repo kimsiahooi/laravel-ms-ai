@@ -28,6 +28,7 @@ class CategoryController
             'tenant/categories/index',
             'categories',
             fn (Category $category): CategoryData => CategoryData::from($category),
+            ['name', 'created_at'],
         );
     }
 

@@ -18,6 +18,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { formatDate } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import rawMaterialsRoutes from '@/routes/tenant/raw-materials';
 import type { TenantPageProps } from '@/types';
@@ -62,6 +63,7 @@ export default function RawMaterialsIndex() {
                     {row.original.name}
                 </span>
             ),
+            meta: { sortKey: 'name' },
         },
         {
             accessorKey: 'sku',
@@ -79,12 +81,29 @@ export default function RawMaterialsIndex() {
                     {row.original.sku}
                 </span>
             ),
+            meta: { sortKey: 'sku' },
         },
         {
             accessorKey: 'unit',
             header: 'Unit',
             cell: ({ row }) => row.original.unit,
             meta: { className: 'hidden text-muted-foreground md:table-cell' },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
+            },
         },
         {
             id: 'actions',

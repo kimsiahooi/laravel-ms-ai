@@ -16,6 +16,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { formatDate } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import categoriesRoutes from '@/routes/tenant/categories';
 import type { TenantPageProps } from '@/types';
@@ -57,6 +58,7 @@ export default function CategoriesIndex() {
                     {row.original.name}
                 </span>
             ),
+            meta: { sortKey: 'name' },
         },
         {
             accessorKey: 'description',
@@ -65,6 +67,22 @@ export default function CategoriesIndex() {
             meta: {
                 className:
                     'hidden max-w-md truncate text-muted-foreground sm:table-cell',
+            },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
             },
         },
         {

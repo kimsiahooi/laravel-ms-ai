@@ -48,7 +48,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatMoney } from '@/lib/format';
+import { formatDate, formatMoney } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import poRoutes from '@/routes/tenant/purchase-orders';
@@ -201,6 +201,7 @@ export default function PurchaseOrdersIndex() {
                     #{row.original.id}
                 </Link>
             ),
+            meta: { sortKey: 'id' },
         },
         {
             accessorKey: 'supplier',
@@ -217,6 +218,7 @@ export default function PurchaseOrdersIndex() {
                     label={row.original.status_label}
                 />
             ),
+            meta: { sortKey: 'status' },
         },
         {
             accessorKey: 'item_count',
@@ -233,6 +235,22 @@ export default function PurchaseOrdersIndex() {
             cell: ({ row }) =>
                 formatMoney(row.original.total, row.original.currency),
             meta: { className: 'text-right tabular-nums' },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
+            },
         },
         {
             id: 'actions',

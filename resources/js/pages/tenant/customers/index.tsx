@@ -17,6 +17,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
+import { formatDate } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import customersRoutes from '@/routes/tenant/customers';
 import type { TenantPageProps } from '@/types';
@@ -75,6 +76,7 @@ export default function CustomersIndex() {
                     {row.original.name}
                 </span>
             ),
+            meta: { sortKey: 'name' },
         },
         {
             accessorKey: 'email',
@@ -83,6 +85,7 @@ export default function CustomersIndex() {
             meta: {
                 className:
                     'hidden max-w-md truncate text-muted-foreground sm:table-cell',
+                sortKey: 'email',
             },
         },
         {
@@ -90,6 +93,22 @@ export default function CustomersIndex() {
             header: 'Phone',
             cell: ({ row }) => row.original.phone ?? '—',
             meta: { className: 'hidden text-muted-foreground md:table-cell' },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
+            },
         },
         {
             id: 'actions',

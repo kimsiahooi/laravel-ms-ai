@@ -17,9 +17,12 @@ use Inertia\Response;
  */
 trait RendersResourceIndex
 {
+    use SortsResourceQuery;
+
     /**
      * @param  class-string<Model>  $model  the Eloquent model (must have a `search` scope)
      * @param  callable(Model): mixed  $toData  maps each row to its Data object
+     * @param  array<int, string>  $sortable  real columns the UI may sort by (default: created_at desc)
      */
     protected function resourceIndex(
         Request $request,
@@ -27,20 +30,25 @@ trait RendersResourceIndex
         string $view,
         string $key,
         callable $toData,
+        array $sortable = [],
+        string $defaultSort = 'created_at',
+        string $defaultDirection = 'desc',
     ): Response {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $rows = $this->paginateList(
-            $model::query()->search($search)->latest()->latest('id'),
-            $perPage,
-        )->through($toData);
+        $query = $model::query()->search($search);
+        $sort = $this->applySort($query, $request, $sortable, $defaultSort, $defaultDirection);
+
+        $rows = $this->paginateList($query, $perPage)->through($toData);
 
         return Inertia::render($view, [
             $key => $rows,
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

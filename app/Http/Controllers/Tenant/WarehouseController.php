@@ -9,6 +9,7 @@ use App\Data\WarehouseData;
 use App\Data\WarehouseItemData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\WarehouseRequest;
 use App\Models\Location;
 use App\Models\Warehouse;
@@ -23,6 +24,7 @@ class WarehouseController
 {
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
@@ -30,31 +32,32 @@ class WarehouseController
 
         $perPage = $this->perPage($request);
 
-        $warehouses = $this->paginateList(
-            Warehouse::query()
-                ->with('location')
-                ->search($search)
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(function (Warehouse $warehouse): WarehouseData {
-            // Per-warehouse stock summary for the list badges, from the same
-            // union the detail page uses so the numbers reconcile. One small
-            // count query per listed warehouse (a page's worth).
-            $counts = $this->stockCounts($warehouse->id);
-            $data = WarehouseData::from($warehouse);
-            $data->items_in_stock = $counts['in_stock'];
-            $data->low_stock = $counts['low'];
-            $data->out_of_stock = $counts['out'];
+        $query = Warehouse::query()
+            ->with('location')
+            ->search($search);
+        $sort = $this->applySort($query, $request, ['name', 'code', 'created_at']);
 
-            return $data;
-        });
+        $warehouses = $this->paginateList($query, $perPage)
+            ->through(function (Warehouse $warehouse): WarehouseData {
+                // Per-warehouse stock summary for the list badges, from the same
+                // union the detail page uses so the numbers reconcile. One small
+                // count query per listed warehouse (a page's worth).
+                $counts = $this->stockCounts($warehouse->id);
+                $data = WarehouseData::from($warehouse);
+                $data->items_in_stock = $counts['in_stock'];
+                $data->low_stock = $counts['low'];
+                $data->out_of_stock = $counts['out'];
+
+                return $data;
+            });
 
         return Inertia::render('tenant/warehouses/index', [
             'warehouses' => $warehouses,
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
             'locations' => OptionData::collect(Location::orderBy('name')->get(['id', 'name'])),
         ]);

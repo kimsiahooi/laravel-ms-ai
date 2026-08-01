@@ -43,7 +43,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
+import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import productsRoutes from '@/routes/tenant/products';
@@ -296,6 +296,7 @@ export default function ProductsIndex() {
                     {row.original.name}
                 </span>
             ),
+            meta: { sortKey: 'name' },
         },
         {
             accessorKey: 'sku',
@@ -313,6 +314,7 @@ export default function ProductsIndex() {
                     {row.original.sku}
                 </span>
             ),
+            meta: { sortKey: 'sku' },
         },
         {
             accessorKey: 'category',
@@ -331,6 +333,22 @@ export default function ProductsIndex() {
             header: 'Unit',
             cell: ({ row }) => row.original.unit,
             meta: { className: 'hidden text-muted-foreground md:table-cell' },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
+            },
         },
         {
             id: 'actions',

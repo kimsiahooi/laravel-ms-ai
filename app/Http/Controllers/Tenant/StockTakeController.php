@@ -10,6 +10,7 @@ use App\Enums\StockTakeStatus;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\StockTakeRequest;
 use App\Models\StockTake;
 use App\Models\Warehouse;
@@ -25,20 +26,20 @@ class StockTakeController
     use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $takes = $this->paginateList(
-            StockTake::query()
-                ->with(['warehouse.location', 'items'])
-                ->search($search)
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (StockTake $take): StockTakeData => StockTakeData::from($take));
+        $query = StockTake::query()
+            ->with(['warehouse.location', 'items'])
+            ->search($search);
+        $sort = $this->applySort($query, $request, ['id', 'status', 'created_at']);
+
+        $takes = $this->paginateList($query, $perPage)
+            ->through(fn (StockTake $take): StockTakeData => StockTakeData::from($take));
 
         return Inertia::render('tenant/stock-takes/index', [
             'takes' => $takes,
@@ -46,6 +47,8 @@ class StockTakeController
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

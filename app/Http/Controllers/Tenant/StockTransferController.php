@@ -9,6 +9,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\StockTransferRequest;
 use App\Models\Product;
 use App\Models\RawMaterial;
@@ -27,20 +28,20 @@ class StockTransferController
     use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $transfers = $this->paginateList(
-            StockTransfer::query()
-                ->with(['fromWarehouse.location', 'toWarehouse.location', 'stockable', 'user'])
-                ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (StockTransfer $transfer): StockTransferData => StockTransferData::from($transfer));
+        $query = StockTransfer::query()
+            ->with(['fromWarehouse.location', 'toWarehouse.location', 'stockable', 'user'])
+            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search));
+        $sort = $this->applySort($query, $request, ['quantity', 'created_at']);
+
+        $transfers = $this->paginateList($query, $perPage)
+            ->through(fn (StockTransfer $transfer): StockTransferData => StockTransferData::from($transfer));
 
         return Inertia::render('tenant/stock-transfers/index', [
             'transfers' => $transfers,
@@ -49,6 +50,8 @@ class StockTransferController
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

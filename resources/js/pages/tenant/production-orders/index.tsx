@@ -41,7 +41,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
+import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import productionRoutes from '@/routes/tenant/production-orders';
@@ -132,6 +132,7 @@ export default function ProductionOrdersIndex() {
                     #{row.original.id}
                 </Link>
             ),
+            meta: { sortKey: 'id' },
         },
         {
             accessorKey: 'product',
@@ -147,12 +148,13 @@ export default function ProductionOrdersIndex() {
                     label={row.original.status_label}
                 />
             ),
+            meta: { sortKey: 'status' },
         },
         {
             accessorKey: 'quantity',
             header: 'Quantity',
             cell: ({ row }) => formatQuantity(row.original.quantity),
-            meta: { className: 'text-right tabular-nums' },
+            meta: { className: 'text-right tabular-nums', sortKey: 'quantity' },
         },
         {
             accessorKey: 'item_count',
@@ -161,6 +163,22 @@ export default function ProductionOrdersIndex() {
             meta: {
                 className:
                     'hidden text-right text-muted-foreground sm:table-cell',
+            },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
             },
         },
         {

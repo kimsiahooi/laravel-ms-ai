@@ -12,6 +12,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\PurchaseReturnRequest;
 use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
@@ -30,20 +31,20 @@ class PurchaseReturnController
     use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $returns = $this->paginateList(
-            PurchaseReturn::query()
-                ->with(['supplier', 'items'])
-                ->search($search)
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (PurchaseReturn $return): PurchaseReturnData => PurchaseReturnData::from($return));
+        $query = PurchaseReturn::query()
+            ->with(['supplier', 'items'])
+            ->search($search);
+        $sort = $this->applySort($query, $request, ['id', 'status', 'created_at']);
+
+        $returns = $this->paginateList($query, $perPage)
+            ->through(fn (PurchaseReturn $return): PurchaseReturnData => PurchaseReturnData::from($return));
 
         return Inertia::render('tenant/purchase-returns/index', [
             'returns' => $returns,
@@ -53,6 +54,8 @@ class PurchaseReturnController
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

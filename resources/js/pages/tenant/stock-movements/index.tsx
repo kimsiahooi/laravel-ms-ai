@@ -120,6 +120,7 @@ export default function StockMovementsIndex() {
                     {timeAgo(row.original.created_at)}
                 </span>
             ),
+            meta: { sortKey: 'created_at' },
         },
         {
             accessorKey: 'warehouse',
@@ -145,7 +146,7 @@ export default function StockMovementsIndex() {
                     className="font-medium"
                 />
             ),
-            meta: { className: 'text-right' },
+            meta: { className: 'text-right', sortKey: 'quantity' },
         },
         {
             accessorKey: 'reason',

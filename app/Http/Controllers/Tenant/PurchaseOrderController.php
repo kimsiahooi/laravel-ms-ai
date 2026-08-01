@@ -11,6 +11,7 @@ use App\Enums\PurchaseOrderStatus;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\PurchaseOrderRequest;
 use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
@@ -28,20 +29,20 @@ class PurchaseOrderController
     use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $orders = $this->paginateList(
-            PurchaseOrder::query()
-                ->with(['supplier', 'items'])
-                ->search($search)
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (PurchaseOrder $order): PurchaseOrderData => PurchaseOrderData::from($order));
+        $query = PurchaseOrder::query()
+            ->with(['supplier', 'items'])
+            ->search($search);
+        $sort = $this->applySort($query, $request, ['id', 'status', 'created_at']);
+
+        $orders = $this->paginateList($query, $perPage)
+            ->through(fn (PurchaseOrder $order): PurchaseOrderData => PurchaseOrderData::from($order));
 
         return Inertia::render('tenant/purchase-orders/index', [
             'orders' => $orders,
@@ -51,6 +52,8 @@ class PurchaseOrderController
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

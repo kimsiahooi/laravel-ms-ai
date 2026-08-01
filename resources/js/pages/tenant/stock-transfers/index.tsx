@@ -108,6 +108,7 @@ export default function StockTransfersIndex() {
                     {timeAgo(row.original.created_at)}
                 </span>
             ),
+            meta: { sortKey: 'created_at' },
         },
         {
             accessorKey: 'item',
@@ -133,7 +134,7 @@ export default function StockTransfersIndex() {
             accessorKey: 'quantity',
             header: 'Quantity',
             cell: ({ row }) => formatQuantity(row.original.quantity),
-            meta: { className: 'text-right tabular-nums' },
+            meta: { className: 'text-right tabular-nums', sortKey: 'quantity' },
         },
         {
             accessorKey: 'user',

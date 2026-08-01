@@ -141,3 +141,36 @@ it('searches suppliers by their notes (R04)', function () {
             ->where('suppliers.data.0.name', 'Acme Metals')
         );
 });
+
+it('sorts suppliers by a whitelisted column, echoing the sort in filters (R06)', function () {
+    $this->tenant->run(function () {
+        Supplier::create(['name' => 'Zeta Supplies']);
+        Supplier::create(['name' => 'Alpha Metals']);
+    });
+
+    loginAsAcmeUser();
+
+    $this->get('/acme/suppliers?sort=name&direction=asc')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('suppliers.data.0.name', 'Alpha Metals')
+            ->where('suppliers.data.1.name', 'Zeta Supplies')
+            ->where('filters.sort', 'name')
+            ->where('filters.direction', 'asc')
+        );
+});
+
+it('ignores an unknown sort column, falling back to the default (R06)', function () {
+    $this->tenant->run(function () {
+        Supplier::create(['name' => 'Acme']);
+    });
+
+    loginAsAcmeUser();
+
+    // A hand-typed column not in the allow-list must not reach the query.
+    $this->get('/acme/suppliers?sort=notes&direction=asc')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.sort', 'created_at')
+        );
+});

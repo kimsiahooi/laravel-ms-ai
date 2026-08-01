@@ -12,6 +12,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\ProductionOrderRequest;
 use App\Models\BomItem;
 use App\Models\Product;
@@ -31,20 +32,20 @@ class ProductionOrderController
     use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $orders = $this->paginateList(
-            ProductionOrder::query()
-                ->with(['product', 'items'])
-                ->search($search)
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (ProductionOrder $order): ProductionOrderData => ProductionOrderData::from($order));
+        $query = ProductionOrder::query()
+            ->with(['product', 'items'])
+            ->search($search);
+        $sort = $this->applySort($query, $request, ['id', 'status', 'quantity', 'created_at']);
+
+        $orders = $this->paginateList($query, $perPage)
+            ->through(fn (ProductionOrder $order): ProductionOrderData => ProductionOrderData::from($order));
 
         // Only products with a BOM can be manufactured; ship each one's
         // exploded per-unit needs so the create dialog can preview consumption.
@@ -71,6 +72,8 @@ class ProductionOrderController
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

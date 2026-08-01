@@ -10,6 +10,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\StockMovementRequest;
 use App\Models\Product;
 use App\Models\RawMaterial;
@@ -28,20 +29,20 @@ class StockMovementController
     use BuildsStockPickers;
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
 
-        $movements = $this->paginateList(
-            StockMovement::query()
-                ->with(['warehouse.location', 'stockable', 'user'])
-                ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search))
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (StockMovement $movement): StockMovementData => StockMovementData::from($movement));
+        $query = StockMovement::query()
+            ->with(['warehouse.location', 'stockable', 'user'])
+            ->when($search !== '', fn (Builder $query) => $this->applySearch($query, $search));
+        $sort = $this->applySort($query, $request, ['quantity', 'created_at']);
+
+        $movements = $this->paginateList($query, $perPage)
+            ->through(fn (StockMovement $movement): StockMovementData => StockMovementData::from($movement));
 
         return Inertia::render('tenant/stock-movements/index', [
             'movements' => $movements,
@@ -50,6 +51,8 @@ class StockMovementController
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
         ]);
     }

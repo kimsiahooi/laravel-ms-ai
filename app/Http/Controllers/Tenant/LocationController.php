@@ -28,6 +28,7 @@ class LocationController
             'tenant/locations/index',
             'locations',
             fn (Location $location): LocationData => LocationData::from($location),
+            ['name', 'code', 'created_at'],
         );
     }
 

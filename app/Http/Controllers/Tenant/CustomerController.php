@@ -28,6 +28,7 @@ class CustomerController
             'tenant/customers/index',
             'customers',
             fn (Customer $customer): CustomerData => CustomerData::from($customer),
+            ['name', 'email', 'created_at'],
         );
     }
 

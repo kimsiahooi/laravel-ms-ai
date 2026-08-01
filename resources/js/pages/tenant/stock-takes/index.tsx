@@ -74,6 +74,7 @@ export default function StockTakesIndex() {
                     #{row.original.id}
                 </Link>
             ),
+            meta: { sortKey: 'id' },
         },
         {
             accessorKey: 'warehouse',
@@ -90,6 +91,7 @@ export default function StockTakesIndex() {
                     label={row.original.status_label}
                 />
             ),
+            meta: { sortKey: 'status' },
         },
         {
             accessorKey: 'item_count',
@@ -119,7 +121,7 @@ export default function StockTakesIndex() {
                     {timeAgo(row.original.created_at)}
                 </span>
             ),
-            meta: { className: 'hidden lg:table-cell' },
+            meta: { className: 'hidden lg:table-cell', sortKey: 'created_at' },
         },
         {
             id: 'actions',

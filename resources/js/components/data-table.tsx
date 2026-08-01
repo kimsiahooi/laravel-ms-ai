@@ -7,6 +7,9 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
     ChevronLeft,
     ChevronRight,
     LoaderCircle,
@@ -43,11 +46,14 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import type { ResourceFilters } from '@/types/page';
 
 // Let columns carry responsive / alignment classes applied to <TableHead>+<TableCell>.
 declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> {
         className?: string;
+        /** DB column key this header sorts by (server-side). Omit = not sortable. */
+        sortKey?: string;
     }
 }
 
@@ -119,10 +125,34 @@ function pageHref(template: string, page: number): string {
     return url.toString();
 }
 
+/** Header sort affordance: neutral when inactive, up/down for the active column. */
+function SortIndicator({
+    active,
+    direction,
+}: {
+    active: boolean;
+    direction?: 'asc' | 'desc';
+}) {
+    if (!active) {
+        return (
+            <ArrowUpDown
+                className="size-3.5 text-muted-foreground/50"
+                aria-hidden
+            />
+        );
+    }
+
+    return direction === 'asc' ? (
+        <ArrowUp className="size-3.5" aria-hidden />
+    ) : (
+        <ArrowDown className="size-3.5" aria-hidden />
+    );
+}
+
 type DataTableProps<T> = {
     columns: ColumnDef<T, unknown>[];
     paginator: Paginator<T>;
-    filters: { search: string; per_page: number };
+    filters: ResourceFilters;
     baseUrl: string;
     only: string[];
     getRowId: (row: T) => string;
@@ -182,7 +212,12 @@ export function DataTable<T>({
             requestedSearchRef.current = q;
             router.get(
                 baseUrl,
-                { search: q || undefined, per_page: filters.per_page },
+                {
+                    search: q || undefined,
+                    per_page: filters.per_page,
+                    sort: filters.sort,
+                    direction: filters.direction,
+                },
                 {
                     only: onlyRef.current,
                     preserveState: true,
@@ -195,7 +230,14 @@ export function DataTable<T>({
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [search, filters.search, filters.per_page, baseUrl]);
+    }, [
+        search,
+        filters.search,
+        filters.per_page,
+        filters.sort,
+        filters.direction,
+        baseUrl,
+    ]);
 
     // Re-sync the search box when the server's `filters.search` changes for a
     // reason other than our own debounced request (e.g. a create/delete redirect
@@ -214,6 +256,25 @@ export function DataTable<T>({
         replace: true as const,
         onStart: () => setLoading(true),
         onFinish: () => setLoading(false),
+    };
+
+    // Toggle server-side sort for a column: a fresh column ascends; clicking the
+    // active column flips direction. Sort persists across search and pagination.
+    const onSort = (sortKey: string) => {
+        const direction =
+            filters.sort === sortKey && filters.direction === 'asc'
+                ? 'desc'
+                : 'asc';
+        router.get(
+            baseUrl,
+            {
+                search: filters.search || undefined,
+                per_page: filters.per_page,
+                sort: sortKey,
+                direction,
+            },
+            reload,
+        );
     };
 
     const clearSearch = () => {
@@ -329,23 +390,51 @@ export function DataTable<T>({
                                             </span>
                                         </TableHead>
                                     )}
-                                    {headerGroup.headers.map((header) => (
-                                        <TableHead
-                                            key={header.id}
-                                            className={
-                                                header.column.columnDef.meta
-                                                    ?.className
-                                            }
-                                        >
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
-                                        </TableHead>
-                                    ))}
+                                    {headerGroup.headers.map((header) => {
+                                        const sortKey =
+                                            header.column.columnDef.meta
+                                                ?.sortKey;
+                                        const content = header.isPlaceholder
+                                            ? null
+                                            : flexRender(
+                                                  header.column.columnDef
+                                                      .header,
+                                                  header.getContext(),
+                                              );
+
+                                        return (
+                                            <TableHead
+                                                key={header.id}
+                                                className={
+                                                    header.column.columnDef.meta
+                                                        ?.className
+                                                }
+                                            >
+                                                {sortKey ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            onSort(sortKey)
+                                                        }
+                                                        className="-mx-1 inline-flex items-center gap-1.5 rounded px-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                    >
+                                                        {content}
+                                                        <SortIndicator
+                                                            active={
+                                                                filters.sort ===
+                                                                sortKey
+                                                            }
+                                                            direction={
+                                                                filters.direction
+                                                            }
+                                                        />
+                                                    </button>
+                                                ) : (
+                                                    content
+                                                )}
+                                            </TableHead>
+                                        );
+                                    })}
                                 </TableRow>
                             ))}
                         </TableHeader>
@@ -523,6 +612,8 @@ export function DataTable<T>({
                                                 search:
                                                     filters.search || undefined,
                                                 per_page: Number(value),
+                                                sort: filters.sort,
+                                                direction: filters.direction,
                                             },
                                             reload,
                                         )

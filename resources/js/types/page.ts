@@ -2,6 +2,9 @@
 export type ResourceFilters = {
     search: string;
     per_page: number;
+    /** Active sort column key + direction — present on tables with sortable headers. */
+    sort?: string;
+    direction?: 'asc' | 'desc';
 };
 
 /** The current tenant's identity, shared with every tenant page. */

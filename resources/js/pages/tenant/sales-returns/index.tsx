@@ -40,7 +40,7 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
+import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { dashboard } from '@/routes/tenant';
 import returnsRoutes from '@/routes/tenant/sales-returns';
@@ -149,6 +149,7 @@ export default function SalesReturnsIndex() {
                     #{row.original.id}
                 </Link>
             ),
+            meta: { sortKey: 'id' },
         },
         {
             accessorKey: 'customer',
@@ -165,12 +166,29 @@ export default function SalesReturnsIndex() {
                     label={row.original.status_label}
                 />
             ),
+            meta: { sortKey: 'status' },
         },
         {
             accessorKey: 'total_quantity',
             header: 'Quantity',
             cell: ({ row }) => formatQuantity(row.original.total_quantity),
             meta: { className: 'text-right tabular-nums' },
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Created',
+            cell: ({ row }) => (
+                <span
+                    suppressHydrationWarning
+                    className="text-muted-foreground tabular-nums"
+                >
+                    {formatDate(row.original.created_at)}
+                </span>
+            ),
+            meta: {
+                className: 'hidden text-muted-foreground lg:table-cell',
+                sortKey: 'created_at',
+            },
         },
         {
             id: 'actions',

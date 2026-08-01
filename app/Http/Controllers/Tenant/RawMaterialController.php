@@ -28,6 +28,7 @@ class RawMaterialController
             'tenant/raw-materials/index',
             'rawMaterials',
             fn (RawMaterial $rawMaterial): RawMaterialData => RawMaterialData::from($rawMaterial),
+            ['name', 'sku', 'created_at'],
         );
     }
 

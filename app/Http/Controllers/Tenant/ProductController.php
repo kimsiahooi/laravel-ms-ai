@@ -8,6 +8,7 @@ use App\Data\OptionData;
 use App\Data\ProductData;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
+use App\Http\Controllers\Concerns\SortsResourceQuery;
 use App\Http\Requests\Tenant\BomRequest;
 use App\Http\Requests\Tenant\ProductRequest;
 use App\Models\Category;
@@ -25,6 +26,7 @@ class ProductController
 {
     use ResolvesPerPage;
     use RespondsWithToast;
+    use SortsResourceQuery;
 
     public function index(Request $request): Response
     {
@@ -32,20 +34,21 @@ class ProductController
 
         $perPage = $this->perPage($request);
 
-        $products = $this->paginateList(
-            Product::query()
-                ->with(['category', 'supplier', 'bomItems.rawMaterial', 'media'])
-                ->search($search)
-                ->latest()
-                ->latest('id'),
-            $perPage,
-        )->through(fn (Product $product): ProductData => ProductData::from($product));
+        $query = Product::query()
+            ->with(['category', 'supplier', 'bomItems.rawMaterial', 'media'])
+            ->search($search);
+        $sort = $this->applySort($query, $request, ['name', 'sku', 'created_at']);
+
+        $products = $this->paginateList($query, $perPage)
+            ->through(fn (Product $product): ProductData => ProductData::from($product));
 
         return Inertia::render('tenant/products/index', [
             'products' => $products,
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
+                'sort' => $sort['sort'],
+                'direction' => $sort['direction'],
             ],
             'categories' => OptionData::collect(Category::orderBy('name')->get(['id', 'name'])),
             'suppliers' => OptionData::collect(Supplier::orderBy('name')->get(['id', 'name'])),
