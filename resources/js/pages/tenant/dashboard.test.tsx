@@ -21,9 +21,10 @@ function props(overrides: Record<string, unknown> = {}) {
             to: '2026-07-12T23:59:59+08:00',
         },
         kpis: {
+            currency: 'USD',
             sales: { count: 1, amount: 1250 },
             purchases: { count: 0, amount: 0 },
-            production: { count: 0, quantity: 0 },
+            production: { count: 3, quantity: 884 },
             low_stock: 2,
         },
         series: [
@@ -53,8 +54,10 @@ describe('tenant dashboard', () => {
 
         expect(screen.getByText('Production')).toBeInTheDocument();
         expect(screen.getByText('Low / out of stock')).toBeInTheDocument();
-        // formatQuantity(1250) with the pinned locale — proves the KPI + formatter path.
-        expect(screen.getByText('1,250')).toBeInTheDocument();
+        // formatMoney(1250, 'USD') with the pinned locale — proves the KPI + money formatter path.
+        expect(screen.getByText('$1,250.00')).toBeInTheDocument();
+        // Production headlines the order count and labels the total units "unit" (R16).
+        expect(screen.getByText('884 units completed')).toBeInTheDocument();
         expect(screen.getByText('Sales vs Purchases')).toBeInTheDocument();
         expect(screen.getByText('Stock movements')).toBeInTheDocument();
     });
@@ -64,6 +67,7 @@ describe('tenant dashboard', () => {
             <Dashboard />,
             props({
                 kpis: {
+                    currency: 'USD',
                     sales: { count: 0, amount: 0 },
                     purchases: { count: 0, amount: 0 },
                     production: { count: 0, quantity: 0 },

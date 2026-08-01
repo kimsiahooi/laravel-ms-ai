@@ -13,6 +13,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\StockReportService;
+use App\Settings\BusinessSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -54,6 +55,10 @@ class DashboardController
                 $production = $reports->productionTotals($range);
 
                 return [
+                    // The base currency the totals roll up to (business settings). Amounts
+                    // are summed as-entered per order; converting mixed order currencies to
+                    // this base is R05, not this display label.
+                    'currency' => (string) (app(BusinessSettings::class)->values()['default_currency'] ?? 'MYR'),
                     'sales' => ['count' => $sales->count, 'amount' => $sales->amount],
                     'purchases' => ['count' => $purchases->count, 'amount' => $purchases->amount],
                     'production' => ['count' => $production->count, 'quantity' => $production->quantity],

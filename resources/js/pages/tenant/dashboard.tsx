@@ -28,7 +28,7 @@ import { useDateRangeFilter } from '@/hooks/use-date-range-filter';
 import { firstName, useTimeOfDayGreeting } from '@/hooks/use-greeting';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatCompact, formatQuantity } from '@/lib/format';
+import { formatCompact, formatMoney, formatQuantity } from '@/lib/format';
 import { dashboard } from '@/routes/tenant';
 import locations from '@/routes/tenant/locations';
 import products from '@/routes/tenant/products';
@@ -39,6 +39,7 @@ import warehouses from '@/routes/tenant/warehouses';
 import type { TenantBrand, User } from '@/types';
 
 type Kpis = {
+    currency: string;
     sales: { count: number; amount: number };
     purchases: { count: number; amount: number };
     production: { count: number; quantity: number };
@@ -181,20 +182,20 @@ export default function TenantDashboard() {
                 <StatCard
                     icon={TrendingUp}
                     label="Sales"
-                    value={formatQuantity(kpis.sales.amount)}
+                    value={formatMoney(kpis.sales.amount, kpis.currency)}
                     sub={`${kpis.sales.count} ${kpis.sales.count === 1 ? 'order' : 'orders'} fulfilled`}
                 />
                 <StatCard
                     icon={ShoppingCart}
                     label="Purchases"
-                    value={formatQuantity(kpis.purchases.amount)}
+                    value={formatMoney(kpis.purchases.amount, kpis.currency)}
                     sub={`${kpis.purchases.count} ${kpis.purchases.count === 1 ? 'order' : 'orders'} received`}
                 />
                 <StatCard
                     icon={Factory}
                     label="Production"
-                    value={formatQuantity(kpis.production.quantity)}
-                    sub={`${kpis.production.count} ${kpis.production.count === 1 ? 'build' : 'builds'} completed`}
+                    value={kpis.production.count}
+                    sub={`${formatQuantity(kpis.production.quantity)} ${kpis.production.quantity === 1 ? 'unit' : 'units'} completed`}
                 />
                 <StatCard
                     icon={TriangleAlert}
