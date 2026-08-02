@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Services\StockReportService;
+use App\Settings\BusinessSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -29,6 +30,9 @@ class ReportController
                 'from' => $from->toIso8601String(),
                 'to' => $to->toIso8601String(),
             ],
+            // Sales/purchase amounts are converted to this base currency per order
+            // before summing (StockReportService), so the totals are comparable.
+            'currency' => app(BusinessSettings::class)->baseCurrency(),
             'sales' => function () use ($reports, $range) {
                 $sales = $reports->salesTotals($range);
 

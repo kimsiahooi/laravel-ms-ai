@@ -16,6 +16,7 @@ function props(overrides: Record<string, unknown> = {}) {
             from: '2026-07-01T00:00:00+08:00',
             to: '2026-07-12T23:59:59+08:00',
         },
+        currency: 'MYR',
         sales: { count: 2, quantity: 10, amount: 250 },
         purchases: { count: 1, quantity: 5, amount: 100 },
         production: { count: 0, quantity: 0 },

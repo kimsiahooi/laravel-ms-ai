@@ -6,6 +6,7 @@ namespace App\Data;
 
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
+use App\Settings\BusinessSettings;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -24,9 +25,12 @@ class SalesOrderData extends Data
         public string $status,
         public string $status_label,
         public string $currency,
+        public float $exchange_rate,
+        public string $base_currency,
         public ?string $number,
         public int $item_count,
         public float $total,
+        public float $base_total,
         public ?string $notes,
         public ?string $expected_date,
         public ?string $fulfilled_at,
@@ -35,11 +39,15 @@ class SalesOrderData extends Data
         public array $items,
     ) {}
 
-    public static function fromSalesOrder(SalesOrder $order): self
+    public static function fromSalesOrder(SalesOrder $order, ?string $baseCurrency = null): self
     {
+        $baseCurrency ??= app(BusinessSettings::class)->baseCurrency();
+
         $items = $order->items->map(
             fn (SalesOrderItem $item): SalesOrderItemData => SalesOrderItemData::from($item),
         );
+        $total = (float) $items->sum(fn (SalesOrderItemData $item): float => $item->quantity * $item->unit_price);
+        $exchangeRate = (float) $order->exchange_rate;
 
         return new self(
             id: $order->id,
@@ -48,9 +56,14 @@ class SalesOrderData extends Data
             status: $order->status->value,
             status_label: $order->status->label(),
             currency: $order->currency,
+            exchange_rate: $exchangeRate,
+            base_currency: $baseCurrency,
             number: $order->number,
             item_count: $items->count(),
-            total: (float) $items->sum(fn (SalesOrderItemData $item): float => $item->quantity * $item->unit_price),
+            total: $total,
+            // The order total expressed in the tenant base currency (= total when
+            // the order is already in the base currency, i.e. rate 1).
+            base_total: $total * $exchangeRate,
             notes: $order->notes,
             expected_date: $order->expected_date?->toISOString(),
             fulfilled_at: $order->fulfilled_at?->toISOString(),

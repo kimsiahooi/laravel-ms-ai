@@ -25,7 +25,7 @@ import {
 import { useDateRangeFilter } from '@/hooks/use-date-range-filter';
 import { usePageProps } from '@/hooks/use-page-props';
 import TenantLayout from '@/layouts/tenant-layout';
-import { formatQuantity } from '@/lib/format';
+import { formatMoney, formatQuantity } from '@/lib/format';
 import { STOCK_STATUS_TEXT, stockStatus } from '@/lib/stock';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/tenant';
@@ -53,6 +53,8 @@ type PageProps = TenantPageProps & {
     production: { count: number; quantity: number };
     movements: Movement[];
     lowStock: LowStock[];
+    /** Tenant base currency — Sales/Purchases amounts are already converted to it. */
+    currency: string;
 };
 
 export default function ReportsIndex() {
@@ -63,6 +65,7 @@ export default function ReportsIndex() {
         production,
         movements,
         lowStock,
+        currency,
         tenant,
     } = usePageProps<PageProps>();
     const base = reportsRoutes.index.url({ tenant: tenant.slug });
@@ -96,7 +99,8 @@ export default function ReportsIndex() {
                     </h1>
                     <p className="text-muted-foreground text-sm">
                         A summary of activity over a period. Totals come from
-                        each order's line amounts (quantity × price).
+                        each order's line amounts (quantity × price), shown in
+                        your base currency ({currency}).
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -115,13 +119,13 @@ export default function ReportsIndex() {
                 <StatCard
                     icon={TrendingUp}
                     label="Sales"
-                    value={formatQuantity(sales.amount)}
+                    value={formatMoney(sales.amount, currency)}
                     sub={`${sales.count} orders · ${formatQuantity(sales.quantity)} sold`}
                 />
                 <StatCard
                     icon={ShoppingCart}
                     label="Purchases"
-                    value={formatQuantity(purchases.amount)}
+                    value={formatMoney(purchases.amount, currency)}
                     sub={`${purchases.count} received · ${formatQuantity(purchases.quantity)} in`}
                 />
                 <StatCard

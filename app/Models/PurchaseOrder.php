@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $supplier_id
  * @property PurchaseOrderStatus $status
  * @property string $currency
+ * @property string $exchange_rate
  * @property string|null $number
  * @property string|null $notes
  * @property Carbon|null $expected_date
@@ -37,7 +38,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $user
  * @property-read Warehouse|null $receivedWarehouse
  */
-#[Fillable(['supplier_id', 'status', 'currency', 'number', 'notes', 'expected_date', 'user_id', 'received_at', 'received_warehouse_id'])]
+#[Fillable(['supplier_id', 'status', 'currency', 'exchange_rate', 'number', 'notes', 'expected_date', 'user_id', 'received_at', 'received_warehouse_id'])]
 class PurchaseOrder extends Model
 {
     use RecordsActivity;
@@ -57,6 +58,7 @@ class PurchaseOrder extends Model
     {
         return [
             'status' => PurchaseOrderStatus::class,
+            'exchange_rate' => 'decimal:6',
             'received_at' => 'datetime',
             'expected_date' => 'datetime',
         ];

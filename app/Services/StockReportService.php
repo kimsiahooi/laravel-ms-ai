@@ -35,7 +35,7 @@ class StockReportService
             ->where('sales_orders.status', SalesOrderStatus::Fulfilled->value)
             ->whereNull('sales_orders.deleted_at')
             ->whereBetween('sales_orders.fulfilled_at', $range)
-            ->selectRaw('COUNT(DISTINCT sales_orders.id) as cnt, COALESCE(SUM(sales_order_items.quantity), 0) as qty, COALESCE(SUM(sales_order_items.quantity * sales_order_items.unit_price), 0) as amount')
+            ->selectRaw('COUNT(DISTINCT sales_orders.id) as cnt, COALESCE(SUM(sales_order_items.quantity), 0) as qty, COALESCE(SUM(sales_order_items.quantity * sales_order_items.unit_price * sales_orders.exchange_rate), 0) as amount')
             ->first();
 
         return (object) ['count' => (int) $row->cnt, 'quantity' => (float) $row->qty, 'amount' => (float) $row->amount];
@@ -52,7 +52,7 @@ class StockReportService
             ->where('purchase_orders.status', PurchaseOrderStatus::Received->value)
             ->whereNull('purchase_orders.deleted_at')
             ->whereBetween('purchase_orders.received_at', $range)
-            ->selectRaw('COUNT(DISTINCT purchase_orders.id) as cnt, COALESCE(SUM(purchase_order_items.quantity), 0) as qty, COALESCE(SUM(purchase_order_items.quantity * purchase_order_items.unit_cost), 0) as amount')
+            ->selectRaw('COUNT(DISTINCT purchase_orders.id) as cnt, COALESCE(SUM(purchase_order_items.quantity), 0) as qty, COALESCE(SUM(purchase_order_items.quantity * purchase_order_items.unit_cost * purchase_orders.exchange_rate), 0) as amount')
             ->first();
 
         return (object) ['count' => (int) $row->cnt, 'quantity' => (float) $row->qty, 'amount' => (float) $row->amount];
@@ -112,7 +112,7 @@ class StockReportService
             ->where('sales_orders.status', SalesOrderStatus::Fulfilled->value)
             ->whereNull('sales_orders.deleted_at')
             ->whereBetween('sales_orders.fulfilled_at', $range)
-            ->selectRaw('DATE(sales_orders.fulfilled_at) as day, COALESCE(SUM(sales_order_items.quantity * sales_order_items.unit_price), 0) as amount')
+            ->selectRaw('DATE(sales_orders.fulfilled_at) as day, COALESCE(SUM(sales_order_items.quantity * sales_order_items.unit_price * sales_orders.exchange_rate), 0) as amount')
             ->groupBy('day')
             ->pluck('amount', 'day');
 
@@ -121,7 +121,7 @@ class StockReportService
             ->where('purchase_orders.status', PurchaseOrderStatus::Received->value)
             ->whereNull('purchase_orders.deleted_at')
             ->whereBetween('purchase_orders.received_at', $range)
-            ->selectRaw('DATE(purchase_orders.received_at) as day, COALESCE(SUM(purchase_order_items.quantity * purchase_order_items.unit_cost), 0) as amount')
+            ->selectRaw('DATE(purchase_orders.received_at) as day, COALESCE(SUM(purchase_order_items.quantity * purchase_order_items.unit_cost * purchase_orders.exchange_rate), 0) as amount')
             ->groupBy('day')
             ->pluck('amount', 'day');
 

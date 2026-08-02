@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
+use App\Settings\BusinessSettings;
 use App\Support\ActiveExists;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,13 @@ class PurchaseOrderRequest extends TenantFormRequest
                 'required',
                 ActiveExists::of('suppliers'),
             ],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', Rule::in(BusinessSettings::currencies())],
+            // Base-currency units per 1 unit of the order currency. Optional: the
+            // controller forces it to 1 for a base-currency order and defaults a
+            // missing rate to 1, so an order can never be created without one.
+            // Capped at the exchange_rate column's real ceiling — decimal(15,6) holds
+            // 9 integer digits — so an over-large rate 422s instead of overflowing (500).
+            'exchange_rate' => ['nullable', 'numeric', 'gt:0', 'max:999999999'],
             // Optional user-entered document number; unique among live orders.
             'number' => [
                 'nullable',

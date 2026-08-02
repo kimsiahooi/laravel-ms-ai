@@ -42,6 +42,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { salesOrderMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
@@ -65,6 +69,9 @@ type PageProps = TenantPageProps & {
     customers: Option[];
     products: Option[];
     warehouses: Option[];
+    /** Tenant base currency (new orders default to it) + the pickable currencies. */
+    baseCurrency: string;
+    currencies: string[];
 };
 
 type Line = {
@@ -75,8 +82,16 @@ type Line = {
 };
 
 export default function SalesOrdersIndex() {
-    const { orders, filters, customers, products, warehouses, tenant } =
-        usePageProps<PageProps>();
+    const {
+        orders,
+        filters,
+        customers,
+        products,
+        warehouses,
+        baseCurrency,
+        currencies,
+        tenant,
+    } = usePageProps<PageProps>();
     const { can } = usePermissions();
     const base = soRoutes.index.url({ tenant: tenant.slug });
 
@@ -105,7 +120,8 @@ export default function SalesOrdersIndex() {
     const missingPrereqs = unmetPrerequisites(prerequisites);
 
     const [customerId, setCustomerId] = useState('');
-    const [currency, setCurrency] = useState('USD');
+    const [currency, setCurrency] = useState(baseCurrency);
+    const [exchangeRate, setExchangeRate] = useState('1');
     const [notes, setNotes] = useState('');
     const [expectedDate, setExpectedDate] = useState('');
     const [orderNumber, setOrderNumber] = useState('');
@@ -137,7 +153,8 @@ export default function SalesOrdersIndex() {
     const dialog = useResourceDialog<SalesOrder>({
         onCreate: () => {
             setCustomerId('');
-            setCurrency('USD');
+            setCurrency(baseCurrency);
+            setExchangeRate('1');
             setNotes('');
             setExpectedDate('');
             setOrderNumber('');
@@ -146,6 +163,7 @@ export default function SalesOrdersIndex() {
         onEdit: (order) => {
             setCustomerId(order.customer_id ? String(order.customer_id) : '');
             setCurrency(order.currency);
+            setExchangeRate(String(order.exchange_rate));
             setNotes(order.notes ?? '');
             setExpectedDate(
                 order.expected_date ? order.expected_date.slice(0, 10) : '',
@@ -458,26 +476,86 @@ export default function SalesOrdersIndex() {
                             <div className="space-y-2">
                                 <FieldLabel
                                     htmlFor="currency"
-                                    hint="The 3-letter currency code for this order's prices, such as USD, MYR, or EUR."
+                                    hint="The currency this order's prices are in. Totals roll up to your base currency."
                                 >
                                     Currency
                                 </FieldLabel>
-                                <Input
+                                <NativeSelect
                                     id="currency"
                                     name="currency"
                                     value={currency}
-                                    onChange={(event) =>
-                                        setCurrency(
-                                            event.target.value.toUpperCase(),
-                                        )
-                                    }
-                                    maxLength={3}
+                                    onChange={(event) => {
+                                        const next = event.target.value;
+                                        setCurrency(next);
+                                        // Switching to a foreign currency clears the
+                                        // base default of 1 so the required rate field
+                                        // forces a deliberate entry (no silent 1:1).
+                                        if (
+                                            next !== baseCurrency &&
+                                            exchangeRate === '1'
+                                        ) {
+                                            setExchangeRate('');
+                                        }
+                                    }}
                                     required
-                                    placeholder="USD"
+                                    className="w-full"
                                     aria-invalid={!!errors.currency}
-                                />
+                                >
+                                    {currencies.map((code) => (
+                                        <NativeSelectOption
+                                            key={code}
+                                            value={code}
+                                        >
+                                            {code}
+                                        </NativeSelectOption>
+                                    ))}
+                                </NativeSelect>
                             </div>
                         </div>
+
+                        {currency === baseCurrency ? (
+                            <input
+                                type="hidden"
+                                name="exchange_rate"
+                                value="1"
+                            />
+                        ) : (
+                            <div className="space-y-2 sm:max-w-xs">
+                                <FieldLabel
+                                    htmlFor="exchange_rate"
+                                    hint={`How many ${baseCurrency} one ${currency} is worth. Your reports and dashboard roll up to ${baseCurrency}.`}
+                                >
+                                    Exchange rate
+                                </FieldLabel>
+                                <div className="flex items-center gap-2">
+                                    <span className="whitespace-nowrap text-muted-foreground text-sm">
+                                        1 {currency} =
+                                    </span>
+                                    <Input
+                                        id="exchange_rate"
+                                        name="exchange_rate"
+                                        type="number"
+                                        step="0.000001"
+                                        min="0"
+                                        value={exchangeRate}
+                                        onChange={(event) =>
+                                            setExchangeRate(event.target.value)
+                                        }
+                                        required
+                                        className="w-40 tabular-nums"
+                                        aria-invalid={!!errors.exchange_rate}
+                                    />
+                                    <span className="text-muted-foreground text-sm">
+                                        {baseCurrency}
+                                    </span>
+                                </div>
+                                {errors.exchange_rate ? (
+                                    <p className="text-destructive text-sm">
+                                        {errors.exchange_rate}
+                                    </p>
+                                ) : null}
+                            </div>
+                        )}
 
                         <div className="space-y-2 sm:max-w-xs">
                             <FieldLabel
@@ -542,8 +620,10 @@ export default function SalesOrdersIndex() {
                             <div className="flex items-center justify-between">
                                 <Label>Line items</Label>
                                 <span className="text-muted-foreground text-sm tabular-nums">
-                                    Total:{' '}
-                                    {formatMoney(draftTotal, currency || 'USD')}
+                                    Total: {formatMoney(draftTotal, currency)}
+                                    {currency !== baseCurrency
+                                        ? ` (≈ ${formatMoney(draftTotal * (Number(exchangeRate) || 0), baseCurrency)})`
+                                        : ''}
                                 </span>
                             </div>
 

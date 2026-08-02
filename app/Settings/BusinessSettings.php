@@ -32,6 +32,22 @@ class BusinessSettings extends SettingsCategory
     }
 
     /**
+     * The currencies an order (and the base-currency setting) may use.
+     *
+     * @return list<string>
+     */
+    public static function currencies(): array
+    {
+        return self::CURRENCIES;
+    }
+
+    /** The base currency that reports and totals roll up to. */
+    public function baseCurrency(): string
+    {
+        return (string) ($this->values()['default_currency'] ?? 'MYR');
+    }
+
+    /**
      * @return list<Field>
      */
     public function fields(): array

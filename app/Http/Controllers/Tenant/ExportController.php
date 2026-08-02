@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Services\StockReportService;
+use App\Settings\BusinessSettings;
 use App\Support\ExportRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -62,12 +63,14 @@ class ExportController
         $sales = $reports->salesTotals($range);
         $purchases = $reports->purchaseTotals($range);
         $production = $reports->productionTotals($range);
+        // Amounts are converted to the base currency per order before summing.
+        $currency = app(BusinessSettings::class)->baseCurrency();
 
-        return $this->stream('reports', $format, function (WriterInterface $writer) use ($reports, $range, $from, $to, $sales, $purchases, $production): void {
+        return $this->stream('reports', $format, function (WriterInterface $writer) use ($reports, $range, $from, $to, $sales, $purchases, $production, $currency): void {
             $writer->addRow(Row::fromValues(['Period', $from->format('Y-m-d'), 'to', $to->format('Y-m-d')]));
             $writer->addRow(Row::fromValues(['']));
 
-            $writer->addRow(Row::fromValues(['Summary', 'Count', 'Quantity', 'Amount']));
+            $writer->addRow(Row::fromValues(['Summary', 'Count', 'Quantity', "Amount ({$currency})"]));
             $writer->addRow(Row::fromValues(['Sales', $sales->count, $sales->quantity, $sales->amount]));
             $writer->addRow(Row::fromValues(['Purchases', $purchases->count, $purchases->quantity, $purchases->amount]));
             $writer->addRow(Row::fromValues(['Production', $production->count, $production->quantity, '']));

@@ -17,6 +17,7 @@ use App\Models\PurchaseOrder;
 use App\Models\RawMaterial;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Settings\BusinessSettings;
 use App\Support\ActiveExists;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,11 +42,16 @@ class PurchaseOrderController
             ->search($search);
         $sort = $this->applySort($query, $request, ['id', 'status', 'created_at']);
 
+        $baseCurrency = app(BusinessSettings::class)->baseCurrency();
+
         $orders = $this->paginateList($query, $perPage)
-            ->through(fn (PurchaseOrder $order): PurchaseOrderData => PurchaseOrderData::from($order));
+            ->through(fn (PurchaseOrder $order): PurchaseOrderData => PurchaseOrderData::fromPurchaseOrder($order, $baseCurrency));
 
         return Inertia::render('tenant/purchase-orders/index', [
             'orders' => $orders,
+            // The order form picks a currency + FX rate; new orders default to base.
+            'baseCurrency' => $baseCurrency,
+            'currencies' => BusinessSettings::currencies(),
             'suppliers' => OptionData::collect(Supplier::orderBy('name')->get(['id', 'name'])),
             'rawMaterials' => OptionData::collect(RawMaterial::orderBy('name')->get(['id', 'name'])),
             'warehouses' => $this->stockWarehouseOptions(),
@@ -71,10 +77,13 @@ class PurchaseOrderController
 
     public function store(PurchaseOrderRequest $request): RedirectResponse
     {
-        DB::transaction(function () use ($request): void {
+        $currency = strtoupper((string) $request->input('currency'));
+
+        DB::transaction(function () use ($request, $currency): void {
             $order = PurchaseOrder::create([
                 'supplier_id' => $request->integer('supplier_id'),
-                'currency' => strtoupper((string) $request->input('currency')),
+                'currency' => $currency,
+                'exchange_rate' => $this->exchangeRateFor($currency, $request->float('exchange_rate')),
                 'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
@@ -94,10 +103,13 @@ class PurchaseOrderController
     {
         abort_unless($purchaseOrder->status === PurchaseOrderStatus::Pending, 422);
 
-        DB::transaction(function () use ($request, $purchaseOrder): void {
+        $currency = strtoupper((string) $request->input('currency'));
+
+        DB::transaction(function () use ($request, $purchaseOrder, $currency): void {
             $purchaseOrder->update([
                 'supplier_id' => $request->integer('supplier_id'),
-                'currency' => strtoupper((string) $request->input('currency')),
+                'currency' => $currency,
+                'exchange_rate' => $this->exchangeRateFor($currency, $request->float('exchange_rate')),
                 'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
@@ -147,6 +159,19 @@ class PurchaseOrderController
         $this->toast('Purchase order cancelled.');
 
         return back();
+    }
+
+    /**
+     * The rate to store: 1 for a base-currency order (or a missing/zero rate), else
+     * the entered rate. The server is the source of truth for the base case.
+     */
+    private function exchangeRateFor(string $currency, float $rate): float
+    {
+        if ($currency === app(BusinessSettings::class)->baseCurrency()) {
+            return 1.0;
+        }
+
+        return $rate > 0 ? $rate : 1.0;
     }
 
     /**

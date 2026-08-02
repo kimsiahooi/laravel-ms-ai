@@ -80,6 +80,14 @@ export default function PurchaseOrderShow() {
                               ]
                             : []),
                         { label: 'Currency', value: currency },
+                        ...(currency !== order.base_currency
+                            ? [
+                                  {
+                                      label: 'Exchange rate',
+                                      value: `1 ${currency} = ${order.exchange_rate} ${order.base_currency}`,
+                                  },
+                              ]
+                            : []),
                     ]}
                 >
                     <PrintItemsTable
@@ -103,7 +111,22 @@ export default function PurchaseOrderShow() {
                         }))}
                         total={{
                             label: 'Total',
-                            value: formatMoney(order.total, currency),
+                            value: (
+                                <>
+                                    {formatMoney(order.total, currency)}
+                                    {currency !== order.base_currency ? (
+                                        <span className="text-muted-foreground print:text-black">
+                                            {' '}
+                                            (≈{' '}
+                                            {formatMoney(
+                                                order.base_total,
+                                                order.base_currency,
+                                            )}
+                                            )
+                                        </span>
+                                    ) : null}
+                                </>
+                            ),
                         }}
                     />
                 </PrintDocument>
@@ -199,6 +222,14 @@ function PurchaseOrderDetail({
               ]
             : []),
         { label: 'Currency', value: currency },
+        ...(currency !== order.base_currency
+            ? [
+                  {
+                      label: 'Exchange rate',
+                      value: `1 ${currency} = ${order.exchange_rate} ${order.base_currency}`,
+                  },
+              ]
+            : []),
         ...(order.notes ? [{ label: 'Notes', value: order.notes }] : []),
     ];
 
@@ -263,7 +294,22 @@ function PurchaseOrderDetail({
                 }))}
                 total={{
                     label: 'Total',
-                    value: formatMoney(order.total, currency),
+                    value: (
+                        <>
+                            {formatMoney(order.total, currency)}
+                            {currency !== order.base_currency ? (
+                                <span className="text-muted-foreground">
+                                    {' '}
+                                    (≈{' '}
+                                    {formatMoney(
+                                        order.base_total,
+                                        order.base_currency,
+                                    )}
+                                    )
+                                </span>
+                            ) : null}
+                        </>
+                    ),
                 }}
             />
 
