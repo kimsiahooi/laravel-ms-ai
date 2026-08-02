@@ -22,6 +22,9 @@ return new class extends Migration
             $table->foreignIdFor(Customer::class)->nullable()->constrained()->nullOnDelete();
             $table->string('status', 20)->default('pending');
             $table->string('currency', 3)->default('USD');
+            // Base-currency units per 1 unit of the order currency (1 when already
+            // in base); converts foreign orders to the base currency in rollups.
+            $table->decimal('exchange_rate', 15, 6)->default(1);
             $table->text('notes')->nullable();
             $table->timestamp('expected_date')->nullable();
             $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
