@@ -112,7 +112,13 @@ export function PrintDocument({
     number: string;
     statusLabel: string;
     statusVariant: 'default' | 'secondary' | 'outline';
-    party: { heading: string; name: string; detail?: string };
+    party: {
+        heading: string;
+        name: string;
+        detail?: string;
+        /** Extra lines under the name (e.g. buyer tax identity), with stable keys. */
+        lines?: { key: string; text: string }[];
+    };
     meta: MetaRow[];
     children: ReactNode;
 }) {
@@ -127,6 +133,11 @@ export function PrintDocument({
         taxLabel && business?.tax_registration_no
             ? `${taxLabel} ${business.tax_registration_no}`
             : null;
+    // Seller tax identity for an e-invoice-ready document.
+    const registrationLine = business?.registration_no
+        ? `Reg. No. ${business.registration_no}`
+        : null;
+    const tinLine = business?.tin ? `TIN ${business.tin}` : null;
 
     return (
         <div className="rounded-lg border bg-card p-8 text-card-foreground shadow-sm print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black print:shadow-none">
@@ -146,6 +157,16 @@ export function PrintDocument({
                         {business?.address ? (
                             <p className="whitespace-pre-line text-muted-foreground text-xs print:text-black">
                                 {business.address}
+                            </p>
+                        ) : null}
+                        {registrationLine ? (
+                            <p className="text-muted-foreground text-xs print:text-black">
+                                {registrationLine}
+                            </p>
+                        ) : null}
+                        {tinLine ? (
+                            <p className="text-muted-foreground text-xs print:text-black">
+                                {tinLine}
                             </p>
                         ) : null}
                         {taxLine ? (
@@ -182,6 +203,14 @@ export function PrintDocument({
                             {party.detail}
                         </p>
                     ) : null}
+                    {party.lines?.map((line) => (
+                        <p
+                            key={line.key}
+                            className="whitespace-pre-line text-muted-foreground text-sm print:text-black"
+                        >
+                            {line.text}
+                        </p>
+                    ))}
                 </div>
                 <dl className="space-y-1 sm:text-right">
                     {meta.map((row) => (

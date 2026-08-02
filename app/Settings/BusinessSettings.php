@@ -108,6 +108,33 @@ class BusinessSettings extends SettingsCategory
                 placeholder: 'Street, city, postcode',
                 rules: ['nullable', 'string', 'max:1000'],
             ),
+            new Field(
+                key: 'city',
+                type: FieldType::Text,
+                label: 'City',
+                section: self::CONTACT,
+                description: 'Your city — part of the structured address an e-invoice needs.',
+                placeholder: 'e.g. Kuala Lumpur',
+                rules: ['nullable', 'string', 'max:100'],
+            ),
+            new Field(
+                key: 'postcode',
+                type: FieldType::Text,
+                label: 'Postcode',
+                section: self::CONTACT,
+                description: 'Your postal code, for the e-invoice address.',
+                placeholder: 'e.g. 50000',
+                rules: ['nullable', 'string', 'max:20'],
+            ),
+            new Field(
+                key: 'state_code',
+                type: FieldType::Text,
+                label: 'State code',
+                section: self::CONTACT,
+                description: 'The state code used on e-invoices (e.g. MyInvois state code).',
+                placeholder: 'e.g. 14',
+                rules: ['nullable', 'string', 'max:10'],
+            ),
 
             new Field(
                 key: 'country',
@@ -230,9 +257,14 @@ class BusinessSettings extends SettingsCategory
         return new BusinessSettingsData(
             legal_name: $values['legal_name'] ?? null,
             registration_no: $values['registration_no'] ?? null,
-            address: $values['address'] ?? null,
+            tin: $values['tin'] ?? null,
             tax_type: (string) ($values['tax_type'] ?? 'none'),
             tax_registration_no: $values['tax_registration_no'] ?? null,
+            address: $values['address'] ?? null,
+            city: $values['city'] ?? null,
+            postcode: $values['postcode'] ?? null,
+            state_code: $values['state_code'] ?? null,
+            country: $values['country'] ?? null,
             // Content-addressed URL (or null) — changes on every re-upload, so a
             // document header never shows a stale logo. Typed ?string via fileUrl().
             logo_url: $this->fileUrl('logo'),

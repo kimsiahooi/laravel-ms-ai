@@ -8,52 +8,34 @@ use App\Models\Customer;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
-/**
- * The customer list-item payload. snake_case property names keep the serialized
- * JSON (and the generated TS) byte-identical to the previous hand-mapped array.
- * #[TypeScript] makes the transformer emit App.Data.CustomerData.
- */
+/** A party (buyer or seller) on an invoice — tax identity + structured address. */
 #[TypeScript]
-class CustomerData extends Data
+class InvoicePartyData extends Data
 {
     public function __construct(
-        public int $id,
         public string $name,
-        public ?string $contact_person,
-        public ?string $email,
         public ?string $tin,
         public ?string $registration_no,
         public ?string $sst_registration_no,
-        public ?string $phone,
         public ?string $address,
         public ?string $city,
         public ?string $postcode,
         public ?string $state_code,
         public ?string $country_code,
-        public ?string $notes,
-        public string $created_at,
-        public ?string $creator,
     ) {}
 
     public static function fromCustomer(Customer $customer): self
     {
         return new self(
-            id: $customer->id,
             name: $customer->name,
-            contact_person: $customer->contact_person,
-            email: $customer->email,
             tin: $customer->tin,
             registration_no: $customer->registration_no,
             sst_registration_no: $customer->sst_registration_no,
-            phone: $customer->phone,
             address: $customer->address,
             city: $customer->city,
             postcode: $customer->postcode,
             state_code: $customer->state_code,
             country_code: $customer->country_code,
-            notes: $customer->notes,
-            created_at: $customer->created_at->toISOString(),
-            creator: $customer->creator?->name,
         );
     }
 }

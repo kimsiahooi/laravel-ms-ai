@@ -19,14 +19,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string|null $contact_person
  * @property string|null $email
- * @property string|null $tax_id
+ * @property string|null $tin
+ * @property string|null $registration_no
+ * @property string|null $sst_registration_no
  * @property string|null $phone
  * @property string|null $address
+ * @property string|null $city
+ * @property string|null $postcode
+ * @property string|null $state_code
+ * @property string|null $country_code
  * @property string|null $notes
  * @property int|null $created_by
  * @property-read User|null $creator
  */
-#[Fillable(['name', 'contact_person', 'email', 'tax_id', 'phone', 'address', 'notes'])]
+#[Fillable([
+    'name', 'contact_person', 'email',
+    'tin', 'registration_no', 'sst_registration_no',
+    'phone', 'address', 'city', 'postcode', 'state_code', 'country_code', 'notes',
+])]
 class Customer extends Model
 {
     use RecordsActivity;
@@ -34,5 +44,5 @@ class Customer extends Model
     use Searchable;
     use SoftDeletes;
 
-    protected array $searchable = ['name', 'contact_person', 'email', 'notes'];
+    protected array $searchable = ['name', 'contact_person', 'email', 'tin', 'registration_no', 'notes'];
 }

@@ -41,9 +41,15 @@ it('creates a customer', function () {
             'name' => 'Globex',
             'contact_person' => 'John Lee',
             'email' => 'buyer@globex.test',
-            'tax_id' => 'C9876543210',
+            'tin' => 'C9876543210',
+            'registration_no' => '202301234567',
+            'sst_registration_no' => 'W10-1234-56789',
             'phone' => '+60 12-000 0000',
             'address' => '5 Market St',
+            'city' => 'Kuala Lumpur',
+            'postcode' => '50000',
+            'state_code' => '14',
+            'country_code' => 'MY',
             'notes' => 'Wholesale account',
         ])
         ->assertRedirect('/acme/customers')
@@ -53,7 +59,9 @@ it('creates a customer', function () {
         $customer = Customer::firstWhere('name', 'Globex');
         expect($customer)->not->toBeNull()
             ->and($customer->contact_person)->toBe('John Lee')
-            ->and($customer->tax_id)->toBe('C9876543210');
+            ->and($customer->tin)->toBe('C9876543210')
+            ->and($customer->registration_no)->toBe('202301234567')
+            ->and($customer->country_code)->toBe('MY');
     });
 });
 

@@ -560,7 +560,7 @@ export default function SalesOrdersIndex() {
                         <div className="space-y-2 sm:max-w-xs">
                             <FieldLabel
                                 htmlFor="number"
-                                hint="Your own SO number for this order. Optional — blank uses the system number (#id). Must be unique."
+                                hint="Your own number for this order. Optional — leave blank to auto-number from your settings (e.g. SO-2026-0001). Must be unique."
                             >
                                 Order number{' '}
                                 <span className="font-normal text-muted-foreground">

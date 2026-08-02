@@ -18,9 +18,17 @@ return new class extends Migration
             $table->string('name');
             $table->string('contact_person')->nullable();
             $table->string('email')->nullable()->unique();
-            $table->string('tax_id', 100)->nullable();
+            // Buyer tax identity + structured address for e-invoice (MyInvois /
+            // InvoiceNow) — all optional; the export/labels adapt to MY vs SG.
+            $table->string('tin', 100)->nullable();                 // Tax Identification Number
+            $table->string('registration_no', 100)->nullable();     // SSM (MY) / UEN (SG)
+            $table->string('sst_registration_no', 100)->nullable(); // SST/GST registration
             $table->string('phone', 50)->nullable();
-            $table->text('address')->nullable();
+            $table->text('address')->nullable();                    // address line(s)
+            $table->string('city', 100)->nullable();
+            $table->string('postcode', 20)->nullable();
+            $table->string('state_code', 10)->nullable();
+            $table->string('country_code', 2)->nullable();          // ISO-3166 alpha-2
             $table->text('notes')->nullable();
             $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

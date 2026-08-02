@@ -21,9 +21,14 @@ class BusinessSettingsData extends Data
     public function __construct(
         public ?string $legal_name,
         public ?string $registration_no,
-        public ?string $address,
+        public ?string $tin,
         public string $tax_type,
         public ?string $tax_registration_no,
+        public ?string $address,
+        public ?string $city,
+        public ?string $postcode,
+        public ?string $state_code,
+        public ?string $country,
         public ?string $logo_url,
     ) {}
 }

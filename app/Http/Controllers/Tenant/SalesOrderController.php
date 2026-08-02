@@ -20,8 +20,10 @@ use App\Models\SalesOrder;
 use App\Models\Warehouse;
 use App\Settings\BusinessSettings;
 use App\Support\ActiveExists;
+use App\Support\DocumentNumberGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -77,16 +79,18 @@ class SalesOrderController
         ]);
     }
 
-    public function store(SalesOrderRequest $request): RedirectResponse
+    public function store(SalesOrderRequest $request, DocumentNumberGenerator $numbers): RedirectResponse
     {
         $currency = strtoupper((string) $request->input('currency'));
+        $manualNumber = $request->input('number');
 
-        DB::transaction(function () use ($request, $currency): void {
+        DB::transaction(function () use ($request, $currency, $manualNumber, $numbers): void {
             $order = SalesOrder::create([
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => $currency,
                 'exchange_rate' => $this->exchangeRateFor($currency, $request->float('exchange_rate')),
-                'number' => $request->input('number'),
+                // Manual number (R08b) wins; otherwise auto-generate from settings.
+                'number' => filled($manualNumber) ? $manualNumber : $this->nextUniqueNumber($numbers),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
                 'user_id' => $request->user()?->id,
@@ -180,6 +184,44 @@ class SalesOrderController
         }
 
         return $rate > 0 ? $rate : 1.0;
+    }
+
+    /**
+     * The next auto number that isn't already taken by a (manually-numbered) live
+     * order — auto + manual numbers share the column, which has no DB unique index.
+     * Each attempt advances the sequence, so this terminates immediately in practice.
+     */
+    private function nextUniqueNumber(DocumentNumberGenerator $numbers): string
+    {
+        do {
+            $number = $this->documentNumber($numbers);
+        } while (SalesOrder::where('number', $number)->exists());
+
+        return $number;
+    }
+
+    /**
+     * The next sales-order document number, from the settings prefix + numbering
+     * reset rule + financial-year. Call inside the store transaction (row-locked).
+     */
+    private function documentNumber(DocumentNumberGenerator $numbers): string
+    {
+        $settings = app(BusinessSettings::class)->values();
+        $prefix = (string) ($settings['sales_order_prefix'] ?? 'SO');
+        $resetsYearly = (string) ($settings['number_reset'] ?? 'yearly') === 'yearly';
+        $period = $resetsYearly
+            ? $this->financialYearLabel((int) ($settings['financial_year_start_month'] ?? 1))
+            : null;
+
+        return $numbers->next('sales_order', $prefix, $period);
+    }
+
+    /** The label of the financial year the current date falls in (its start year). */
+    private function financialYearLabel(int $startMonth): string
+    {
+        $now = Date::now();
+
+        return (string) ($now->month >= $startMonth ? $now->year : $now->year - 1);
     }
 
     /**

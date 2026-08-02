@@ -41,18 +41,30 @@ export default function CustomersIndex() {
     const [name, setName] = useState('');
     const [contactPerson, setContactPerson] = useState('');
     const [email, setEmail] = useState('');
-    const [taxId, setTaxId] = useState('');
+    const [tin, setTin] = useState('');
+    const [registrationNo, setRegistrationNo] = useState('');
+    const [sstRegistrationNo, setSstRegistrationNo] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [postcode, setPostcode] = useState('');
+    const [stateCode, setStateCode] = useState('');
+    const [countryCode, setCountryCode] = useState('');
     const [notes, setNotes] = useState('');
 
     const resetForm = () => {
         setName('');
         setContactPerson('');
         setEmail('');
-        setTaxId('');
+        setTin('');
+        setRegistrationNo('');
+        setSstRegistrationNo('');
         setPhone('');
         setAddress('');
+        setCity('');
+        setPostcode('');
+        setStateCode('');
+        setCountryCode('');
         setNotes('');
     };
 
@@ -62,9 +74,15 @@ export default function CustomersIndex() {
             setName(customer.name);
             setContactPerson(customer.contact_person ?? '');
             setEmail(customer.email ?? '');
-            setTaxId(customer.tax_id ?? '');
+            setTin(customer.tin ?? '');
+            setRegistrationNo(customer.registration_no ?? '');
+            setSstRegistrationNo(customer.sst_registration_no ?? '');
             setPhone(customer.phone ?? '');
             setAddress(customer.address ?? '');
+            setCity(customer.city ?? '');
+            setPostcode(customer.postcode ?? '');
+            setStateCode(customer.state_code ?? '');
+            setCountryCode(customer.country_code ?? '');
             setNotes(customer.notes ?? '');
         },
     });
@@ -288,31 +306,97 @@ export default function CustomersIndex() {
                                 message={errors.email}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="tax_id">
-                                Tax ID{' '}
+                        <div className="space-y-3 rounded-lg border border-border p-3">
+                            <p className="font-medium text-foreground text-sm">
+                                Tax &amp; e-invoice details{' '}
                                 <span className="font-normal text-muted-foreground">
                                     (optional)
                                 </span>
-                            </Label>
-                            <Input
-                                id="tax_id"
-                                name="tax_id"
-                                value={taxId}
-                                onChange={(event) =>
-                                    setTaxId(event.target.value)
-                                }
-                                placeholder="SST / GST / TIN"
-                                aria-invalid={!!errors.tax_id}
-                                aria-describedby={
-                                    errors.tax_id ? 'tax_id-error' : undefined
-                                }
-                            />
-                            <InputError
-                                id="tax_id-error"
-                                role="alert"
-                                message={errors.tax_id}
-                            />
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                Used to build an e-invoice-ready document
+                                (MyInvois / InvoiceNow). Fill these for business
+                                customers.
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="tin">TIN</Label>
+                                    <Input
+                                        id="tin"
+                                        name="tin"
+                                        value={tin}
+                                        onChange={(event) =>
+                                            setTin(event.target.value)
+                                        }
+                                        placeholder="Tax Identification No."
+                                        aria-invalid={!!errors.tin}
+                                        aria-describedby={
+                                            errors.tin ? 'tin-error' : undefined
+                                        }
+                                    />
+                                    <InputError
+                                        id="tin-error"
+                                        role="alert"
+                                        message={errors.tin}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="registration_no">
+                                        Registration no.
+                                    </Label>
+                                    <Input
+                                        id="registration_no"
+                                        name="registration_no"
+                                        value={registrationNo}
+                                        onChange={(event) =>
+                                            setRegistrationNo(
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="SSM (MY) / UEN (SG)"
+                                        aria-invalid={!!errors.registration_no}
+                                        aria-describedby={
+                                            errors.registration_no
+                                                ? 'registration_no-error'
+                                                : undefined
+                                        }
+                                    />
+                                    <InputError
+                                        id="registration_no-error"
+                                        role="alert"
+                                        message={errors.registration_no}
+                                    />
+                                </div>
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label htmlFor="sst_registration_no">
+                                        SST / GST registration no.
+                                    </Label>
+                                    <Input
+                                        id="sst_registration_no"
+                                        name="sst_registration_no"
+                                        value={sstRegistrationNo}
+                                        onChange={(event) =>
+                                            setSstRegistrationNo(
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="If tax-registered"
+                                        aria-invalid={
+                                            !!errors.sst_registration_no
+                                        }
+                                        aria-describedby={
+                                            errors.sst_registration_no
+                                                ? 'sst_registration_no-error'
+                                                : undefined
+                                        }
+                                    />
+                                    <InputError
+                                        id="sst_registration_no-error"
+                                        role="alert"
+                                        message={errors.sst_registration_no}
+                                    />
+                                </div>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="phone">
@@ -365,6 +449,121 @@ export default function CustomersIndex() {
                                 role="alert"
                                 message={errors.address}
                             />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="city">
+                                    City{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="city"
+                                    name="city"
+                                    value={city}
+                                    onChange={(event) =>
+                                        setCity(event.target.value)
+                                    }
+                                    placeholder="e.g. Kuala Lumpur"
+                                    aria-invalid={!!errors.city}
+                                    aria-describedby={
+                                        errors.city ? 'city-error' : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="city-error"
+                                    role="alert"
+                                    message={errors.city}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="postcode">
+                                    Postcode{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="postcode"
+                                    name="postcode"
+                                    value={postcode}
+                                    onChange={(event) =>
+                                        setPostcode(event.target.value)
+                                    }
+                                    placeholder="e.g. 50000"
+                                    aria-invalid={!!errors.postcode}
+                                    aria-describedby={
+                                        errors.postcode
+                                            ? 'postcode-error'
+                                            : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="postcode-error"
+                                    role="alert"
+                                    message={errors.postcode}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="state_code">
+                                    State code{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="state_code"
+                                    name="state_code"
+                                    value={stateCode}
+                                    onChange={(event) =>
+                                        setStateCode(event.target.value)
+                                    }
+                                    placeholder="e.g. 14 (WP KL)"
+                                    aria-invalid={!!errors.state_code}
+                                    aria-describedby={
+                                        errors.state_code
+                                            ? 'state_code-error'
+                                            : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="state_code-error"
+                                    role="alert"
+                                    message={errors.state_code}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="country_code">
+                                    Country code{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="country_code"
+                                    name="country_code"
+                                    value={countryCode}
+                                    onChange={(event) =>
+                                        setCountryCode(
+                                            event.target.value.toUpperCase(),
+                                        )
+                                    }
+                                    maxLength={2}
+                                    placeholder="MY / SG"
+                                    aria-invalid={!!errors.country_code}
+                                    aria-describedby={
+                                        errors.country_code
+                                            ? 'country_code-error'
+                                            : undefined
+                                    }
+                                />
+                                <InputError
+                                    id="country_code-error"
+                                    role="alert"
+                                    message={errors.country_code}
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="notes">

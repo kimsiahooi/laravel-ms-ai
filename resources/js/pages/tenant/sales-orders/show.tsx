@@ -38,8 +38,48 @@ type PageProps = TenantPageProps & {
 };
 
 export default function SalesOrderShow() {
-    const { order, warehouses, print, tenant } = usePageProps<PageProps>();
+    const { order, warehouses, print, tenant, business } =
+        usePageProps<PageProps>();
     const currency = order.currency;
+    // A Tax Invoice is only issued for a completed (fulfilled) sale under a tax
+    // regime; a pending/cancelled order stays a plain "Sales Order".
+    const docType =
+        business?.tax_type &&
+        business.tax_type !== 'none' &&
+        order.status === 'fulfilled'
+            ? 'Tax Invoice'
+            : 'Sales Order';
+    // The buyer's tax identity + address, for the invoice's "Customer" block.
+    const buyer = order.buyer;
+    const buyerLines = buyer
+        ? [
+              { key: 'tin', text: buyer.tin ? `TIN ${buyer.tin}` : '' },
+              {
+                  key: 'reg',
+                  text: buyer.registration_no
+                      ? `Reg. No. ${buyer.registration_no}`
+                      : '',
+              },
+              {
+                  key: 'sst',
+                  text: buyer.sst_registration_no
+                      ? `SST/GST ${buyer.sst_registration_no}`
+                      : '',
+              },
+              { key: 'address', text: buyer.address ?? '' },
+              {
+                  key: 'location',
+                  text: [
+                      buyer.city,
+                      buyer.postcode,
+                      buyer.state_code,
+                      buyer.country_code,
+                  ]
+                      .filter(Boolean)
+                      .join(' '),
+              },
+          ].filter((line) => line.text !== '')
+        : undefined;
     const showUrl = soRoutes.show.url({
         tenant: tenant.slug,
         salesOrder: order.id,
@@ -53,11 +93,15 @@ export default function SalesOrderShow() {
 
                 <PrintDocument
                     org={tenant.name}
-                    docType="Sales Order"
+                    docType={docType}
                     number={order.number ?? `SO #${order.id}`}
                     statusLabel={order.status_label}
                     statusVariant={statusVariant(order.status)}
-                    party={{ heading: 'Customer', name: order.customer ?? '—' }}
+                    party={{
+                        heading: 'Customer',
+                        name: order.customer ?? '—',
+                        lines: buyerLines,
+                    }}
                     meta={[
                         {
                             label: 'Order date',

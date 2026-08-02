@@ -25,9 +25,16 @@ class CustomerRequest extends TenantFormRequest
                 // Unique within this tenant's database (ignore self on update).
                 Rule::unique('customers', 'email')->ignore($ignoreId),
             ],
-            'tax_id' => ['nullable', 'string', 'max:100'],
+            // Buyer tax identity + structured address for e-invoice (all optional).
+            'tin' => ['nullable', 'string', 'max:100'],
+            'registration_no' => ['nullable', 'string', 'max:100'],
+            'sst_registration_no' => ['nullable', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'postcode' => ['nullable', 'string', 'max:20'],
+            'state_code' => ['nullable', 'string', 'max:10'],
+            'country_code' => ['nullable', 'string', 'size:2'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

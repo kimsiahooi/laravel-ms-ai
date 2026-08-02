@@ -22,6 +22,8 @@ class SalesOrderData extends Data
         public int $id,
         public ?string $customer,
         public ?int $customer_id,
+        /** The buyer's tax identity + address for the Tax Invoice / e-invoice export. */
+        public ?InvoicePartyData $buyer,
         public string $status,
         public string $status_label,
         public string $currency,
@@ -53,6 +55,7 @@ class SalesOrderData extends Data
             id: $order->id,
             customer: $order->customer?->name,
             customer_id: $order->customer_id,
+            buyer: $order->customer !== null ? InvoicePartyData::fromCustomer($order->customer) : null,
             status: $order->status->value,
             status_label: $order->status->label(),
             currency: $order->currency,
