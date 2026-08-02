@@ -19,10 +19,13 @@ const TAX_LABEL: Record<string, string> = { sst: 'SST No.', gst: 'GST No.' };
 export function PrintItemsTable({
     head,
     rows,
+    summary,
     total,
 }: {
     head: string[];
     rows: { key: string | number; cells: ReactNode[] }[];
+    /** Optional pre-total footer rows (e.g. subtotal + tax), less emphasised. */
+    summary?: { key: string; label: ReactNode; value: ReactNode }[];
     total?: { label: string; value: ReactNode };
 }) {
     return (
@@ -72,19 +75,34 @@ export function PrintItemsTable({
                     ))
                 )}
             </tbody>
-            {total ? (
+            {summary?.length || total ? (
                 <tfoot>
-                    <tr>
-                        <td
-                            colSpan={head.length - 1}
-                            className="py-3 text-right font-medium"
-                        >
-                            {total.label}
-                        </td>
-                        <td className="py-3 text-right font-semibold tabular-nums">
-                            {total.value}
-                        </td>
-                    </tr>
+                    {summary?.map((row) => (
+                        <tr key={row.key}>
+                            <td
+                                colSpan={head.length - 1}
+                                className="py-1 text-right text-muted-foreground print:text-black"
+                            >
+                                {row.label}
+                            </td>
+                            <td className="py-1 text-right tabular-nums">
+                                {row.value}
+                            </td>
+                        </tr>
+                    ))}
+                    {total ? (
+                        <tr>
+                            <td
+                                colSpan={head.length - 1}
+                                className="py-3 text-right font-medium"
+                            >
+                                {total.label}
+                            </td>
+                            <td className="py-3 text-right font-semibold tabular-nums">
+                                {total.value}
+                            </td>
+                        </tr>
+                    ) : null}
                 </tfoot>
             ) : null}
         </table>

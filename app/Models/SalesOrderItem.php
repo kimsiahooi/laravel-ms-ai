@@ -19,12 +19,13 @@ use Illuminate\Support\Carbon;
  * @property array{name: string, sku: string, unit: string} $product_snapshot
  * @property string $quantity
  * @property string $unit_price
+ * @property bool $taxable
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read SalesOrder $salesOrder
  * @property-read Product|null $product
  */
-#[Fillable(['sales_order_id', 'product_id', 'product_snapshot', 'quantity', 'unit_price'])]
+#[Fillable(['sales_order_id', 'product_id', 'product_snapshot', 'quantity', 'unit_price', 'taxable'])]
 class SalesOrderItem extends Model
 {
     /**
@@ -36,6 +37,7 @@ class SalesOrderItem extends Model
             'product_snapshot' => 'array',
             'quantity' => 'decimal:4',
             'unit_price' => 'decimal:4',
+            'taxable' => 'boolean',
         ];
     }
 

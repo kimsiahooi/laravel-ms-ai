@@ -13,6 +13,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseReturn;
 use App\Models\RawMaterial;
 use App\Models\SalesOrder;
+use App\Models\SalesOrderItem;
 use App\Models\SalesReturn;
 use App\Models\StockMovement;
 use App\Models\StockTake;
@@ -153,8 +154,10 @@ class ExportRegistry
                     ['heading' => 'Currency', 'value' => fn (SalesOrder $o) => $o->currency],
                     ['heading' => 'Rate', 'value' => fn (SalesOrder $o) => (float) $o->exchange_rate],
                     ['heading' => 'Items', 'value' => fn (SalesOrder $o) => $o->items->count()],
-                    ['heading' => 'Total', 'value' => fn (SalesOrder $o) => (float) $o->items->sum(fn ($i) => (float) $i->quantity * (float) $i->unit_price)],
-                    ['heading' => 'Base total', 'value' => fn (SalesOrder $o) => (float) $o->items->sum(fn ($i) => (float) $i->quantity * (float) $i->unit_price) * (float) $o->exchange_rate],
+                    ['heading' => 'Subtotal', 'value' => fn (SalesOrder $o) => self::salesSubtotal($o)],
+                    ['heading' => 'Tax', 'value' => fn (SalesOrder $o) => self::salesTax($o)],
+                    ['heading' => 'Total', 'value' => fn (SalesOrder $o) => self::salesSubtotal($o) + self::salesTax($o)],
+                    ['heading' => 'Base total', 'value' => fn (SalesOrder $o) => (self::salesSubtotal($o) + self::salesTax($o)) * (float) $o->exchange_rate],
                     ['heading' => 'Created', 'value' => fn (SalesOrder $o) => $o->created_at?->format('Y-m-d')],
                 ],
             ],
@@ -209,6 +212,22 @@ class ExportRegistry
                 ],
             ],
         ];
+    }
+
+    /** The net line-item subtotal of a sales order (before tax), order currency. */
+    private static function salesSubtotal(SalesOrder $order): float
+    {
+        return (float) $order->items->sum(fn (SalesOrderItem $i): float => (float) $i->quantity * (float) $i->unit_price);
+    }
+
+    /** SST/GST on the order's taxable lines, rounded to 2dp, order currency. */
+    private static function salesTax(SalesOrder $order): float
+    {
+        $taxable = (float) $order->items->sum(
+            fn (SalesOrderItem $i): float => $i->taxable ? (float) $i->quantity * (float) $i->unit_price : 0.0,
+        );
+
+        return round($taxable * (float) $order->tax_rate / 100, 2);
     }
 
     /**

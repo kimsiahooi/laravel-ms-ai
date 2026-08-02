@@ -23,6 +23,8 @@ class BusinessSettingsData extends Data
         public ?string $registration_no,
         public ?string $tin,
         public string $tax_type,
+        /** Default SST/GST rate (%) applied to taxable invoice lines. */
+        public float $tax_rate,
         public ?string $tax_registration_no,
         public ?string $address,
         public ?string $city,

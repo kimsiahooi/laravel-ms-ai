@@ -45,6 +45,8 @@ class SalesOrderRequest extends TenantFormRequest
             ],
             'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
             'items.*.unit_price' => ['required', 'numeric', 'min:0', 'max:'.self::DECIMAL_MAX],
+            // Whether the line is taxed (defaults to true in the controller).
+            'items.*.taxable' => ['nullable', 'boolean'],
         ];
     }
 }

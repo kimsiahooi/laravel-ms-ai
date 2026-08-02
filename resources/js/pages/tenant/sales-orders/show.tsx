@@ -37,6 +37,27 @@ type PageProps = TenantPageProps & {
     print: boolean;
 };
 
+/**
+ * The subtotal + tax footer rows for the line-items table — only when the order
+ * carries tax, so an untaxed order shows a single "Total" as before.
+ */
+function taxSummaryFor(order: SalesOrder, currency: string) {
+    if (order.tax_amount <= 0) return undefined;
+
+    return [
+        {
+            key: 'subtotal',
+            label: 'Subtotal',
+            value: formatMoney(order.subtotal, currency),
+        },
+        {
+            key: 'tax',
+            label: `Tax (${order.tax_rate}%)`,
+            value: formatMoney(order.tax_amount, currency),
+        },
+    ];
+}
+
 export default function SalesOrderShow() {
     const { order, warehouses, print, tenant, business } =
         usePageProps<PageProps>();
@@ -80,6 +101,7 @@ export default function SalesOrderShow() {
               },
           ].filter((line) => line.text !== '')
         : undefined;
+    const taxSummary = taxSummaryFor(order, currency);
     const showUrl = soRoutes.show.url({
         tenant: tenant.slug,
         salesOrder: order.id,
@@ -153,6 +175,7 @@ export default function SalesOrderShow() {
                                 ),
                             ],
                         }))}
+                        summary={taxSummary}
                         total={{
                             label: 'Total',
                             value: (
@@ -336,6 +359,7 @@ function SalesOrderDetail({
                         formatMoney(item.quantity * item.unit_price, currency),
                     ],
                 }))}
+                summary={taxSummaryFor(order, currency)}
                 total={{
                     label: 'Total',
                     value: (

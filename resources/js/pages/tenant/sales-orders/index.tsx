@@ -25,6 +25,7 @@ import {
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -79,6 +80,7 @@ type Line = {
     productId: string;
     quantity: string;
     unitPrice: string;
+    taxable: boolean;
 };
 
 export default function SalesOrdersIndex() {
@@ -91,6 +93,7 @@ export default function SalesOrdersIndex() {
         baseCurrency,
         currencies,
         tenant,
+        business,
     } = usePageProps<PageProps>();
     const { can } = usePermissions();
     const base = soRoutes.index.url({ tenant: tenant.slug });
@@ -139,6 +142,7 @@ export default function SalesOrdersIndex() {
         productId: '',
         quantity: '',
         unitPrice: '',
+        taxable: true,
     });
     const addLine = () => setLines((prev) => [...prev, newLine()]);
     const removeLine = (key: number) =>
@@ -175,16 +179,27 @@ export default function SalesOrdersIndex() {
                     productId: item.product_id ? String(item.product_id) : '',
                     quantity: String(item.quantity),
                     unitPrice: String(item.unit_price),
+                    taxable: item.taxable,
                 })),
             );
         },
     });
 
-    const draftTotal = lines.reduce(
-        (sum, line) =>
-            sum + (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0),
+    const lineAmount = (line: Line) =>
+        (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
+    const draftSubtotal = lines.reduce(
+        (sum, line) => sum + lineAmount(line),
         0,
     );
+    // The tenant's effective SST/GST rate (0 when tax_type is "none").
+    const taxRate = business?.tax_rate ?? 0;
+    const draftTaxableBase = lines.reduce(
+        (sum, line) => (line.taxable ? sum + lineAmount(line) : sum),
+        0,
+    );
+    // Mirror the server's round(base × rate / 100, 2).
+    const draftTax = Math.round(draftTaxableBase * taxRate) / 100;
+    const draftTotal = draftSubtotal + draftTax;
 
     const submitFulfill = () => {
         if (!fulfilling) return;
@@ -617,14 +632,41 @@ export default function SalesOrdersIndex() {
                         </div>
 
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-start justify-between gap-4">
                                 <Label>Line items</Label>
-                                <span className="text-muted-foreground text-sm tabular-nums">
-                                    Total: {formatMoney(draftTotal, currency)}
-                                    {currency !== baseCurrency
-                                        ? ` (≈ ${formatMoney(draftTotal * (Number(exchangeRate) || 0), baseCurrency)})`
-                                        : ''}
-                                </span>
+                                <div className="text-right text-muted-foreground text-sm tabular-nums">
+                                    {taxRate > 0 ? (
+                                        <>
+                                            <div>
+                                                Subtotal:{' '}
+                                                {formatMoney(
+                                                    draftSubtotal,
+                                                    currency,
+                                                )}
+                                            </div>
+                                            <div>
+                                                Tax ({taxRate}%):{' '}
+                                                {formatMoney(
+                                                    draftTax,
+                                                    currency,
+                                                )}
+                                            </div>
+                                        </>
+                                    ) : null}
+                                    <div
+                                        className={
+                                            taxRate > 0
+                                                ? 'font-medium text-foreground'
+                                                : ''
+                                        }
+                                    >
+                                        Total:{' '}
+                                        {formatMoney(draftTotal, currency)}
+                                        {currency !== baseCurrency
+                                            ? ` (≈ ${formatMoney(draftTotal * (Number(exchangeRate) || 0), baseCurrency)})`
+                                            : ''}
+                                    </div>
+                                </div>
                             </div>
 
                             {errors.items ? (
@@ -637,12 +679,21 @@ export default function SalesOrdersIndex() {
                                 {lines.map((line, index) => (
                                     <div
                                         key={line.key}
-                                        className="grid grid-cols-[1fr_auto_auto_auto] items-end gap-2"
+                                        className={`grid items-end gap-2 ${
+                                            taxRate > 0
+                                                ? 'grid-cols-[1fr_auto_auto_auto_auto]'
+                                                : 'grid-cols-[1fr_auto_auto_auto]'
+                                        }`}
                                     >
                                         <input
                                             type="hidden"
                                             name={`items[${index}][product_id]`}
                                             value={line.productId}
+                                        />
+                                        <input
+                                            type="hidden"
+                                            name={`items[${index}][taxable]`}
+                                            value={line.taxable ? '1' : '0'}
                                         />
                                         <ComboboxField
                                             id={`line-${line.key}`}
@@ -709,6 +760,34 @@ export default function SalesOrdersIndex() {
                                                 required
                                             />
                                         </div>
+                                        {taxRate > 0 ? (
+                                            <div className="w-14 space-y-2">
+                                                <Label
+                                                    htmlFor={`tax-${line.key}`}
+                                                    className="text-muted-foreground text-xs"
+                                                >
+                                                    Taxable
+                                                </Label>
+                                                <div className="flex h-9 items-center justify-center">
+                                                    <Checkbox
+                                                        id={`tax-${line.key}`}
+                                                        checked={line.taxable}
+                                                        onCheckedChange={(
+                                                            checked,
+                                                        ) =>
+                                                            updateLine(
+                                                                line.key,
+                                                                {
+                                                                    taxable:
+                                                                        checked ===
+                                                                        true,
+                                                                },
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : null}
                                         <Button
                                             type="button"
                                             variant="ghost"

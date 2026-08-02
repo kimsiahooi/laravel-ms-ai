@@ -271,6 +271,7 @@ class DemoTenantSeeder extends Seeder
             'legal_name' => 'Acme Manufacturing Sdn Bhd',
             'registration_no' => '202301012345 (1509876-A)',
             'tax_type' => 'sst',
+            'tax_rate' => '10',
             'tax_registration_no' => 'W10-1808-32000123',
             'tin' => 'C20880690010',
             'country' => 'MY',
@@ -493,7 +494,7 @@ class DemoTenantSeeder extends Seeder
             $when = $dates[$i];
             $customer = $this->customers[array_rand($this->customers)];
 
-            $so = SalesOrder::create(['customer_id' => $customer->id, 'currency' => self::CURRENCIES[array_rand(self::CURRENCIES)], 'status' => $status, 'user_id' => $this->admin->id]);
+            $so = SalesOrder::create(['customer_id' => $customer->id, 'currency' => self::CURRENCIES[array_rand(self::CURRENCIES)], 'status' => $status, 'tax_rate' => 10, 'user_id' => $this->admin->id]);
             foreach ($this->pickProducts() as $product) {
                 $this->soItem($so, $product, random_int(2, 15), random_int(8, 60) + 0.5);
             }

@@ -21,6 +21,8 @@ return new class extends Migration
             $table->json('product_snapshot');
             $table->decimal('quantity', 15, 4);
             $table->decimal('unit_price', 15, 4);
+            // Whether this line is taxed at the order's tax rate (SST/GST).
+            $table->boolean('taxable')->default(true);
             $table->timestamps();
         });
     }

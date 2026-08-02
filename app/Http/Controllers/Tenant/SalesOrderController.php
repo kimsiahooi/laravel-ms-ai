@@ -89,6 +89,9 @@ class SalesOrderController
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => $currency,
                 'exchange_rate' => $this->exchangeRateFor($currency, $request->float('exchange_rate')),
+                // Snapshot the tax rate at issue so a later settings change can't
+                // silently re-tax an existing invoice.
+                'tax_rate' => app(BusinessSettings::class)->taxRate(),
                 // Manual number (R08b) wins; otherwise auto-generate from settings.
                 'number' => filled($manualNumber) ? $manualNumber : $this->nextUniqueNumber($numbers),
                 'notes' => $request->input('notes'),
@@ -116,6 +119,7 @@ class SalesOrderController
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => $currency,
                 'exchange_rate' => $this->exchangeRateFor($currency, $request->float('exchange_rate')),
+                'tax_rate' => app(BusinessSettings::class)->taxRate(),
                 'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
                 'expected_date' => $request->date('expected_date'),
@@ -239,6 +243,8 @@ class SalesOrderController
                 'product_snapshot' => Product::snapshotOf($product),
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
+                // Absent (older payload) → taxable; string "0"/"1" or bool both handled.
+                'taxable' => filter_var($item['taxable'] ?? true, FILTER_VALIDATE_BOOLEAN),
             ]);
         }
     }

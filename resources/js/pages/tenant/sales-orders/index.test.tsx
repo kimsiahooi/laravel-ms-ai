@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
@@ -32,6 +32,8 @@ function props(overrides: Record<string, unknown> = {}) {
         customers: [],
         products: [],
         warehouses: [],
+        baseCurrency: 'MYR',
+        currencies: ['MYR', 'USD'],
         filters: filters(),
         ...overrides,
     };
@@ -75,5 +77,44 @@ describe('sales orders index', () => {
         expect(
             screen.getByRole('link', { name: /add a customer/i }),
         ).toBeInTheDocument();
+    });
+
+    it('offers a per-line taxable toggle when the tenant charges tax (R15)', async () => {
+        renderPage(
+            <SalesOrdersIndex />,
+            props({
+                customers: [{ id: 1, name: 'Globex Retail' }],
+                products: [{ id: 2, name: 'Widget' }],
+                business: { tax_type: 'sst', tax_rate: 10 },
+            }),
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /new sales order/i }),
+        );
+
+        // The new line defaults to taxable; the checkbox is checked and labelled.
+        const taxable = await screen.findByRole('checkbox');
+        expect(taxable).toHaveAttribute('aria-checked', 'true');
+        expect(screen.getByText('Taxable')).toBeInTheDocument();
+    });
+
+    it('hides the taxable toggle when the tenant charges no tax (R15)', async () => {
+        renderPage(
+            <SalesOrdersIndex />,
+            props({
+                customers: [{ id: 1, name: 'Globex Retail' }],
+                products: [{ id: 2, name: 'Widget' }],
+                business: { tax_type: 'none', tax_rate: 0 },
+            }),
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /new sales order/i }),
+        );
+
+        // Line items still render, but no taxable column.
+        expect(await screen.findByText('Line items')).toBeInTheDocument();
+        expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     });
 });

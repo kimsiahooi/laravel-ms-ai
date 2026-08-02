@@ -19,6 +19,8 @@ class SalesOrderItemData extends Data
         public string $name,
         public float $quantity,
         public float $unit_price,
+        /** Whether this line is subject to the order's SST/GST rate. */
+        public bool $taxable,
     ) {}
 
     public static function fromSalesOrderItem(SalesOrderItem $item): self
@@ -29,6 +31,7 @@ class SalesOrderItemData extends Data
             name: $item->product_snapshot['name'] ?? '—',
             quantity: (float) $item->quantity,
             unit_price: (float) $item->unit_price,
+            taxable: $item->taxable,
         );
     }
 }

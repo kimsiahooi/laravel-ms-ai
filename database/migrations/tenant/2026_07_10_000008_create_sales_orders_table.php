@@ -25,6 +25,8 @@ return new class extends Migration
             // Base-currency units per 1 unit of the order currency (1 when already
             // in base); converts foreign orders to the base currency in rollups.
             $table->decimal('exchange_rate', 15, 6)->default(1);
+            // SST/GST rate (%) snapshotted at issue, applied to taxable lines.
+            $table->decimal('tax_rate', 8, 4)->default(0);
             $table->text('notes')->nullable();
             $table->timestamp('expected_date')->nullable();
             $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();

@@ -19,6 +19,7 @@ function businessBase(array $overrides = []): array
 {
     return [
         'tax_type' => 'sst',
+        'tax_rate' => '10',
         'country' => 'MY',
         'default_currency' => 'MYR',
         'financial_year_start_month' => '1',

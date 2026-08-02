@@ -26,12 +26,15 @@ export function LineItemsTable({
     title = 'Line items',
     head,
     rows,
+    summary,
     total,
     emptyText = 'No line items.',
 }: {
     title?: string;
     head: string[];
     rows: LineItemRow[];
+    /** Optional pre-total footer rows (e.g. subtotal + tax), less emphasised. */
+    summary?: { key: string; label: ReactNode; value: ReactNode }[];
     total?: { label: string; value: ReactNode };
     emptyText?: string;
 }) {
@@ -88,19 +91,34 @@ export function LineItemsTable({
                                 ))
                             )}
                         </TableBody>
-                        {total ? (
+                        {summary?.length || total ? (
                             <TableFooter>
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={head.length - 1}
-                                        className="text-right font-medium"
-                                    >
-                                        {total.label}
-                                    </TableCell>
-                                    <TableCell className="text-right font-semibold tabular-nums">
-                                        {total.value}
-                                    </TableCell>
-                                </TableRow>
+                                {summary?.map((row) => (
+                                    <TableRow key={row.key}>
+                                        <TableCell
+                                            colSpan={head.length - 1}
+                                            className="text-right font-normal text-muted-foreground"
+                                        >
+                                            {row.label}
+                                        </TableCell>
+                                        <TableCell className="text-right font-normal tabular-nums">
+                                            {row.value}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {total ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={head.length - 1}
+                                            className="text-right font-medium"
+                                        >
+                                            {total.label}
+                                        </TableCell>
+                                        <TableCell className="text-right font-semibold tabular-nums">
+                                            {total.value}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : null}
                             </TableFooter>
                         ) : null}
                     </Table>

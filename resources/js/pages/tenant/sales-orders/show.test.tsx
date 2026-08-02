@@ -19,12 +19,17 @@ function order(overrides: Record<string, unknown> = {}) {
     return {
         id: 7,
         customer: 'Globex Retail',
+        customer_id: 1,
+        buyer: null,
         status: 'fulfilled',
         status_label: 'Fulfilled',
         currency: 'MYR',
         exchange_rate: 1,
         base_currency: 'MYR',
         item_count: 1,
+        subtotal: 250,
+        tax_rate: 0,
+        tax_amount: 0,
         total: 250,
         base_total: 250,
         notes: null,
@@ -37,6 +42,7 @@ function order(overrides: Record<string, unknown> = {}) {
                 name: 'Widget Pro',
                 quantity: 100,
                 unit_price: 2.5,
+                taxable: true,
             },
         ],
         ...overrides,
@@ -96,5 +102,32 @@ describe('sales order show', () => {
 
         expect(screen.getByText('Sales Order')).toBeInTheDocument();
         expect(screen.getByText('Widget Pro')).toBeInTheDocument();
+    });
+
+    it('breaks out subtotal + tax + total when the order is taxed (R15)', () => {
+        renderPage(
+            <SalesOrderShow />,
+            props({
+                order: order({
+                    subtotal: 250,
+                    tax_rate: 10,
+                    tax_amount: 25,
+                    total: 275,
+                    base_total: 275,
+                }),
+            }),
+        );
+
+        expect(screen.getByText('Subtotal')).toBeInTheDocument();
+        expect(screen.getByText('Tax (10%)')).toBeInTheDocument();
+        // Subtotal 250 + 10% tax 25 = 275 grand total (unique amount in the footer).
+        expect(screen.getByText(/275\.00/)).toBeInTheDocument();
+    });
+
+    it('shows only a single total when the order carries no tax (R15)', () => {
+        renderPage(<SalesOrderShow />, props());
+
+        expect(screen.queryByText('Subtotal')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Tax \(/)).not.toBeInTheDocument();
     });
 });

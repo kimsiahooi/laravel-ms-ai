@@ -48,6 +48,19 @@ class BusinessSettings extends SettingsCategory
     }
 
     /**
+     * The effective SST/GST rate (percent) applied to taxable invoice lines — 0
+     * when the tenant charges no tax, so a stale rate can't tax a "none" order.
+     */
+    public function taxRate(): float
+    {
+        if ((string) ($this->values()['tax_type'] ?? 'none') === 'none') {
+            return 0.0;
+        }
+
+        return (float) ($this->values()['tax_rate'] ?? 0);
+    }
+
+    /**
      * @return list<Field>
      */
     public function fields(): array
@@ -164,6 +177,16 @@ class BusinessSettings extends SettingsCategory
                 rules: ['required', 'string', 'in:sst,gst,none'],
             ),
             new Field(
+                key: 'tax_rate',
+                type: FieldType::Text,
+                label: 'Tax rate (%)',
+                section: self::TAX,
+                default: '0',
+                description: 'The SST/GST rate applied to taxable invoice lines. Leave 0 if you don\'t charge tax.',
+                placeholder: 'e.g. 10',
+                rules: ['required', 'numeric', 'min:0', 'max:100'],
+            ),
+            new Field(
                 key: 'tax_registration_no',
                 type: FieldType::Text,
                 label: 'Tax registration no.',
@@ -259,6 +282,7 @@ class BusinessSettings extends SettingsCategory
             registration_no: $values['registration_no'] ?? null,
             tin: $values['tin'] ?? null,
             tax_type: (string) ($values['tax_type'] ?? 'none'),
+            tax_rate: $this->taxRate(),
             tax_registration_no: $values['tax_registration_no'] ?? null,
             address: $values['address'] ?? null,
             city: $values['city'] ?? null,

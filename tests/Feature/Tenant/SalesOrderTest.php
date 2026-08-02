@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\SalesOrder;
+use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
@@ -332,4 +333,107 @@ it('accepts a unique order number and rejects a duplicate (R08b)', function () {
         ->assertSessionHasErrors('number');
 
     $this->tenant->run(fn () => expect(SalesOrder::count())->toBe(1));
+});
+
+it('computes subtotal, tax and grand total from taxable lines (R15)', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    $this->tenant->run(fn () => Setting::putMany('business', ['tax_type' => 'sst', 'tax_rate' => '10']));
+
+    loginAsAcmeUser();
+
+    // Line A: 2 × 100 = 200 (taxable). Line B: 1 × 50 = 50 (exempt).
+    $this->post('/acme/sales-orders', [
+        'customer_id' => $customer,
+        'currency' => 'MYR',
+        'items' => [
+            ['product_id' => $widget, 'quantity' => 2, 'unit_price' => 100, 'taxable' => true],
+            ['product_id' => $widget, 'quantity' => 1, 'unit_price' => 50, 'taxable' => false],
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $soId = $this->tenant->run(fn () => SalesOrder::first()->id);
+
+    // Snapshot: the exempt line is out of the tax base, so tax = 10% of 200 = 20.
+    $this->tenant->run(function () {
+        $order = SalesOrder::with('items')->first();
+        expect((float) $order->tax_rate)->toBe(10.0)
+            ->and($order->items[0]->taxable)->toBeTrue()
+            ->and($order->items[1]->taxable)->toBeFalse();
+    });
+
+    $this->get("/acme/sales-orders/{$soId}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('order.subtotal', 250)
+            ->where('order.tax_rate', 10)
+            ->where('order.tax_amount', 20)
+            ->where('order.total', 270)
+        );
+});
+
+it('applies no tax when the tenant charges none, even with a stale rate (R15)', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    // A left-over rate must not tax a "none" order.
+    $this->tenant->run(fn () => Setting::putMany('business', ['tax_type' => 'none', 'tax_rate' => '10']));
+
+    loginAsAcmeUser();
+
+    $this->post('/acme/sales-orders', [
+        'customer_id' => $customer,
+        'currency' => 'MYR',
+        'items' => [['product_id' => $widget, 'quantity' => 2, 'unit_price' => 100, 'taxable' => true]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $soId = $this->tenant->run(fn () => SalesOrder::first()->id);
+
+    $this->tenant->run(fn () => expect((float) SalesOrder::first()->tax_rate)->toBe(0.0));
+
+    $this->get("/acme/sales-orders/{$soId}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('order.subtotal', 200)
+            ->where('order.tax_amount', 0)
+            ->where('order.total', 200)
+        );
+});
+
+it('snapshots the tax rate at issue so a later settings change never re-taxes (R15)', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    $this->tenant->run(fn () => Setting::putMany('business', ['tax_type' => 'sst', 'tax_rate' => '10']));
+
+    loginAsAcmeUser();
+
+    $this->post('/acme/sales-orders', [
+        'customer_id' => $customer,
+        'currency' => 'MYR',
+        'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 100, 'taxable' => true]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $soId = $this->tenant->run(fn () => SalesOrder::first()->id);
+
+    // Rate drops after the order is issued.
+    $this->tenant->run(fn () => Setting::putMany('business', ['tax_type' => 'sst', 'tax_rate' => '6']));
+
+    // The order keeps its issued-time 10%, not the new 6%.
+    $this->get("/acme/sales-orders/{$soId}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('order.tax_rate', 10)
+            ->where('order.tax_amount', 10)
+            ->where('order.total', 110)
+        );
+});
+
+it('defaults a line to taxable when the payload omits the flag (R15)', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    $this->tenant->run(fn () => Setting::putMany('business', ['tax_type' => 'sst', 'tax_rate' => '10']));
+
+    loginAsAcmeUser();
+
+    // No `taxable` key — older payloads must fall back to taxable.
+    $this->post('/acme/sales-orders', [
+        'customer_id' => $customer,
+        'currency' => 'MYR',
+        'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 100]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->tenant->run(fn () => expect(SalesOrder::with('items')->first()->items->first()->taxable)->toBeTrue());
 });

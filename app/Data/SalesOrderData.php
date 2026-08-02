@@ -31,6 +31,10 @@ class SalesOrderData extends Data
         public string $base_currency,
         public ?string $number,
         public int $item_count,
+        public float $subtotal,
+        /** SST/GST rate (%) snapshotted at issue; 0 when the tenant has no tax type. */
+        public float $tax_rate,
+        public float $tax_amount,
         public float $total,
         public float $base_total,
         public ?string $notes,
@@ -48,7 +52,14 @@ class SalesOrderData extends Data
         $items = $order->items->map(
             fn (SalesOrderItem $item): SalesOrderItemData => SalesOrderItemData::from($item),
         );
-        $total = (float) $items->sum(fn (SalesOrderItemData $item): float => $item->quantity * $item->unit_price);
+        $subtotal = (float) $items->sum(fn (SalesOrderItemData $item): float => $item->quantity * $item->unit_price);
+        // Only lines flagged taxable contribute to the tax base.
+        $taxableBase = (float) $items->sum(
+            fn (SalesOrderItemData $item): float => $item->taxable ? $item->quantity * $item->unit_price : 0.0,
+        );
+        $taxRate = (float) $order->tax_rate;
+        $taxAmount = round($taxableBase * $taxRate / 100, 2);
+        $total = $subtotal + $taxAmount;
         $exchangeRate = (float) $order->exchange_rate;
 
         return new self(
@@ -63,9 +74,12 @@ class SalesOrderData extends Data
             base_currency: $baseCurrency,
             number: $order->number,
             item_count: $items->count(),
+            subtotal: $subtotal,
+            tax_rate: $taxRate,
+            tax_amount: $taxAmount,
             total: $total,
-            // The order total expressed in the tenant base currency (= total when
-            // the order is already in the base currency, i.e. rate 1).
+            // The order grand total expressed in the tenant base currency (= total
+            // when the order is already in the base currency, i.e. rate 1).
             base_total: $total * $exchangeRate,
             notes: $order->notes,
             expected_date: $order->expected_date?->toISOString(),
