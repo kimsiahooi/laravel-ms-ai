@@ -143,6 +143,7 @@ export type RawMaterialData = {
 id: number,
 name: string,
 sku: string,
+barcode: string | null,
 unit: string,
 created_at: string,
 creator: string | null,
@@ -209,6 +210,13 @@ product_id: number | null,
 name: string,
 quantity: number,
 };
+export type StockItemMatchData = {
+value: string,
+label: string,
+name: string,
+sku: string | null,
+type: string,
+};
 export type StockMovementData = {
 id: number,
 warehouse: string,
@@ -237,6 +245,7 @@ items: App.Data.StockTakeItemData[],
 };
 export type StockTakeItemData = {
 id: number,
+stockable: string,
 name: string,
 sku: string | null,
 unit: string,

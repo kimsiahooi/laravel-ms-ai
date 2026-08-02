@@ -14,6 +14,8 @@ class StockTakeItemData extends Data
 {
     public function __construct(
         public int $id,
+        /** Merged picker key "product:{id}" / "raw_material:{id}" — for scan matching. */
+        public string $stockable,
         /** Snapshot name (survives item edits/deletes). */
         public string $name,
         public ?string $sku,
@@ -27,6 +29,8 @@ class StockTakeItemData extends Data
     {
         return new self(
             id: $item->id,
+            // stockable_type is the morph alias ("product"/"raw_material") per the map.
+            stockable: $item->stockable_type.':'.$item->stockable_id,
             name: $item->stockable_snapshot['name'] ?? '—',
             sku: $item->stockable_snapshot['sku'] ?? null,
             unit: $item->stockable_snapshot['unit'] ?? '',

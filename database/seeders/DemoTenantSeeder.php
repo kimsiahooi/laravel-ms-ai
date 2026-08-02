@@ -311,13 +311,18 @@ class DemoTenantSeeder extends Seeder
         }
 
         // Manufacturable core (kept coherent so production orders explode a real BOM).
-        $steel = RawMaterial::create(['name' => 'Steel sheet 1mm', 'sku' => 'RM-STEEL-1MM', 'unit' => 'kg']);
-        $copper = RawMaterial::create(['name' => 'Copper wire 2.5mm', 'sku' => 'RM-CU-2.5', 'unit' => 'm']);
-        $abs = RawMaterial::create(['name' => 'ABS plastic pellet', 'sku' => 'RM-ABS-PEL', 'unit' => 'kg']);
-        $screw = RawMaterial::create(['name' => 'M4 screw', 'sku' => 'RM-M4-SCR', 'unit' => 'pcs']);
+        $steel = RawMaterial::create(['name' => 'Steel sheet 1mm', 'sku' => 'RM-STEEL-1MM', 'barcode' => '9559000000018', 'unit' => 'kg']);
+        $copper = RawMaterial::create(['name' => 'Copper wire 2.5mm', 'sku' => 'RM-CU-2.5', 'barcode' => '9559000000025', 'unit' => 'm']);
+        $abs = RawMaterial::create(['name' => 'ABS plastic pellet', 'sku' => 'RM-ABS-PEL', 'barcode' => '9559000000032', 'unit' => 'kg']);
+        $screw = RawMaterial::create(['name' => 'M4 screw', 'sku' => 'RM-M4-SCR', 'barcode' => '9559000000049', 'unit' => 'pcs']);
         $this->rawMaterials = [$steel, $copper, $abs, $screw];
-        foreach (self::RAW_MATERIAL_POOL as [$name, $sku, $unit]) {
-            $this->rawMaterials[] = RawMaterial::create(['name' => $name, 'sku' => $sku, 'unit' => $unit]);
+        foreach (self::RAW_MATERIAL_POOL as $index => [$name, $sku, $unit]) {
+            $this->rawMaterials[] = RawMaterial::create([
+                'name' => $name,
+                'sku' => $sku,
+                'barcode' => '95590001'.str_pad((string) ($index + 1), 5, '0', STR_PAD_LEFT),
+                'unit' => $unit,
+            ]);
         }
 
         $electronics = $categories[0];

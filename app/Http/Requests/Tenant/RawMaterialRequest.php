@@ -23,6 +23,7 @@ class RawMaterialRequest extends TenantFormRequest
                 'required', 'string', 'max:100',
                 Rule::unique('raw_materials', 'sku')->ignore($ignoreId),
             ],
+            'barcode' => ['nullable', 'string', 'max:100'],
             'unit' => ['required', 'string', 'max:20'],
         ];
     }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Data\StockItemMatchData;
 use App\Data\StockOnHandData;
 use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Requests\Tenant\StockOnHandRequest;
+use App\Http\Requests\Tenant\StockResolveItemRequest;
 use App\Models\Warehouse;
 use App\Models\WarehouseReorderLevel;
 use App\Services\StockService;
@@ -39,5 +41,19 @@ class StockLookupController
             unit: $stockable->unit,
             reorder_level: $reorder !== null ? (float) $reorder : null,
         );
+    }
+
+    /**
+     * Resolve a scanned barcode / QR / SKU to a stock item (as the merged picker
+     * value the flows accept), so the scan fields can fill an item. 404 when the
+     * code matches nothing — the client treats that as "no match".
+     */
+    public function resolveItem(StockResolveItemRequest $request): StockItemMatchData
+    {
+        $match = $this->matchStockItem((string) $request->validated('code'));
+
+        abort_if($match === null, 404);
+
+        return $match;
     }
 }

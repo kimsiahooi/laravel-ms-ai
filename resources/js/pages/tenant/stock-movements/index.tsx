@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ComboboxField } from '@/components/combobox-field';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
@@ -16,6 +17,7 @@ import {
     unmetPrerequisites,
 } from '@/components/prerequisites';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
+import { ScanField } from '@/components/scan-field';
 import { SignedQuantity } from '@/components/signed-quantity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +27,7 @@ import { stockMovementMeta } from '@/config/resources';
 import { useOnHand } from '@/hooks/use-on-hand';
 import { usePageProps } from '@/hooks/use-page-props';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useResolveScan } from '@/hooks/use-resolve-scan';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { timeAgo } from '@/lib/format';
@@ -94,6 +97,17 @@ export default function StockMovementsIndex() {
     });
 
     const onHand = useOnHand(tenant.slug, warehouseId, stockable);
+    const { resolve } = useResolveScan(tenant.slug);
+
+    // Scan a barcode / QR / SKU → set the item picker to the matched item.
+    const handleScan = async (code: string) => {
+        const match = await resolve(code);
+        if (!match) {
+            toast.error('No item found for that barcode.');
+            return;
+        }
+        setStockable(match.value);
+    };
 
     // Deep-link: /stock-movements?warehouse={id} opens the create dialog pre-scoped
     // to that warehouse. openCreate() runs the onCreate reset (clears warehouseId),
@@ -269,6 +283,13 @@ export default function StockMovementsIndex() {
                             searchPlaceholder="Search warehouses…"
                             emptyText="No warehouses found."
                         />
+
+                        <div className="space-y-2">
+                            <FieldLabel hint="Scan a product/raw-material barcode or QR (or type its SKU) to fill the item, or choose it below.">
+                                Scan to find an item
+                            </FieldLabel>
+                            <ScanField onScan={handleScan} />
+                        </div>
 
                         <ComboboxField
                             id="stockable"

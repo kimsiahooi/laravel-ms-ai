@@ -119,6 +119,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
             Route::get('stock/on-hand', [StockLookupController::class, 'onHand'])
                 ->name('stock.on-hand');
 
+            // Resolve a scanned barcode / QR / SKU to a stock item (read-only JSON).
+            Route::get('stock/resolve-item', [StockLookupController::class, 'resolveItem'])
+                ->name('stock.resolve-item');
+
             // Stock take — physical count that posts variance adjustments.
             Route::resource('stock-takes', StockTakeController::class)
                 ->parameters(['stock-takes' => 'stockTake'])

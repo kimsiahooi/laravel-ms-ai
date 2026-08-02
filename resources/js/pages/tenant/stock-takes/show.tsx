@@ -1,8 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Ban, ClipboardCheck, LoaderCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
+import { ScanField } from '@/components/scan-field';
 import { SignedQuantity } from '@/components/signed-quantity';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import {
 } from '@/components/ui/table';
 import { usePageProps } from '@/hooks/use-page-props';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useResolveScan } from '@/hooks/use-resolve-scan';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -52,6 +55,42 @@ export default function StockTakeShow() {
             take.items.map((item) => [item.id, String(item.counted_qty)]),
         ),
     );
+
+    // A mirror of `counts` so rapid consecutive scans read the latest value
+    // synchronously (before React re-renders).
+    const countsRef = useRef(counts);
+    countsRef.current = counts;
+    const [flashId, setFlashId] = useState<number | null>(null);
+    const { resolve } = useResolveScan(tenant.slug);
+
+    // Scan a barcode / QR / SKU → bump the matching row's count by 1 and scroll to it.
+    const handleScan = async (code: string) => {
+        const match = await resolve(code);
+        if (!match) {
+            toast.error('No item found for that barcode.');
+            return;
+        }
+        const row = take.items.find((item) => item.stockable === match.value);
+        if (!row) {
+            toast.error(`${match.name} isn't in this stock take.`);
+            return;
+        }
+
+        const next = (Number(countsRef.current[row.id]) || 0) + 1;
+        countsRef.current = { ...countsRef.current, [row.id]: String(next) };
+        setCounts(countsRef.current);
+
+        setFlashId(row.id);
+        window.setTimeout(
+            () =>
+                setFlashId((current) => (current === row.id ? null : current)),
+            1200,
+        );
+        document
+            .getElementById(`stock-take-row-${row.id}`)
+            ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        toast.success(`Counted ${row.name} (${formatQuantity(next)})`);
+    };
 
     const postForm = useForm<{
         items: { id: number; counted_qty: string }[];
@@ -139,6 +178,20 @@ export default function StockTakeShow() {
                 </Button>
             </div>
 
+            {isDraft && canManage && take.items.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                    <ScanField
+                        onScan={handleScan}
+                        label="Scan an item to count"
+                        placeholder="Scan an item — its count goes up by one…"
+                    />
+                    <p className="text-muted-foreground text-xs">
+                        Scan each item as you count it, or type its barcode/SKU
+                        and press Enter.
+                    </p>
+                </div>
+            ) : null}
+
             {take.items.length === 0 ? (
                 <EmptyState
                     icon={ClipboardCheck}
@@ -175,7 +228,15 @@ export default function StockTakeShow() {
                                 {take.items.map((item) => {
                                     const v = variance(item);
                                     return (
-                                        <TableRow key={item.id}>
+                                        <TableRow
+                                            key={item.id}
+                                            id={`stock-take-row-${item.id}`}
+                                            className={cn(
+                                                'transition-colors',
+                                                flashId === item.id &&
+                                                    'bg-primary/5',
+                                            )}
+                                        >
                                             <TableCell>
                                                 <span className="font-medium text-foreground">
                                                     {item.name}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Concerns;
 
 use App\Data\OptionData;
+use App\Data\StockItemMatchData;
 use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\Warehouse;
@@ -74,5 +75,35 @@ trait BuildsStockPickers
         return $type === 'product'
             ? Product::findOrFail($id)
             : RawMaterial::findOrFail($id);
+    }
+
+    /**
+     * Resolve a scanned code (barcode / QR / SKU) to a stock item, or null if none
+     * matches. The unique SKU is the strongest signal, so it wins over the
+     * (non-unique) barcode across both item types; products come before raw
+     * materials only within the same pass. Returns the merged picker value
+     * ("product:5" / "raw_material:3") the flows already accept.
+     */
+    protected function matchStockItem(string $code): ?StockItemMatchData
+    {
+        $item = Product::where('sku', $code)->first()
+            ?? RawMaterial::where('sku', $code)->first()
+            ?? Product::where('barcode', $code)->first()
+            ?? RawMaterial::where('barcode', $code)->first();
+
+        if ($item === null) {
+            return null;
+        }
+
+        $type = $item instanceof Product ? 'product' : 'raw_material';
+        $typeLabel = $type === 'product' ? 'Product' : 'Raw material';
+
+        return new StockItemMatchData(
+            value: $type.':'.$item->id,
+            label: $item->name.' · '.$typeLabel,
+            name: $item->name,
+            sku: $item->sku,
+            type: $type,
+        );
     }
 }

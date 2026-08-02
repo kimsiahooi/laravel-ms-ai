@@ -41,17 +41,20 @@ export default function RawMaterialsIndex() {
 
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
+    const [barcode, setBarcode] = useState('');
     const [unit, setUnit] = useState('');
 
     const dialog = useResourceDialog<RawMaterial>({
         onCreate: () => {
             setName('');
             setSku('');
+            setBarcode('');
             setUnit('');
         },
         onEdit: (rawMaterial) => {
             setName(rawMaterial.name);
             setSku(rawMaterial.sku);
+            setBarcode(rawMaterial.barcode ?? '');
             setUnit(rawMaterial.unit);
         },
     });
@@ -163,7 +166,7 @@ export default function RawMaterialsIndex() {
                 only={['rawMaterials', 'filters']}
                 getRowId={(rawMaterial) => String(rawMaterial.id)}
                 title={rawMaterialMeta.plural}
-                searchPlaceholder="Search name or SKU…"
+                searchPlaceholder="Search name, SKU, or barcode…"
                 renderExpanded={(rawMaterial) => (
                     <div className="px-4 py-3">
                         {rawMaterial.purchase_history.length > 0 ? (
@@ -307,6 +310,35 @@ export default function RawMaterialsIndex() {
                                 id="sku-error"
                                 role="alert"
                                 message={errors.sku}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <FieldLabel
+                                htmlFor="barcode"
+                                hint="An optional barcode or QR value you can scan to find this material in stock counts, movements, and transfers."
+                            >
+                                Barcode{' '}
+                                <span className="font-normal text-muted-foreground">
+                                    (optional)
+                                </span>
+                            </FieldLabel>
+                            <Input
+                                id="barcode"
+                                name="barcode"
+                                value={barcode}
+                                onChange={(event) =>
+                                    setBarcode(event.target.value)
+                                }
+                                placeholder="Scan or type a barcode"
+                                aria-invalid={!!errors.barcode}
+                                aria-describedby={
+                                    errors.barcode ? 'barcode-error' : undefined
+                                }
+                            />
+                            <InputError
+                                id="barcode-error"
+                                role="alert"
+                                message={errors.barcode}
                             />
                         </div>
                         <div className="space-y-2">

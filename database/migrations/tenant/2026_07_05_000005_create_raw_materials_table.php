@@ -16,6 +16,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('sku', 100)->unique();
+            // Optional scannable barcode (not unique) — mirrors products.
+            $table->string('barcode', 100)->nullable();
             $table->string('unit', 20);
             $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

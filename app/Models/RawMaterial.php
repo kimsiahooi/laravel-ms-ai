@@ -23,12 +23,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property string $name
  * @property string $sku
+ * @property string|null $barcode
  * @property string $unit
  * @property int|null $created_by
  * @property-read User|null $creator
  * @property-read Collection<int, PurchaseOrderItem> $receivedPurchases
  */
-#[Fillable(['name', 'sku', 'unit'])]
+#[Fillable(['name', 'sku', 'barcode', 'unit'])]
 class RawMaterial extends Model
 {
     use HasSnapshot;
@@ -37,7 +38,7 @@ class RawMaterial extends Model
     use Searchable;
     use SoftDeletes;
 
-    protected array $searchable = ['name', 'sku'];
+    protected array $searchable = ['name', 'sku', 'barcode'];
 
     /**
      * @return array<string, string>
