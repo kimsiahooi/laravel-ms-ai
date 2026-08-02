@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { locationMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
@@ -31,7 +32,12 @@ type PageProps = TenantPageProps & {
 
 export default function LocationsIndex() {
     const { locations, filters, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = locationsRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('locations.create');
+    const canEdit = can('locations.update');
+    const canDelete = can('locations.delete');
 
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
@@ -118,6 +124,8 @@ export default function LocationsIndex() {
                     label={row.original.name}
                     onEdit={() => dialog.openEdit(row.original)}
                     onDelete={() => del.request(row.original)}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                 />
             ),
         },
@@ -155,10 +163,15 @@ export default function LocationsIndex() {
                 title={locationMeta.plural}
                 searchPlaceholder="Search name or code…"
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {locationMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {locationMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -166,10 +179,12 @@ export default function LocationsIndex() {
                         title="No locations yet"
                         description="Add your first site or branch to hold warehouses."
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {locationMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {locationMeta.singular}
+                                </Button>
+                            ) : undefined
                         }
                     />
                 }

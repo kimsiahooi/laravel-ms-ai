@@ -46,4 +46,24 @@ describe('suppliers index', () => {
 
         expect(screen.getByText(/no suppliers yet/i)).toBeInTheDocument();
     });
+
+    it('hides create and row actions for a view-only user', () => {
+        renderPage(
+            <SuppliersIndex />,
+            props({
+                auth: { permissions: ['suppliers.view'], is_admin: false },
+            }),
+        );
+
+        // The list still renders…
+        expect(screen.getByText('Acme Metals')).toBeInTheDocument();
+        // …but the create button is gone,
+        expect(
+            screen.queryByRole('button', { name: /new supplier/i }),
+        ).not.toBeInTheDocument();
+        // …and the row-actions menu is omitted entirely (no edit or delete).
+        expect(
+            screen.queryByRole('button', { name: /actions for/i }),
+        ).not.toBeInTheDocument();
+    });
 });

@@ -46,6 +46,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { salesOrderMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -76,7 +77,12 @@ type Line = {
 export default function SalesOrdersIndex() {
     const { orders, filters, customers, products, warehouses, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = soRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('sales-orders.create');
+    const canUpdate = can('sales-orders.update');
+    const canDelete = can('sales-orders.delete');
 
     const customerOptions = toOptions(customers);
     const productOptions = toOptions(products);
@@ -260,12 +266,13 @@ export default function SalesOrdersIndex() {
             cell: ({ row }) => {
                 const order = row.original;
                 const pending = order.status === 'pending';
+                const showMenu = pending ? canUpdate : canDelete;
 
                 return (
                     <div className="flex items-center justify-end gap-1">
                         {/* Inline shortcut for the next step, so the lifecycle
                             isn't hidden behind the "…" menu on pending rows. */}
-                        {pending ? (
+                        {pending && canUpdate ? (
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -283,59 +290,66 @@ export default function SalesOrdersIndex() {
                                 </span>
                             </Button>
                         ) : null}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8"
-                                    aria-label={`Actions for order #${order.id}`}
+                        {showMenu ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8"
+                                        aria-label={`Actions for order #${order.id}`}
+                                    >
+                                        <MoreHorizontal className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-44"
                                 >
-                                    <MoreHorizontal className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                                {pending ? (
-                                    <>
-                                        <DropdownMenuItem
-                                            onSelect={() =>
-                                                dialog.openEdit(order)
-                                            }
-                                        >
-                                            <Pencil className="size-4" />
-                                            Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onSelect={() => {
-                                                fulfillForm.reset();
-                                                fulfillForm.clearErrors();
-                                                setFulfilling(order);
-                                            }}
-                                        >
-                                            <PackageCheck className="size-4" />
-                                            Fulfill
-                                        </DropdownMenuItem>
+                                    {pending ? (
+                                        <>
+                                            <DropdownMenuItem
+                                                onSelect={() =>
+                                                    dialog.openEdit(order)
+                                                }
+                                            >
+                                                <Pencil className="size-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onSelect={() => {
+                                                    fulfillForm.reset();
+                                                    fulfillForm.clearErrors();
+                                                    setFulfilling(order);
+                                                }}
+                                            >
+                                                <PackageCheck className="size-4" />
+                                                Fulfill
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                variant="destructive"
+                                                onSelect={() =>
+                                                    setCancelling(order)
+                                                }
+                                            >
+                                                <Ban className="size-4" />
+                                                Cancel
+                                            </DropdownMenuItem>
+                                        </>
+                                    ) : (
                                         <DropdownMenuItem
                                             variant="destructive"
                                             onSelect={() =>
-                                                setCancelling(order)
+                                                remove.request(order)
                                             }
                                         >
-                                            <Ban className="size-4" />
-                                            Cancel
+                                            <Trash2 className="size-4" />
+                                            Delete
                                         </DropdownMenuItem>
-                                    </>
-                                ) : (
-                                    <DropdownMenuItem
-                                        variant="destructive"
-                                        onSelect={() => remove.request(order)}
-                                    >
-                                        <Trash2 className="size-4" />
-                                        Delete
-                                    </DropdownMenuItem>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : null}
                     </div>
                 );
             },
@@ -374,12 +388,14 @@ export default function SalesOrdersIndex() {
                 getRowId={(order) => String(order.id)}
                 title={salesOrderMeta.plural}
                 toolbar={
-                    <NewResourceButton
-                        label={salesOrderMeta.singular}
-                        onClick={dialog.openCreate}
-                        disabledReason={prerequisiteReason(missingPrereqs)}
-                        className="shrink-0"
-                    />
+                    canCreate ? (
+                        <NewResourceButton
+                            label={salesOrderMeta.singular}
+                            onClick={dialog.openCreate}
+                            disabledReason={prerequisiteReason(missingPrereqs)}
+                            className="shrink-0"
+                        />
+                    ) : undefined
                 }
                 emptyState={
                     missingPrereqs.length > 0 ? (
@@ -394,10 +410,12 @@ export default function SalesOrdersIndex() {
                             title={`No ${salesOrderMeta.plural.toLowerCase()} yet`}
                             description="Create your first sales order to start shipping stock."
                             action={
-                                <Button onClick={dialog.openCreate}>
-                                    <Plus className="size-4" />
-                                    New {salesOrderMeta.singular}
-                                </Button>
+                                canCreate ? (
+                                    <Button onClick={dialog.openCreate}>
+                                        <Plus className="size-4" />
+                                        New {salesOrderMeta.singular}
+                                    </Button>
+                                ) : undefined
                             }
                         />
                     )

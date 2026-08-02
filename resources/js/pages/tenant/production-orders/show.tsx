@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { productionOrderMeta } from '@/config/resources';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import PrintLayout from '@/layouts/print-layout';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -114,8 +115,10 @@ function ProductionOrderDetail({
     warehouses: Option[];
 }) {
     const { tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = productionRoutes.index.url({ tenant: tenant.slug });
     const pending = order.status === 'pending';
+    const canCreate = can('production-orders.create');
     const warehouseOptions = toOptions(warehouses);
     const showUrl = productionRoutes.show.url({
         tenant: tenant.slug,
@@ -206,7 +209,7 @@ function ProductionOrderDetail({
                 description={`${formatQuantity(order.quantity)} × ${order.product}`}
                 actions={
                     <>
-                        {pending ? (
+                        {pending && canCreate ? (
                             <>
                                 <Button onClick={openComplete}>
                                     <Factory className="size-4" />

@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { timeAgo } from '@/lib/format';
@@ -44,7 +45,11 @@ type PageProps = TenantPageProps & {
 
 export default function StockTakesIndex() {
     const { takes, filters, warehouses, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = stockTakesRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('stock-takes.create');
+    const canDelete = can('stock-takes.delete');
 
     const warehouseOptions = toOptions(warehouses);
 
@@ -151,13 +156,15 @@ export default function StockTakesIndex() {
                                 View
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => del.request(row.original)}
-                        >
-                            <Trash2 className="size-4" />
-                            Delete
-                        </DropdownMenuItem>
+                        {canDelete && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => del.request(row.original)}
+                            >
+                                <Trash2 className="size-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -203,14 +210,16 @@ export default function StockTakesIndex() {
                     })
                 }
                 toolbar={
-                    <Button
-                        onClick={dialog.openCreate}
-                        className="shrink-0"
-                        disabled={warehouses.length === 0}
-                    >
-                        <Plus className="size-4" />
-                        New stock take
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                            disabled={warehouses.length === 0}
+                        >
+                            <Plus className="size-4" />
+                            New stock take
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -222,7 +231,7 @@ export default function StockTakesIndex() {
                                 : 'Start a stock take to count a warehouse and correct any differences.'
                         }
                         action={
-                            warehouses.length > 0 ? (
+                            canCreate && warehouses.length > 0 ? (
                                 <Button onClick={dialog.openCreate}>
                                     <Plus className="size-4" />
                                     New stock take

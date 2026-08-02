@@ -38,6 +38,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -61,7 +62,12 @@ type Line = { key: number; productId: string; quantity: string };
 export default function SalesReturnsIndex() {
     const { returns, filters, customers, products, warehouses, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = returnsRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('sales-returns.create');
+    const canUpdate = can('sales-returns.update');
+    const canDelete = can('sales-returns.delete');
 
     const customerOptions = toOptions(customers);
     const productOptions = toOptions(products);
@@ -197,6 +203,11 @@ export default function SalesReturnsIndex() {
             cell: ({ row }) => {
                 const ret = row.original;
                 const pending = ret.status === 'pending';
+                const hasActions = pending ? canUpdate : canDelete;
+
+                if (!hasActions) {
+                    return null;
+                }
 
                 return (
                     <DropdownMenu>
@@ -213,38 +224,48 @@ export default function SalesReturnsIndex() {
                         <DropdownMenuContent align="end" className="w-44">
                             {pending ? (
                                 <>
-                                    <DropdownMenuItem
-                                        onSelect={() => dialog.openEdit(ret)}
-                                    >
-                                        <Pencil className="size-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onSelect={() => {
-                                            completeForm.reset();
-                                            completeForm.clearErrors();
-                                            setCompleting(ret);
-                                        }}
-                                    >
-                                        <PackagePlus className="size-4" />
-                                        Complete
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        variant="destructive"
-                                        onSelect={() => setCancelling(ret)}
-                                    >
-                                        <Ban className="size-4" />
-                                        Cancel
-                                    </DropdownMenuItem>
+                                    {canUpdate && (
+                                        <DropdownMenuItem
+                                            onSelect={() =>
+                                                dialog.openEdit(ret)
+                                            }
+                                        >
+                                            <Pencil className="size-4" />
+                                            Edit
+                                        </DropdownMenuItem>
+                                    )}
+                                    {canUpdate && (
+                                        <DropdownMenuItem
+                                            onSelect={() => {
+                                                completeForm.reset();
+                                                completeForm.clearErrors();
+                                                setCompleting(ret);
+                                            }}
+                                        >
+                                            <PackagePlus className="size-4" />
+                                            Complete
+                                        </DropdownMenuItem>
+                                    )}
+                                    {canUpdate && (
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            onSelect={() => setCancelling(ret)}
+                                        >
+                                            <Ban className="size-4" />
+                                            Cancel
+                                        </DropdownMenuItem>
+                                    )}
                                 </>
                             ) : (
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() => remove.request(ret)}
-                                >
-                                    <Trash2 className="size-4" />
-                                    Delete
-                                </DropdownMenuItem>
+                                canDelete && (
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        onSelect={() => remove.request(ret)}
+                                    >
+                                        <Trash2 className="size-4" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                )
                             )}
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -285,14 +306,16 @@ export default function SalesReturnsIndex() {
                 getRowId={(ret) => String(ret.id)}
                 title="Sales returns"
                 toolbar={
-                    <Button
-                        onClick={dialog.openCreate}
-                        className="shrink-0"
-                        disabled={products.length === 0}
-                    >
-                        <Plus className="size-4" />
-                        New return
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                            disabled={products.length === 0}
+                        >
+                            <Plus className="size-4" />
+                            New return
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -304,7 +327,7 @@ export default function SalesReturnsIndex() {
                                 : 'Create a return to take products back from a customer.'
                         }
                         action={
-                            products.length > 0 ? (
+                            canCreate && products.length > 0 ? (
                                 <Button onClick={dialog.openCreate}>
                                     <Plus className="size-4" />
                                     New return

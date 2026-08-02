@@ -19,6 +19,7 @@ import { WarningBadge } from '@/components/warning-badge';
 import { warehouseMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
@@ -39,11 +40,16 @@ type PageProps = TenantPageProps & {
 export default function WarehousesIndex() {
     const { warehouses, filters, locations, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = warehousesRoutes.index.url({ tenant: tenant.slug });
     const locationsUrl = locationsRoutes.index.url({ tenant: tenant.slug });
 
+    const canCreate = can('warehouses.create');
+    const canEdit = can('warehouses.update');
+    const canDelete = can('warehouses.delete');
+
     const locationOptions = toOptions(locations);
-    const canCreate = locations.length > 0;
+    const hasLocations = locations.length > 0;
 
     const [locationId, setLocationId] = useState('');
     const [name, setName] = useState('');
@@ -173,6 +179,8 @@ export default function WarehousesIndex() {
                     label={row.original.name}
                     onEdit={() => dialog.openEdit(row.original)}
                     onDelete={() => del.request(row.original)}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                 />
             ),
         },
@@ -217,45 +225,53 @@ export default function WarehousesIndex() {
                 }
                 toolbar={
                     canCreate ? (
-                        <Button
-                            onClick={dialog.openCreate}
-                            className="shrink-0"
-                        >
-                            <Plus className="size-4" />
-                            New {warehouseMeta.singular}
-                        </Button>
-                    ) : (
-                        <Button asChild variant="outline" className="shrink-0">
-                            <Link href={locationsUrl}>
-                                <MapPin className="size-4" />
-                                Create a location first
-                            </Link>
-                        </Button>
-                    )
+                        hasLocations ? (
+                            <Button
+                                onClick={dialog.openCreate}
+                                className="shrink-0"
+                            >
+                                <Plus className="size-4" />
+                                New {warehouseMeta.singular}
+                            </Button>
+                        ) : (
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="shrink-0"
+                            >
+                                <Link href={locationsUrl}>
+                                    <MapPin className="size-4" />
+                                    Create a location first
+                                </Link>
+                            </Button>
+                        )
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
                         icon={warehouseMeta.icon}
                         title="No warehouses yet"
                         description={
-                            canCreate
+                            hasLocations
                                 ? 'Add a warehouse under one of your locations.'
                                 : 'Warehouses live under a location — create a location first, then add warehouses to it.'
                         }
                         action={
                             canCreate ? (
-                                <Button onClick={dialog.openCreate}>
-                                    <Plus className="size-4" />
-                                    New {warehouseMeta.singular}
-                                </Button>
-                            ) : (
-                                <Button asChild>
-                                    <Link href={locationsUrl}>
-                                        <MapPin className="size-4" />
-                                        Create a location first
-                                    </Link>
-                                </Button>
-                            )
+                                hasLocations ? (
+                                    <Button onClick={dialog.openCreate}>
+                                        <Plus className="size-4" />
+                                        New {warehouseMeta.singular}
+                                    </Button>
+                                ) : (
+                                    <Button asChild>
+                                        <Link href={locationsUrl}>
+                                            <MapPin className="size-4" />
+                                            Create a location first
+                                        </Link>
+                                    </Button>
+                                )
+                            ) : undefined
                         }
                     />
                 }

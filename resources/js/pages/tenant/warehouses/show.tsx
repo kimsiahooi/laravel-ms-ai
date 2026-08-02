@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/tooltip';
 import { WarningBadge } from '@/components/warning-badge';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -113,6 +114,8 @@ function MinStockCell({
 export default function WarehouseShow() {
     const { warehouse, items, summary, filters, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
+    const canUpdate = can('warehouses.update');
 
     const listBase = warehousesRoutes.index.url({ tenant: tenant.slug });
     // View-aware base so the DataTable's own search/per-page reloads keep ?view=all.
@@ -227,13 +230,18 @@ export default function WarehouseShow() {
                 </>
             ),
             meta: { className: 'text-right' },
-            cell: ({ row }) => (
-                <MinStockCell
-                    row={row.original}
-                    warehouseId={warehouse.id}
-                    tenantSlug={tenant.slug}
-                />
-            ),
+            cell: ({ row }) =>
+                canUpdate ? (
+                    <MinStockCell
+                        row={row.original}
+                        warehouseId={warehouse.id}
+                        tenantSlug={tenant.slug}
+                    />
+                ) : (
+                    <span className="tabular-nums">
+                        {formatQuantity(row.original.min_stock)}
+                    </span>
+                ),
         },
         {
             accessorKey: 'unit',

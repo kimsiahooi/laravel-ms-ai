@@ -63,9 +63,11 @@ class HandleInertiaRequests extends Middleware
                     : $webUser,
                 // The tenant user's permissions + whether they're the built-in
                 // Administrator, so the UI can hide what they can't do. Enforcement
-                // still lives server-side (AuthorizeTenantRoute).
-                'permissions' => $tenantUser?->getAllPermissions()->pluck('name')->all() ?? [],
-                'is_admin' => $tenantUser !== null && $tenantUser->hasRole(RolesSeeder::ADMIN_ROLE),
+                // still lives server-side (AuthorizeTenantRoute). Deferred via
+                // closures so a partial `only:` reload that doesn't need them skips
+                // the tenant-DB lookup (see the server-side Inertia guideline).
+                'permissions' => fn () => $tenantUser?->getAllPermissions()->pluck('name')->all() ?? [],
+                'is_admin' => fn () => $tenantUser?->hasRole(RolesSeeder::ADMIN_ROLE) ?? false,
             ],
             'tenant' => $tenant ? [
                 'slug' => $tenant->getKey(),

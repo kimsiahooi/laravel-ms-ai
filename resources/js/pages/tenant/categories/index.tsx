@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { categoryMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
@@ -29,7 +30,12 @@ type PageProps = TenantPageProps & {
 
 export default function CategoriesIndex() {
     const { categories, filters, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = categoriesRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('categories.create');
+    const canEdit = can('categories.update');
+    const canDelete = can('categories.delete');
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -100,6 +106,8 @@ export default function CategoriesIndex() {
                     label={row.original.name}
                     onEdit={() => dialog.openEdit(row.original)}
                     onDelete={() => del.request(row.original)}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                 />
             ),
         },
@@ -137,10 +145,15 @@ export default function CategoriesIndex() {
                 title={categoryMeta.plural}
                 searchPlaceholder="Search name or description…"
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {categoryMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {categoryMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -148,10 +161,12 @@ export default function CategoriesIndex() {
                         title={`No ${categoryMeta.plural.toLowerCase()} yet`}
                         description="Create your first category to start organizing your products."
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {categoryMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {categoryMeta.singular}
+                                </Button>
+                            ) : undefined
                         }
                     />
                 }

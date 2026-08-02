@@ -41,6 +41,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { productMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -66,7 +67,12 @@ type BomLine = { key: number; rawMaterialId: string; quantity: string };
 export default function ProductsIndex() {
     const { products, filters, categories, suppliers, rawMaterials, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = productsRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('products.create');
+    const canEdit = can('products.update');
+    const canDelete = can('products.delete');
 
     const categoryOptions = toOptions(categories);
     const supplierOptions = toOptions(suppliers);
@@ -360,41 +366,50 @@ export default function ProductsIndex() {
             id: 'actions',
             header: () => <span className="sr-only">Actions</span>,
             meta: { className: 'text-right' },
-            cell: ({ row }) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 text-muted-foreground"
-                            aria-label={`Actions for ${row.original.name}`}
-                        >
-                            <MoreHorizontal className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                            onSelect={() => dialog.openEdit(row.original)}
-                        >
-                            <Pencil className="size-4" />
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onSelect={() => openBom(row.original)}
-                        >
-                            <ListTree className="size-4" />
-                            Bill of materials
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => del.request(row.original)}
-                        >
-                            <Trash2 className="size-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            ),
+            cell: ({ row }) =>
+                canEdit || canDelete ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground"
+                                aria-label={`Actions for ${row.original.name}`}
+                            >
+                                <MoreHorizontal className="size-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {canEdit && (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        dialog.openEdit(row.original)
+                                    }
+                                >
+                                    <Pencil className="size-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                            )}
+                            {canEdit && (
+                                <DropdownMenuItem
+                                    onSelect={() => openBom(row.original)}
+                                >
+                                    <ListTree className="size-4" />
+                                    Bill of materials
+                                </DropdownMenuItem>
+                            )}
+                            {canDelete && (
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() => del.request(row.original)}
+                                >
+                                    <Trash2 className="size-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : null,
         },
     ];
 
@@ -440,14 +455,16 @@ export default function ProductsIndex() {
                                             · to make one unit
                                         </span>
                                     </p>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => openBom(product)}
-                                    >
-                                        <Pencil className="size-4" />
-                                        Edit
-                                    </Button>
+                                    {canEdit && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => openBom(product)}
+                                        >
+                                            <Pencil className="size-4" />
+                                            Edit
+                                        </Button>
+                                    )}
                                 </div>
                                 <ul className="divide-y rounded-md border bg-background">
                                     {product.bom.map((line) => (
@@ -471,23 +488,30 @@ export default function ProductsIndex() {
                                     No BOM yet — set the raw materials it takes
                                     to make this product.
                                 </p>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openBom(product)}
-                                >
-                                    <ListTree className="size-4" />
-                                    Set bill of materials
-                                </Button>
+                                {canEdit && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openBom(product)}
+                                    >
+                                        <ListTree className="size-4" />
+                                        Set bill of materials
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </div>
                 )}
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {productMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {productMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -495,10 +519,12 @@ export default function ProductsIndex() {
                         title={`No ${productMeta.plural.toLowerCase()} yet`}
                         description="Add your first product to start building your catalog."
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {productMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {productMeta.singular}
+                                </Button>
+                            ) : undefined
                         }
                     />
                 }

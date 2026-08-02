@@ -26,6 +26,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,8 @@ type PageProps = TenantPageProps & {
 
 export default function StockTakeShow() {
     const { take, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
+    const canManage = can('stock-takes.create');
     const isDraft = take.status === 'draft';
     const listUrl = stockTakesRoutes.index.url({ tenant: tenant.slug });
 
@@ -254,7 +257,7 @@ export default function StockTakeShow() {
                         className="font-medium"
                     />
                 </p>
-                {isDraft && (
+                {isDraft && canManage && (
                     <div className="flex gap-2">
                         <Button
                             variant="ghost"

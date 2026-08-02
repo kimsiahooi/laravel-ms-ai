@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supplierMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
@@ -30,7 +31,12 @@ type PageProps = TenantPageProps & {
 
 export default function SuppliersIndex() {
     const { suppliers, filters, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = suppliersRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('suppliers.create');
+    const canEdit = can('suppliers.update');
+    const canDelete = can('suppliers.delete');
 
     const [name, setName] = useState('');
     const [contactPerson, setContactPerson] = useState('');
@@ -125,6 +131,8 @@ export default function SuppliersIndex() {
                     label={row.original.name}
                     onEdit={() => dialog.openEdit(row.original)}
                     onDelete={() => del.request(row.original)}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                 />
             ),
         },
@@ -162,10 +170,15 @@ export default function SuppliersIndex() {
                 title={supplierMeta.plural}
                 searchPlaceholder="Search by name, email, or notes…"
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {supplierMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {supplierMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -173,10 +186,12 @@ export default function SuppliersIndex() {
                         title={`No ${supplierMeta.plural.toLowerCase()} yet`}
                         description="Add your first supplier to start tracking your vendors."
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {supplierMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {supplierMeta.singular}
+                                </Button>
+                            ) : undefined
                         }
                     />
                 }

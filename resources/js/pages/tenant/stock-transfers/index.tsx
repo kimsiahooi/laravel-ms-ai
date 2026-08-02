@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { stockTransferMeta } from '@/config/resources';
 import { useOnHand } from '@/hooks/use-on-hand';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity, timeAgo } from '@/lib/format';
@@ -46,7 +47,10 @@ type PageProps = TenantPageProps & {
 export default function StockTransfersIndex() {
     const { transfers, filters, warehouses, items, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = stockTransfersRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('stock-transfers.create');
 
     const warehouseOptions = toOptions(warehouses);
 
@@ -175,12 +179,14 @@ export default function StockTransfersIndex() {
                 getRowId={(transfer) => String(transfer.id)}
                 title={stockTransferMeta.plural}
                 toolbar={
-                    <NewResourceButton
-                        label={stockTransferMeta.singular}
-                        onClick={dialog.openCreate}
-                        disabledReason={prerequisiteReason(missingPrereqs)}
-                        className="shrink-0"
-                    />
+                    canCreate ? (
+                        <NewResourceButton
+                            label={stockTransferMeta.singular}
+                            onClick={dialog.openCreate}
+                            disabledReason={prerequisiteReason(missingPrereqs)}
+                            className="shrink-0"
+                        />
+                    ) : undefined
                 }
                 emptyState={
                     missingPrereqs.length > 0 ? (
@@ -195,10 +201,12 @@ export default function StockTransfersIndex() {
                             title={`No ${stockTransferMeta.plural.toLowerCase()} yet`}
                             description="Move stock between warehouses to see transfers here."
                             action={
-                                <Button onClick={dialog.openCreate}>
-                                    <Plus className="size-4" />
-                                    New {stockTransferMeta.singular}
-                                </Button>
+                                canCreate ? (
+                                    <Button onClick={dialog.openCreate}>
+                                        <Plus className="size-4" />
+                                        New {stockTransferMeta.singular}
+                                    </Button>
+                                ) : undefined
                             }
                         />
                     )

@@ -38,6 +38,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -61,7 +62,12 @@ type Line = { key: number; rawMaterialId: string; quantity: string };
 export default function PurchaseReturnsIndex() {
     const { returns, filters, suppliers, rawMaterials, warehouses, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = returnsRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('purchase-returns.create');
+    const canEdit = can('purchase-returns.update');
+    const canDelete = can('purchase-returns.delete');
 
     const supplierOptions = toOptions(suppliers);
     const rawMaterialOptions = toOptions(rawMaterials);
@@ -199,6 +205,11 @@ export default function PurchaseReturnsIndex() {
             cell: ({ row }) => {
                 const ret = row.original;
                 const pending = ret.status === 'pending';
+                const showActions = pending ? canEdit : canDelete;
+
+                if (!showActions) {
+                    return null;
+                }
 
                 return (
                     <DropdownMenu>
@@ -287,14 +298,16 @@ export default function PurchaseReturnsIndex() {
                 getRowId={(ret) => String(ret.id)}
                 title="Purchase returns"
                 toolbar={
-                    <Button
-                        onClick={dialog.openCreate}
-                        className="shrink-0"
-                        disabled={rawMaterials.length === 0}
-                    >
-                        <Plus className="size-4" />
-                        New return
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                            disabled={rawMaterials.length === 0}
+                        >
+                            <Plus className="size-4" />
+                            New return
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -306,7 +319,7 @@ export default function PurchaseReturnsIndex() {
                                 : 'Create a return to send raw materials back to a supplier.'
                         }
                         action={
-                            rawMaterials.length > 0 ? (
+                            canCreate && rawMaterials.length > 0 ? (
                                 <Button onClick={dialog.openCreate}>
                                     <Plus className="size-4" />
                                     New return

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
+use App\Tenancy\PermissionCacheTenancyBootstrapper;
 use App\Tenancy\SessionTenancyBootstrapper;
 use Database\Seeders\TenantDatabaseSeeder;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
@@ -41,6 +42,7 @@ return [
         DatabaseTenancyBootstrapper::class,
         SessionTenancyBootstrapper::class,
         CacheTenancyBootstrapper::class,
+        PermissionCacheTenancyBootstrapper::class,
         FilesystemTenancyBootstrapper::class,
         QueueTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed

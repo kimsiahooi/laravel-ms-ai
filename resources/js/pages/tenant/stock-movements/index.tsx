@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { stockMovementMeta } from '@/config/resources';
 import { useOnHand } from '@/hooks/use-on-hand';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { timeAgo } from '@/lib/format';
@@ -54,7 +55,10 @@ const TYPES: { value: MovementType; label: string }[] = [
 export default function StockMovementsIndex() {
     const { movements, filters, warehouses, items, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = stockMovementsRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('stock-movements.create');
 
     const warehouseOptions = toOptions(warehouses);
 
@@ -194,12 +198,14 @@ export default function StockMovementsIndex() {
                 getRowId={(movement) => String(movement.id)}
                 title={stockMovementMeta.plural}
                 toolbar={
-                    <NewResourceButton
-                        label={stockMovementMeta.singular}
-                        onClick={dialog.openCreate}
-                        disabledReason={prerequisiteReason(missingPrereqs)}
-                        className="shrink-0"
-                    />
+                    canCreate ? (
+                        <NewResourceButton
+                            label={stockMovementMeta.singular}
+                            onClick={dialog.openCreate}
+                            disabledReason={prerequisiteReason(missingPrereqs)}
+                            className="shrink-0"
+                        />
+                    ) : undefined
                 }
                 emptyState={
                     missingPrereqs.length > 0 ? (
@@ -214,10 +220,12 @@ export default function StockMovementsIndex() {
                             title={`No ${stockMovementMeta.plural.toLowerCase()} yet`}
                             description="Record your first movement to start tracking your stock levels."
                             action={
-                                <Button onClick={dialog.openCreate}>
-                                    <Plus className="size-4" />
-                                    New {stockMovementMeta.singular}
-                                </Button>
+                                canCreate ? (
+                                    <Button onClick={dialog.openCreate}>
+                                        <Plus className="size-4" />
+                                        New {stockMovementMeta.singular}
+                                    </Button>
+                                ) : undefined
                             }
                         />
                     )

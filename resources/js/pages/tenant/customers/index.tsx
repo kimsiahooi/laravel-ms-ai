@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { customerMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
@@ -30,7 +31,12 @@ type PageProps = TenantPageProps & {
 
 export default function CustomersIndex() {
     const { customers, filters, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = customersRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('customers.create');
+    const canEdit = can('customers.update');
+    const canDelete = can('customers.delete');
 
     const [name, setName] = useState('');
     const [contactPerson, setContactPerson] = useState('');
@@ -125,6 +131,8 @@ export default function CustomersIndex() {
                     label={row.original.name}
                     onEdit={() => dialog.openEdit(row.original)}
                     onDelete={() => del.request(row.original)}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                 />
             ),
         },
@@ -162,10 +170,15 @@ export default function CustomersIndex() {
                 title={customerMeta.plural}
                 searchPlaceholder="Search name, email, or notes…"
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {customerMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {customerMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -173,10 +186,12 @@ export default function CustomersIndex() {
                         title={`No ${customerMeta.plural.toLowerCase()} yet`}
                         description="Add your first customer to start tracking your buyers."
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {customerMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {customerMeta.singular}
+                                </Button>
+                            ) : undefined
                         }
                     />
                 }

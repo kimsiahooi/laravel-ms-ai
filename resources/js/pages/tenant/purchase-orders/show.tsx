@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { purchaseOrderMeta } from '@/config/resources';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import PrintLayout from '@/layouts/print-layout';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
@@ -121,9 +122,11 @@ function PurchaseOrderDetail({
     warehouses: Option[];
 }) {
     const { tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const currency = order.currency;
     const base = poRoutes.index.url({ tenant: tenant.slug });
     const pending = order.status === 'pending';
+    const canUpdate = can('purchase-orders.update');
     const warehouseOptions = toOptions(warehouses);
     const showUrl = poRoutes.show.url({
         tenant: tenant.slug,
@@ -220,7 +223,7 @@ function PurchaseOrderDetail({
                 }
                 actions={
                     <>
-                        {pending ? (
+                        {pending && canUpdate ? (
                             <>
                                 <Button onClick={openReceive}>
                                     <PackageCheck className="size-4" />

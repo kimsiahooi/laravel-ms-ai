@@ -46,6 +46,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { purchaseOrderMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -76,7 +77,12 @@ type Line = {
 export default function PurchaseOrdersIndex() {
     const { orders, filters, suppliers, rawMaterials, warehouses, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = poRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('purchase-orders.create');
+    const canUpdate = can('purchase-orders.update');
+    const canDelete = can('purchase-orders.delete');
 
     const supplierOptions = toOptions(suppliers);
     const rawMaterialOptions = toOptions(rawMaterials);
@@ -262,12 +268,16 @@ export default function PurchaseOrdersIndex() {
             cell: ({ row }) => {
                 const order = row.original;
                 const pending = order.status === 'pending';
+                // The "…" menu holds lifecycle actions (Edit/Receive/Cancel on
+                // pending rows, Delete otherwise) — hide it entirely when the
+                // user lacks the permission its items would need.
+                const showMenu = pending ? canUpdate : canDelete;
 
                 return (
                     <div className="flex items-center justify-end gap-1">
                         {/* Inline shortcut for the next step, so the lifecycle
                             isn't hidden behind the "…" menu on pending rows. */}
-                        {pending ? (
+                        {pending && canUpdate ? (
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -285,59 +295,66 @@ export default function PurchaseOrdersIndex() {
                                 </span>
                             </Button>
                         ) : null}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8"
-                                    aria-label={`Actions for order #${order.id}`}
+                        {showMenu ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8"
+                                        aria-label={`Actions for order #${order.id}`}
+                                    >
+                                        <MoreHorizontal className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-44"
                                 >
-                                    <MoreHorizontal className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                                {pending ? (
-                                    <>
-                                        <DropdownMenuItem
-                                            onSelect={() =>
-                                                dialog.openEdit(order)
-                                            }
-                                        >
-                                            <Pencil className="size-4" />
-                                            Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onSelect={() => {
-                                                receiveForm.reset();
-                                                receiveForm.clearErrors();
-                                                setReceiving(order);
-                                            }}
-                                        >
-                                            <PackageCheck className="size-4" />
-                                            Receive
-                                        </DropdownMenuItem>
+                                    {pending ? (
+                                        <>
+                                            <DropdownMenuItem
+                                                onSelect={() =>
+                                                    dialog.openEdit(order)
+                                                }
+                                            >
+                                                <Pencil className="size-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onSelect={() => {
+                                                    receiveForm.reset();
+                                                    receiveForm.clearErrors();
+                                                    setReceiving(order);
+                                                }}
+                                            >
+                                                <PackageCheck className="size-4" />
+                                                Receive
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                variant="destructive"
+                                                onSelect={() =>
+                                                    setCancelling(order)
+                                                }
+                                            >
+                                                <Ban className="size-4" />
+                                                Cancel
+                                            </DropdownMenuItem>
+                                        </>
+                                    ) : (
                                         <DropdownMenuItem
                                             variant="destructive"
                                             onSelect={() =>
-                                                setCancelling(order)
+                                                remove.request(order)
                                             }
                                         >
-                                            <Ban className="size-4" />
-                                            Cancel
+                                            <Trash2 className="size-4" />
+                                            Delete
                                         </DropdownMenuItem>
-                                    </>
-                                ) : (
-                                    <DropdownMenuItem
-                                        variant="destructive"
-                                        onSelect={() => remove.request(order)}
-                                    >
-                                        <Trash2 className="size-4" />
-                                        Delete
-                                    </DropdownMenuItem>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : null}
                     </div>
                 );
             },
@@ -376,12 +393,14 @@ export default function PurchaseOrdersIndex() {
                 getRowId={(order) => String(order.id)}
                 title={purchaseOrderMeta.plural}
                 toolbar={
-                    <NewResourceButton
-                        label={purchaseOrderMeta.singular}
-                        onClick={dialog.openCreate}
-                        disabledReason={prerequisiteReason(missingPrereqs)}
-                        className="shrink-0"
-                    />
+                    canCreate ? (
+                        <NewResourceButton
+                            label={purchaseOrderMeta.singular}
+                            onClick={dialog.openCreate}
+                            disabledReason={prerequisiteReason(missingPrereqs)}
+                            className="shrink-0"
+                        />
+                    ) : undefined
                 }
                 emptyState={
                     missingPrereqs.length > 0 ? (
@@ -396,10 +415,12 @@ export default function PurchaseOrdersIndex() {
                             title={`No ${purchaseOrderMeta.plural.toLowerCase()} yet`}
                             description="Create your first purchase order to start receiving stock."
                             action={
-                                <Button onClick={dialog.openCreate}>
-                                    <Plus className="size-4" />
-                                    New {purchaseOrderMeta.singular}
-                                </Button>
+                                canCreate ? (
+                                    <Button onClick={dialog.openCreate}>
+                                        <Plus className="size-4" />
+                                        New {purchaseOrderMeta.singular}
+                                    </Button>
+                                ) : undefined
                             }
                         />
                     )

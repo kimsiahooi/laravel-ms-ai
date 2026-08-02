@@ -39,6 +39,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { productionOrderMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -63,7 +64,11 @@ type PageProps = TenantPageProps & {
 export default function ProductionOrdersIndex() {
     const { orders, filters, products, productBoms, warehouses, tenant } =
         usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = productionRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('production-orders.create');
+    const canDelete = can('production-orders.delete');
 
     const productOptions = toOptions(products);
     const warehouseOptions = toOptions(warehouses);
@@ -188,6 +193,9 @@ export default function ProductionOrdersIndex() {
             cell: ({ row }) => {
                 const order = row.original;
                 const pending = order.status === 'pending';
+                const canAct = pending ? canCreate : canDelete;
+
+                if (!canAct) return null;
 
                 return (
                     <DropdownMenu>
@@ -292,14 +300,16 @@ export default function ProductionOrdersIndex() {
                 getRowId={(order) => String(order.id)}
                 title={productionOrderMeta.plural}
                 toolbar={
-                    <Button
-                        onClick={dialog.openCreate}
-                        className="shrink-0"
-                        disabled={products.length === 0}
-                    >
-                        <Plus className="size-4" />
-                        New {productionOrderMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                            disabled={products.length === 0}
+                        >
+                            <Plus className="size-4" />
+                            New {productionOrderMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -311,7 +321,7 @@ export default function ProductionOrdersIndex() {
                                 : 'Create your first production order to start manufacturing.'
                         }
                         action={
-                            products.length > 0 ? (
+                            canCreate && products.length > 0 ? (
                                 <Button onClick={dialog.openCreate}>
                                     <Plus className="size-4" />
                                     New {productionOrderMeta.singular}

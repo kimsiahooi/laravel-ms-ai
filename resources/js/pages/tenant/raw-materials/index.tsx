@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { rawMaterialMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
@@ -31,7 +32,12 @@ type PageProps = TenantPageProps & {
 
 export default function RawMaterialsIndex() {
     const { rawMaterials, filters, tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = rawMaterialsRoutes.index.url({ tenant: tenant.slug });
+
+    const canCreate = can('raw-materials.create');
+    const canEdit = can('raw-materials.update');
+    const canDelete = can('raw-materials.delete');
 
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
@@ -120,6 +126,8 @@ export default function RawMaterialsIndex() {
                     label={row.original.name}
                     onEdit={() => dialog.openEdit(row.original)}
                     onDelete={() => del.request(row.original)}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                 />
             ),
         },
@@ -217,10 +225,15 @@ export default function RawMaterialsIndex() {
                     </div>
                 )}
                 toolbar={
-                    <Button onClick={dialog.openCreate} className="shrink-0">
-                        <Plus className="size-4" />
-                        New {rawMaterialMeta.singular}
-                    </Button>
+                    canCreate ? (
+                        <Button
+                            onClick={dialog.openCreate}
+                            className="shrink-0"
+                        >
+                            <Plus className="size-4" />
+                            New {rawMaterialMeta.singular}
+                        </Button>
+                    ) : undefined
                 }
                 emptyState={
                     <EmptyState
@@ -228,10 +241,12 @@ export default function RawMaterialsIndex() {
                         title={`No ${rawMaterialMeta.plural.toLowerCase()} yet`}
                         description="Add your first raw material to start tracking your stock."
                         action={
-                            <Button onClick={dialog.openCreate}>
-                                <Plus className="size-4" />
-                                New {rawMaterialMeta.singular}
-                            </Button>
+                            canCreate ? (
+                                <Button onClick={dialog.openCreate}>
+                                    <Plus className="size-4" />
+                                    New {rawMaterialMeta.singular}
+                                </Button>
+                            ) : undefined
                         }
                     />
                 }

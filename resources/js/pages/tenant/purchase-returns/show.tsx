@@ -17,6 +17,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import PrintLayout from '@/layouts/print-layout';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
@@ -110,7 +111,9 @@ function PurchaseReturnDetail({
     warehouses: Option[];
 }) {
     const { tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
     const base = returnsRoutes.index.url({ tenant: tenant.slug });
+    const canUpdate = can('purchase-returns.update');
     const pending = ret.status === 'pending';
     const warehouseOptions = toOptions(warehouses);
     const showUrl = returnsRoutes.show.url({
@@ -190,7 +193,7 @@ function PurchaseReturnDetail({
                 description={ret.supplier ? `From ${ret.supplier}` : undefined}
                 actions={
                     <>
-                        {pending ? (
+                        {pending && canUpdate ? (
                             <>
                                 <Button onClick={openComplete}>
                                     <PackageX className="size-4" />

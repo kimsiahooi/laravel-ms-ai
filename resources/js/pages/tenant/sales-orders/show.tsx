@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { salesOrderMeta } from '@/config/resources';
 import { usePageProps } from '@/hooks/use-page-props';
+import { usePermissions } from '@/hooks/use-permissions';
 import PrintLayout from '@/layouts/print-layout';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
@@ -121,6 +122,8 @@ function SalesOrderDetail({
     warehouses: Option[];
 }) {
     const { tenant } = usePageProps<PageProps>();
+    const { can } = usePermissions();
+    const canUpdate = can('sales-orders.update');
     const currency = order.currency;
     const base = soRoutes.index.url({ tenant: tenant.slug });
     const pending = order.status === 'pending';
@@ -220,7 +223,7 @@ function SalesOrderDetail({
                 }
                 actions={
                     <>
-                        {pending ? (
+                        {pending && canUpdate ? (
                             <>
                                 <Button onClick={openFulfill}>
                                     <PackageCheck className="size-4" />
