@@ -139,74 +139,8 @@ parameters:
 			path: app/Http/Controllers/Central/DashboardController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Central\\TenantController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Central/TenantController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Central/TenantController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{slug\: mixed, name\: string, created_at\: Carbon\\Carbon\}, Closure\(App\\Models\\Tenant\)\: array\{slug\: mixed, name\: string, created_at\: Carbon\\Carbon\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Central/TenantController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{slug\: mixed, name\: string, deleted_at\: Carbon\\CarbonImmutable\|null\}, Closure\(App\\Models\\Tenant\)\: array\{slug\: mixed, name\: string, deleted_at\: Carbon\\CarbonImmutable\|null\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Central/TenantController.php
-
-		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Central\\TenantController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 2
-			path: app/Http/Controllers/Central/TenantController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\ActivityController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ActivityController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/ActivityController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\ActivityData, Closure\(Spatie\\Activitylog\\Models\\Activity\)\: App\\Data\\ActivityData given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ActivityController.php
-
-		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ActivityController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/ActivityController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Tenant/CategoryController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\CategoryController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/CategoryController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
 			count: 1
 			path: app/Http/Controllers/Tenant/CategoryController.php
 
@@ -229,18 +163,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/CustomerController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\CustomerController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/CustomerController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/CustomerController.php
-
-		-
 			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\CustomerController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\Customer\)\: App\\Data\\CustomerData given\.$#'
 			identifier: argument.type
 			count: 1
@@ -259,18 +181,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/LocationController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\LocationController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/LocationController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/LocationController.php
-
-		-
 			message: '#^Parameter \#5 \$toData of method App\\Http\\Controllers\\Tenant\\LocationController\:\:resourceIndex\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(App\\Models\\Location\)\: App\\Data\\LocationData given\.$#'
 			identifier: argument.type
 			count: 1
@@ -283,51 +193,9 @@ parameters:
 			path: app/Http/Controllers/Tenant/LocationController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\ProductController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\ProductData, Closure\(App\\Models\\Product\)\: App\\Data\\ProductData given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductController.php
-
-		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ProductController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductController.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 2
-			path: app/Http/Controllers/Tenant/ProductionOrderController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\ProductionOrderController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductionOrderController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductionOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\ProductionOrderData, Closure\(App\\Models\\ProductionOrder\)\: App\\Data\\ProductionOrderData given\.$#'
-			identifier: argument.type
-			count: 1
 			path: app/Http/Controllers/Tenant/ProductionOrderController.php
 
 		-
@@ -343,12 +211,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/ProductionOrderController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\ProductionOrderController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/ProductionOrderController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\RawMaterial\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\RawMaterial\>\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -357,24 +219,6 @@ parameters:
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\PurchaseOrderController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\PurchaseOrderData, Closure\(App\\Models\\PurchaseOrder\)\: App\\Data\\PurchaseOrderData given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
 
@@ -397,12 +241,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\PurchaseOrderController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseOrderController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\RawMaterial\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\RawMaterial\>\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -411,24 +249,6 @@ parameters:
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\PurchaseReturnController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\PurchaseReturnData, Closure\(App\\Models\\PurchaseReturn\)\: App\\Data\\PurchaseReturnData given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
 
@@ -451,26 +271,8 @@ parameters:
 			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\PurchaseReturnController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/PurchaseReturnController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Tenant/RawMaterialController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\RawMaterialController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/RawMaterialController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
 			count: 1
 			path: app/Http/Controllers/Tenant/RawMaterialController.php
 
@@ -499,24 +301,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/SalesOrderController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\SalesOrderController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesOrderController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\SalesOrderData, Closure\(App\\Models\\SalesOrder\)\: App\\Data\\SalesOrderData given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesOrderController.php
-
-		-
 			message: '#^Parameter \#1 \$model of static method App\\Models\\Product\:\:snapshotOf\(\) expects App\\Models\\Product\|null, App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -535,12 +319,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/SalesOrderController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\SalesOrderController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesOrderController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -549,24 +327,6 @@ parameters:
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesReturnController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\SalesReturnController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesReturnController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesReturnController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\SalesReturnData, Closure\(App\\Models\\SalesReturn\)\: App\\Data\\SalesReturnData given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Tenant/SalesReturnController.php
 
@@ -585,12 +345,6 @@ parameters:
 		-
 			message: '#^Parameter \#3 \$user of method App\\Actions\\CompleteSalesReturn\:\:handle\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
 			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SalesReturnController.php
-
-		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\SalesReturnController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
 			count: 1
 			path: app/Http/Controllers/Tenant/SalesReturnController.php
 
@@ -619,24 +373,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/StockMovementController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\StockMovementController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/StockMovementController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/StockMovementController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\StockMovementData, Closure\(App\\Models\\StockMovement\)\: App\\Data\\StockMovementData given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/StockMovementController.php
-
-		-
 			message: '#^Parameter \#4 \$user of method App\\Services\\StockService\:\:setLevel\(\) expects App\\Models\\User\|null, App\\Models\\CentralUser\|App\\Models\\User\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -649,12 +385,6 @@ parameters:
 			path: app/Http/Controllers/Tenant/StockMovementController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\StockMovementController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/StockMovementController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -663,24 +393,6 @@ parameters:
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTakeController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\StockTakeController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTakeController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTakeController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\StockTakeData, Closure\(App\\Models\\StockTake\)\: App\\Data\\StockTakeData given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Tenant/StockTakeController.php
 
@@ -697,32 +409,8 @@ parameters:
 			path: app/Http/Controllers/Tenant/StockTakeController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\StockTakeController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTakeController.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTransferController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\StockTransferController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTransferController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTransferController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\StockTransferData, Closure\(App\\Models\\StockTransfer\)\: App\\Data\\StockTransferData given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Tenant/StockTransferController.php
 
@@ -733,26 +421,8 @@ parameters:
 			path: app/Http/Controllers/Tenant/StockTransferController.php
 
 		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\StockTransferController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Tenant/StockTransferController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Tenant/SupplierController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\SupplierController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/SupplierController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
 			count: 1
 			path: app/Http/Controllers/Tenant/SupplierController.php
 
@@ -769,32 +439,8 @@ parameters:
 			path: app/Http/Controllers/Tenant/SupplierController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Tenant\\WarehouseController\:\:paginateList\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Tenant/WarehouseController.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query contains generic type Illuminate\\Contracts\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\> but interface Illuminate\\Contracts\\Database\\Eloquent\\Builder is not generic\.$#'
-			identifier: generics.notGeneric
-			count: 1
-			path: app/Http/Controllers/Tenant/WarehouseController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Data\\WarehouseData, Closure\(App\\Models\\Warehouse\)\: App\\Data\\WarehouseData given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/WarehouseController.php
-
-		-
 			message: '#^Parameter \#1 \$expression of method Illuminate\\Database\\Query\\Builder\:\:selectRaw\(\) expects literal\-string, non\-falsy\-string given\.$#'
 			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Tenant/WarehouseController.php
-
-		-
-			message: '#^Unable to resolve the template type TModel in call to method App\\Http\\Controllers\\Tenant\\WarehouseController\:\:paginateList\(\)$#'
-			identifier: argument.templateType
 			count: 1
 			path: app/Http/Controllers/Tenant/WarehouseController.php
 

@@ -12,16 +12,19 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { tenantNavGroups } from '@/config/tenant-nav';
+import { usePermissions } from '@/hooks/use-permissions';
 import { dashboard } from '@/routes/tenant';
 
 type TenantBrand = { slug: string; name: string } | null;
 
 export function TenantSidebar() {
     const { tenant } = usePage().props as unknown as { tenant: TenantBrand };
+    const { can } = usePermissions();
     const slug = tenant?.slug ?? '';
     const dashboardUrl = dashboard.url({ tenant: slug });
 
-    const navGroups = tenantNavGroups(slug);
+    // Only show sections the signed-in user can actually reach.
+    const navGroups = tenantNavGroups(slug, can);
 
     return (
         <Sidebar collapsible="icon" variant="inset">

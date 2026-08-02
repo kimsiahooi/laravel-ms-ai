@@ -15,6 +15,7 @@ use App\Http\Controllers\Tenant\PurchaseOrderController;
 use App\Http\Controllers\Tenant\PurchaseReturnController;
 use App\Http\Controllers\Tenant\RawMaterialController;
 use App\Http\Controllers\Tenant\ReportController;
+use App\Http\Controllers\Tenant\RoleController;
 use App\Http\Controllers\Tenant\SalesOrderController;
 use App\Http\Controllers\Tenant\SalesReturnController;
 use App\Http\Controllers\Tenant\SessionController;
@@ -24,8 +25,10 @@ use App\Http\Controllers\Tenant\StockMovementController;
 use App\Http\Controllers\Tenant\StockTakeController;
 use App\Http\Controllers\Tenant\StockTransferController;
 use App\Http\Controllers\Tenant\SupplierController;
+use App\Http\Controllers\Tenant\UserController;
 use App\Http\Controllers\Tenant\WarehouseController;
 use App\Http\Controllers\Tenant\WarehouseReorderLevelController;
+use App\Http\Middleware\AuthorizeTenantRoute;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -74,7 +77,7 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('login.store');
         });
 
-        Route::middleware('auth:web')->group(function () {
+        Route::middleware(['auth:web', AuthorizeTenantRoute::class])->group(function () {
             Route::get('dashboard', DashboardController::class)->name('dashboard');
 
             // Catalog
@@ -198,6 +201,15 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('settings.update');
             // The logo (a file-typed setting) streams through the generic media route
             // above — no per-setting file endpoint.
+
+            // Team & access — roles (with their permissions) and the people in them.
+            Route::resource('roles', RoleController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('users', UserController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::post('users/{user}/restore', [UserController::class, 'restore'])
+                ->withTrashed()
+                ->name('users.restore');
 
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
         });

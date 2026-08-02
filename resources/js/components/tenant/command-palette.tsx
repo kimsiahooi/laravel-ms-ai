@@ -13,6 +13,7 @@ import {
     CommandShortcut,
 } from '@/components/ui/command';
 import { tenantNavGroups } from '@/config/tenant-nav';
+import { usePermissions } from '@/hooks/use-permissions';
 import { toUrl } from '@/lib/utils';
 
 type TenantBrand = { slug: string; name: string } | null;
@@ -25,10 +26,12 @@ type TenantBrand = { slug: string; name: string } | null;
  */
 export function CommandPalette() {
     const { tenant } = usePage().props as unknown as { tenant: TenantBrand };
+    const { can } = usePermissions();
     const slug = tenant?.slug ?? '';
     const [open, setOpen] = useState(false);
 
-    const groups = tenantNavGroups(slug);
+    // Only offer pages the signed-in user can actually reach.
+    const groups = tenantNavGroups(slug, can);
 
     // ⌘K / Ctrl-K toggles the palette (mirrors the sidebar's ⌘B shortcut).
     useEffect(() => {

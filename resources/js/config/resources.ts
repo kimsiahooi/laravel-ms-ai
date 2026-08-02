@@ -9,8 +9,10 @@ import {
     MapPin,
     Package,
     Receipt,
+    ShieldCheck,
     ShoppingCart,
     Truck,
+    UserRound,
     Warehouse,
 } from 'lucide-react';
 
@@ -98,4 +100,16 @@ export const productionOrderMeta: ResourceMeta = {
     singular: 'production order',
     plural: 'Production orders',
     icon: Factory,
+};
+
+export const userMeta: ResourceMeta = {
+    singular: 'user',
+    plural: 'Users',
+    icon: UserRound,
+};
+
+export const roleMeta: ResourceMeta = {
+    singular: 'role',
+    plural: 'Roles',
+    icon: ShieldCheck,
 };

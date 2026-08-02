@@ -154,6 +154,13 @@ quantity: number,
 unit_cost: number,
 currency: string,
 };
+export type RoleData = {
+id: number,
+name: string,
+permissions: string[],
+is_locked: boolean,
+user_count: number,
+};
 export type SalesOrderData = {
 id: number,
 customer: string | null,
@@ -251,6 +258,15 @@ address: string | null,
 notes: string | null,
 created_at: string,
 creator: string | null,
+};
+export type UserData = {
+id: number,
+name: string,
+email: string,
+role: string | null,
+created_at: string,
+is_active: boolean,
+is_self: boolean,
 };
 export type WarehouseData = {
 id: number,

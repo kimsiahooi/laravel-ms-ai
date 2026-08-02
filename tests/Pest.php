@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /*
@@ -63,12 +66,37 @@ function makeTenants(int $count): void
 
 /**
  * Log in as the seeded first user of the `acme` tenant (provision it first
- * via ProvisionTenant in the test's beforeEach).
+ * via ProvisionTenant in the test's beforeEach). Ada is the built-in
+ * Administrator, so this session has every permission.
  */
 function loginAsAcmeUser(): void
 {
     test()->post('/acme/login', [
         'email' => 'ada@acme.test',
+        'password' => 'password123',
+    ]);
+}
+
+/**
+ * Create a limited "Member" on the `acme` tenant granted only $permissions,
+ * then log in as them — for exercising the permission gate. Provision the
+ * tenant first in beforeEach (its Administrator + permission catalog are seeded).
+ */
+function loginAsAcmeMember(array $permissions = []): void
+{
+    test()->tenant->run(function () use ($permissions) {
+        $role = Role::findOrCreate('Member', 'web');
+        $role->syncPermissions($permissions);
+        User::create([
+            'name' => 'Mel',
+            'email' => 'mel@acme.test',
+            'password' => 'password123',
+        ])->assignRole($role);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    });
+
+    test()->post('/acme/login', [
+        'email' => 'mel@acme.test',
         'password' => 'password123',
     ]);
 }

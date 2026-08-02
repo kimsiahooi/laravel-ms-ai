@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -63,5 +64,45 @@ return Application::configure(basePath: dirname(__DIR__))
             Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
 
             return back();
+        });
+
+        // Friendly, branded pages for the statuses a person is most likely to hit:
+        // a 403 from the permission gate (AuthorizeTenantRoute) and a 404 for a
+        // missing page. Rendered through Inertia so they keep the app's look and an
+        // Inertia visit swaps to them in place. Pure API/JSON clients still get the
+        // default JSON error; 500s keep the default handler (local debugging +
+        // production logging stay untouched).
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            if (! in_array($response->getStatusCode(), [403, 404], true)) {
+                return $response;
+            }
+
+            $wantsJson = ($request->is('api/*') || $request->expectsJson())
+                && ! $request->hasHeader('X-Inertia');
+            if ($wantsJson) {
+                return $response;
+            }
+
+            // Point "go back" at the right home for the area the error happened in,
+            // so an admin or tenant user never dead-ends on the public welcome page.
+            $tenant = tenant();
+            $homeUrl = match (true) {
+                $request->is('admin', 'admin/*') => $request->user('central')
+                    ? route('admin.dashboard', [], false)
+                    : route('admin.login', [], false),
+                $tenant !== null => route('tenant.dashboard', ['tenant' => $tenant->getKey()], false),
+                default => '/',
+            };
+            $homeLabel = match (true) {
+                str_contains($homeUrl, '/login') => 'Back to sign in',
+                $homeUrl === '/' => 'Back to home',
+                default => 'Back to dashboard',
+            };
+
+            return Inertia::render('errors/error', [
+                'status' => $response->getStatusCode(),
+                'homeUrl' => $homeUrl,
+                'homeLabel' => $homeLabel,
+            ])->toResponse($request)->setStatusCode($response->getStatusCode());
         });
     })->create();

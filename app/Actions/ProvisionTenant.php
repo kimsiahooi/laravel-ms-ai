@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ReservedSlugs;
 use Database\Seeders\DemoTenantSeeder;
+use Database\Seeders\RolesSeeder;
 use Database\Seeders\TenantDatabaseSeeder;
 use Illuminate\Validation\ValidationException;
 
@@ -45,14 +46,17 @@ class ProvisionTenant
         // closure, then reverts. User::create writes to the tenant users table;
         // the password is hashed by the model's 'hashed' cast (do not pre-hash).
         $tenant->run(function () use ($adminName, $adminEmail, $adminPassword, $seedDemoData): void {
+            // Baseline tenant data (default settings + the permission catalog and
+            // the Administrator role) — always, and additive/idempotent. Seeded
+            // first so the admin user below can be given the Administrator role.
+            app(TenantDatabaseSeeder::class)->run();
+
+            // The password is hashed by the model's 'hashed' cast (do not pre-hash).
             User::create([
                 'name' => $adminName,
                 'email' => $adminEmail,
                 'password' => $adminPassword,
-            ]);
-
-            // Baseline tenant data (default settings) — always, and additive/idempotent.
-            app(TenantDatabaseSeeder::class)->run();
+            ])->assignRole(RolesSeeder::ADMIN_ROLE);
 
             if ($seedDemoData) {
                 app(DemoTenantSeeder::class)->run();

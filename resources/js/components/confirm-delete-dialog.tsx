@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -17,11 +18,16 @@ type ConfirmDeleteDialogProps<T> = {
     onConfirm: () => void;
     title: string;
     description: ReactNode;
+    /** Confirm-button label (default "Delete") — e.g. "Deactivate" for a reversible action. */
+    confirmLabel?: string;
+    /** Confirm-button icon (default Trash2). */
+    confirmIcon?: LucideIcon;
 };
 
 /**
  * The standard destructive confirm dialog for deleting a resource record. Pair
- * with `useDelete` (`item={deleting}`, `onConfirm={confirm}`).
+ * with `useDelete` (`item={deleting}`, `onConfirm={confirm}`). The confirm label
+ * and icon can be overridden for reversible destructive actions (e.g. deactivate).
  */
 export function ConfirmDeleteDialog<T>({
     item,
@@ -29,6 +35,8 @@ export function ConfirmDeleteDialog<T>({
     onConfirm,
     title,
     description,
+    confirmLabel = 'Delete',
+    confirmIcon: ConfirmIcon = Trash2,
 }: ConfirmDeleteDialogProps<T>) {
     return (
         <Dialog open={item !== null} onOpenChange={onOpenChange}>
@@ -50,8 +58,8 @@ export function ConfirmDeleteDialog<T>({
                         variant="destructive"
                         onClick={onConfirm}
                     >
-                        <Trash2 className="size-4" />
-                        Delete
+                        <ConfirmIcon className="size-4" />
+                        {confirmLabel}
                     </Button>
                 </DialogFooter>
             </DialogContent>
