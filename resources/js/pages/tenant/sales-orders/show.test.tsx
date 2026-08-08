@@ -130,4 +130,87 @@ describe('sales order show', () => {
         expect(screen.queryByText('Subtotal')).not.toBeInTheDocument();
         expect(screen.queryByText(/Tax \(/)).not.toBeInTheDocument();
     });
+
+    it('lists what is missing before the order is e-invoice ready (R15)', () => {
+        renderPage(
+            <SalesOrderShow />,
+            props({
+                business: { country: 'MY', tax_type: 'sst', tax_rate: 10 },
+                eInvoice: {
+                    ready: false,
+                    passed: 1,
+                    total: 2,
+                    checks: [
+                        {
+                            key: 'seller_tin',
+                            label: 'Your TIN',
+                            passed: true,
+                            hint: 'Add your TIN in Business settings.',
+                        },
+                        {
+                            key: 'buyer_tin',
+                            label: "Customer's TIN",
+                            passed: false,
+                            hint: "Add the customer's TIN on their record.",
+                        },
+                    ],
+                },
+            }),
+        );
+
+        expect(screen.getByText(/1 of 2 checks pass/i)).toBeInTheDocument();
+        expect(screen.getByText(/MyInvois/)).toBeInTheDocument();
+        // The failing check explains itself; the passing one needs no hint.
+        expect(
+            screen.getByText("Add the customer's TIN on their record."),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('Add your TIN in Business settings.'),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /download json/i }),
+        ).toBeInTheDocument();
+    });
+
+    it('says the order is ready and names the SG standard for an SG tenant (R15)', () => {
+        renderPage(
+            <SalesOrderShow />,
+            props({
+                business: { country: 'SG', tax_type: 'gst', tax_rate: 9 },
+                eInvoice: {
+                    ready: true,
+                    passed: 2,
+                    total: 2,
+                    checks: [
+                        {
+                            key: 'seller_tin',
+                            label: 'Your TIN',
+                            passed: true,
+                            hint: '',
+                        },
+                        {
+                            key: 'buyer_tin',
+                            label: "Customer's TIN",
+                            passed: true,
+                            hint: '',
+                        },
+                    ],
+                },
+            }),
+        );
+
+        expect(
+            screen.getByText(
+                /Ready — this order has everything InvoiceNow needs/i,
+            ),
+        ).toBeInTheDocument();
+    });
+
+    // The prop is absent on a partial reload that doesn't request it (`only:`),
+    // so the panel must degrade rather than crash.
+    it('omits the e-invoice panel when the prop is absent (R15)', () => {
+        renderPage(<SalesOrderShow />, props());
+
+        expect(screen.queryByText('E-invoice')).not.toBeInTheDocument();
+    });
 });

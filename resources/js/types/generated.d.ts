@@ -59,8 +59,21 @@ notes: string | null,
 created_at: string,
 creator: string | null,
 };
+export type EInvoiceCheckData = {
+key: string,
+label: string,
+passed: boolean,
+hint: string,
+};
+export type EInvoiceReadinessData = {
+ready: boolean,
+passed: number,
+total: number,
+checks: App.Data.EInvoiceCheckData[],
+};
 export type InvoicePartyData = {
 name: string,
+phone: string | null,
 tin: string | null,
 registration_no: string | null,
 sst_registration_no: string | null,

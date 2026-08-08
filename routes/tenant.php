@@ -157,6 +157,10 @@ Route::middleware(['web', InitializeTenancyByPath::class])
                 ->name('sales-orders.fulfill');
             Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
                 ->name('sales-orders.cancel');
+            // The structured e-invoice payload (MyInvois / InvoiceNow shaped) as a
+            // downloadable JSON, for the accounting package / Peppol access point.
+            Route::get('sales-orders/{salesOrder}/e-invoice', [SalesOrderController::class, 'eInvoice'])
+                ->name('sales-orders.e-invoice');
 
             // Sales returns — take products back from a customer (stock IN).
             Route::resource('sales-returns', SalesReturnController::class)

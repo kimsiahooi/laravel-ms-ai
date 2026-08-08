@@ -9,9 +9,12 @@ source. Pair this with [`docs/USER-GUIDE.md`](USER-GUIDE.md) (end-user, task-ori
 is the internals.
 
 > **Read this first — three things that surprise people:**
-> 1. **There is no document-number generator.** Orders/returns/production are identified by their
->    integer `id` (the UI shows `PO #5`). The `PO`/`SO`/`INV` prefixes, `number_reset`, and
->    `financial_year_start_month` business settings are *declared but read nowhere* — not yet wired.
+> 1. **Document numbering is wired for sales orders only.** `SalesOrderController::store` auto-numbers
+>    from `sales_order_prefix` + `number_reset` + `financial_year_start_month` via
+>    `DocumentNumberGenerator` (→ `SO-2026-0001`); a manual `number` still wins. Everything else —
+>    purchase orders, returns, production — is still identified by its integer `id` (the UI shows
+>    `PO #5`), and `purchase_order_prefix` / `invoice_prefix` remain unread. See
+>    [Document numbering](#document-numbering-r15--documentnumbergenerator).
 > 2. **There are no custom observers/events/listeners** (no `app/Observers|Listeners|Events`). The
 >    only automatic model hooks are Spatie **activity logging** (via the `RecordsActivity` trait) and
 >    two **delete guards** (`booted()` on `Location` and `Warehouse`).
@@ -384,13 +387,24 @@ it (an IN can't go negative).
 - **⚠ Not activity-logged** (returns use only `Searchable` + `SoftDeletes`).
 
 ### 4.3 Sales Orders — `sales_orders` (+ `_items`)
-- **Header**: `customer_id`, `status`, `currency` (default `USD`), `notes`, `user_id`, `fulfilled_at`,
-  `fulfilled_warehouse_id`. Soft-delete.
+- **Header**: `customer_id`, `status`, `currency` (default `USD`), `exchange_rate`, `tax_rate`,
+  `number`, `notes`, `user_id`, `fulfilled_at`, `fulfilled_warehouse_id`. Soft-delete.
 - **Items** (`sales_order_items`): `sales_order_id`, `product_id`, `product_snapshot`, `quantity`,
-  `unit_price`.
+  `unit_price`, `taxable`.
 - **`fulfill`** (`FulfillSalesOrder`): per item `record(wh, product, −quantity, SalesFulfillment,
   "SO #id")` → **stock OUT of products**; sets `fulfilled`.
 - **Activity-logged.**
+- **The sales order IS the invoice** — there is no separate Invoice entity. `?print=1` renders it as
+  a **Tax Invoice** once the tenant has a tax type and the order is fulfilled.
+- **Tax (R15)**: `tax_rate` is snapshotted from settings **at issue**, so changing the setting later
+  never re-taxes an existing order. `SalesOrderData` computes `subtotal` → `tax_amount`
+  (`round(taxable-lines × rate/100, 2)`) → `total` (**grand total, incl. tax**); `base_total` is that
+  × `exchange_rate`. Revenue **rollups stay net** — tax is a pass-through, not revenue.
+- **E-invoice (R15)**: `GET sales-orders/{salesOrder}/e-invoice` → `EInvoiceBuilder` →
+  `EInvoiceData`, a downloadable JSON under **UBL 2.1** business-term names, country-adapted from
+  settings `country` (MY → MyInvois, SG → InvoiceNow/PINT SG). It is an **integration hook, not a
+  filing**: the accounting package or Peppol access point maps and submits it. `EInvoiceReadinessData`
+  is the on-page checklist of the tax-identity fields still missing. See §6 *E-invoice export*.
 
 ### 4.4 Sales Returns — `sales_returns` (+ `_items`)
 - **Header**: `customer_id`, `status`, `notes`, `user_id`, `completed_at`, `completed_warehouse_id`.
@@ -492,12 +506,58 @@ Two models block deletion when dependents exist (throwing `BlockedByDependentsEx
 `booted()` `deleting` hook): **`Location`** (has warehouses) and **`Warehouse`** (non-zero
 `warehouse_stocks`). These are the only domain `booted()` hooks.
 
-### Numbering (declared but NOT wired)
-The business settings `sales_order_prefix`, `purchase_order_prefix`, `invoice_prefix`, `number_reset`,
-and `financial_year_start_month` exist as stored settings **but are read nowhere** — a grep finds no
-consumer outside `BusinessSettings.php`. `documentHeader()` exposes only `legal_name`,
-`registration_no`, `address`, `tax_type`, `tax_registration_no`, `logo_url`. Documents are identified
-by their integer `id`. Wiring a real numbering scheme (prefix + FY + reset) is an open enhancement.
+### Document numbering (R15) — `DocumentNumberGenerator`
+Wired for **sales orders**; the generator is generic, so other documents can adopt it.
+[`DocumentNumberGenerator::next($type, $prefix, $period)`](../app/Support/DocumentNumberGenerator.php)
+allocates from the `document_sequences` table (`type`, `period`, `next_number`, unique on
+`(type, period)`) using `insertOrIgnore` + `lockForUpdate` **inside the caller's transaction** — so
+concurrent creates can't collide. The settings `sales_order_prefix`, `number_reset` (`yearly`|`never`)
+and `financial_year_start_month` drive prefix and period, producing `SO-2026-0001`.
+
+`SalesOrderController::store` calls it only when the user leaves `number` blank — a manual number
+(R08b) still wins and stays unique-validated. Because both share one column with no DB unique index,
+`nextUniqueNumber()` re-draws until the candidate isn't already taken by a manual number.
+`purchase_order_prefix` / `invoice_prefix` remain unwired.
+
+### E-invoice export (R15) — `EInvoiceBuilder`
+[`EInvoiceBuilder`](../app/Support/EInvoiceBuilder.php) turns a sales order into
+[`EInvoiceData`](../app/Data/EInvoiceData.php): a JSON payload under **UBL 2.1** business-term names
+(`AccountingSupplierParty`, `InvoiceLine`, `TaxSubtotal`, `LegalMonetaryTotal`…), which is what both
+Malaysia's MyInvois and Singapore's PINT SG are built on.
+
+**It is a hook, not a filing.** The app never submits; the accounting package or Peppol access point
+maps this payload and files it. Fields the app doesn't capture (MSIC industry code, per-line
+classification codes, the digital signature) are the submitting layer's to supply.
+
+Country adaptation is driven by settings `country`:
+
+| | MY → `myinvois` | SG → `invoicenow` |
+|---|---|---|
+| Invoice type code | `01` (LHDN e-Invoice) | `380` (UNTDID 1001) |
+| Registration scheme | `BRN` | `UEN` + Peppol `EndpointID` scheme `0195` (`SGUEN…`) |
+| Tax scheme | `SST` | `GST` |
+| Taxed / untaxed / no-tax line | `01` / `E` / `06` | `SR` / `ZR` / `NG` |
+
+**Currency** is not country-branched: whenever the order currency differs from the base currency the
+payload carries both the `tax_exchange_rate` triplet **and** `tax_amount_in_tax_currency`. MY maps the
+former to `TaxExchangeRate`; PINT SG has no rate term and maps the latter to its second `TaxTotal`
+(Peppol IBT-111).
+
+Line tax is rounded per line, then the residual against the order's own tax figure is absorbed by the
+last **taxed** line (never an exempt one), so **the lines always reconcile to the total the printed
+invoice shows**. Every monetary amount is rounded to 2dp — UBL allows no more, and PINT rule BR-S-08
+compares a category's taxable amount against its lines. Codes are emitted as opaque **strings**
+(`01` ≠ `1`) so a mapper can override without a schema change.
+
+**Known gap:** a MY line coded `E` needs a tax-exemption reason, which the app doesn't capture (the
+line model has only a `taxable` toggle). A mapper cannot derive it — a tenant exempting lines has to
+supply it downstream.
+
+[`EInvoiceReadinessData`](../app/Data/EInvoiceReadinessData.php) is the checklist shown on the SO page:
+seller name+address, seller TIN, seller registration, tax type, tax registration (only when tax is
+charged), buyer TIN, buyer registration, buyer address, document number, and **not cancelled** — a
+voided sale must never present as filable. Download is **never blocked** on it: a not-ready payload
+still shows the mapper exactly what's blank.
 
 ### What is NOT here
 No `EventServiceProvider`, no `app/Observers|Listeners|Events`, no `#[ObservedBy]`. The only

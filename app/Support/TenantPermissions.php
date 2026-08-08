@@ -81,6 +81,8 @@ final class TenantPermissions
         'purchase-returns.cancel' => 'purchase-returns.update',
         'sales-orders.fulfill' => 'sales-orders.update',
         'sales-orders.cancel' => 'sales-orders.update',
+        // Downloading the e-invoice reads the order's data — gate it on view.
+        'sales-orders.e-invoice' => 'sales-orders.view',
         'sales-returns.complete' => 'sales-returns.update',
         'sales-returns.cancel' => 'sales-returns.update',
         'production-orders.complete' => 'production-orders.create',

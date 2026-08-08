@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { DetailFacts, type Fact } from '@/components/detail-facts';
 import { DetailHeader } from '@/components/detail-header';
+import { EInvoicePanel } from '@/components/e-invoice-panel';
 import { LineItemsTable } from '@/components/line-items-table';
 import { PrintDocument, PrintItemsTable } from '@/components/print-document';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,8 @@ type PageProps = TenantPageProps & {
     order: SalesOrder;
     warehouses: Option[];
     print: boolean;
+    /** Readiness checklist; absent on a partial reload that doesn't ask for it. */
+    eInvoice?: App.Data.EInvoiceReadinessData;
 };
 
 /**
@@ -211,7 +214,7 @@ function SalesOrderDetail({
     order: SalesOrder;
     warehouses: Option[];
 }) {
-    const { tenant } = usePageProps<PageProps>();
+    const { tenant, business, eInvoice } = usePageProps<PageProps>();
     const { can } = usePermissions();
     const canUpdate = can('sales-orders.update');
     const currency = order.currency;
@@ -223,6 +226,9 @@ function SalesOrderDetail({
         salesOrder: order.id,
     });
     const printUrl = `${showUrl}?print=1`;
+    // The payload targets the tenant's country: MY files to MyInvois, SG to InvoiceNow.
+    const standardLabel =
+        business?.country === 'SG' ? 'InvoiceNow' : 'MyInvois';
 
     const [fulfillOpen, setFulfillOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
@@ -380,6 +386,17 @@ function SalesOrderDetail({
                     ),
                 }}
             />
+
+            {eInvoice ? (
+                <EInvoicePanel
+                    readiness={eInvoice}
+                    standardLabel={standardLabel}
+                    downloadUrl={soRoutes.eInvoice.url({
+                        tenant: tenant.slug,
+                        salesOrder: order.id,
+                    })}
+                />
+            ) : null}
 
             <Dialog open={fulfillOpen} onOpenChange={setFulfillOpen}>
                 <DialogContent className="max-h-[90dvh] overflow-y-auto">

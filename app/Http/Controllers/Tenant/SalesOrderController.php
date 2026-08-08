@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\FulfillSalesOrder;
+use App\Data\EInvoiceReadinessData;
 use App\Data\OptionData;
 use App\Data\SalesOrderData;
 use App\Enums\SalesOrderStatus;
@@ -21,6 +22,8 @@ use App\Models\Warehouse;
 use App\Settings\BusinessSettings;
 use App\Support\ActiveExists;
 use App\Support\DocumentNumberGenerator;
+use App\Support\EInvoiceBuilder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
@@ -28,6 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class SalesOrderController
 {
@@ -76,7 +80,44 @@ class SalesOrderController
             'order' => SalesOrderData::from($salesOrder),
             'warehouses' => fn () => $this->stockWarehouseOptions(),
             'print' => $request->boolean('print'),
+            // The e-invoice checklist — what's still missing before this order can
+            // be filed. A closure so partial reloads don't recompute it.
+            'eInvoice' => fn () => EInvoiceReadinessData::forSalesOrder(
+                $salesOrder,
+                app(BusinessSettings::class),
+            ),
         ]);
+    }
+
+    /**
+     * The order as a structured e-invoice payload (MyInvois / InvoiceNow shaped),
+     * downloaded as JSON for the accounting package or Peppol access point to
+     * submit. This is the integration hook — the app never files it itself.
+     */
+    public function eInvoice(SalesOrder $salesOrder, EInvoiceBuilder $builder): JsonResponse
+    {
+        $salesOrder->load(['customer', 'items']);
+
+        // The number is user-entered free text (R08b): it can hold quotes, newlines,
+        // and legitimately slashes (INV/2026/001 is an ordinary MY/SG format). Reduce
+        // it to a filesystem-safe slug, then let Symfony build the header — raw
+        // interpolation would let a number truncate the filename or inject a
+        // second disposition parameter.
+        $slug = trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', (string) $salesOrder->number), '-');
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            'e-invoice-'.($slug !== '' ? $slug : "SO-{$salesOrder->id}").'.json',
+        );
+
+        // Pretty-printed: a human pastes/inspects this far more often than a machine
+        // streams it, and one invoice is small. PRESERVE_ZERO_FRACTION keeps money
+        // decimal — a total of 270.0 must not serialise as the integer 270.
+        return response()->json(
+            $builder->build($salesOrder)->toArray(),
+            200,
+            ['Content-Disposition' => $disposition],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION,
+        );
     }
 
     public function store(SalesOrderRequest $request, DocumentNumberGenerator $numbers): RedirectResponse
@@ -119,6 +160,9 @@ class SalesOrderController
                 'customer_id' => $request->integer('customer_id'),
                 'currency' => $currency,
                 'exchange_rate' => $this->exchangeRateFor($currency, $request->float('exchange_rate')),
+                // Re-snapshotted on edit: only a *pending* order is editable, and a
+                // pending order isn't issued yet, so it re-prices at today's rate.
+                // Fulfilled/cancelled orders 422 above and keep their issued rate.
                 'tax_rate' => app(BusinessSettings::class)->taxRate(),
                 'number' => $request->input('number'),
                 'notes' => $request->input('notes'),
