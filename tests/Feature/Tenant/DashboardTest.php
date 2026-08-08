@@ -1,10 +1,16 @@
 <?php
 
 use App\Actions\ProvisionTenant;
+use App\Enums\PurchaseOrderStatus;
 use App\Enums\SalesOrderStatus;
+use App\Enums\StockMovementReason;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
+use App\Models\RawMaterial;
 use App\Models\SalesOrder;
+use App\Models\Warehouse;
+use App\Services\StockService;
 use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -54,13 +60,97 @@ it('renders the organization header, KPI tiles and chart series', function () {
             ->has('kpis.sales')
             ->has('kpis.purchases')
             ->has('kpis.production')
-            ->where('kpis.low_stock', 0)
+            ->where('snapshot.low_stock', 0)
             ->has('series')   // one point per day in range
             ->has('movements')
             ->has('onboarding')
             ->where('onboarding.location', false) // a fresh tenant has nothing set up
             ->where('onboarding.order', false)
             ->where('auth.user.email', 'ada@acme.test')
+        );
+});
+
+it('sends a real zero for every snapshot figure on a fresh tenant (R17)', function () {
+    loginAsAcmeUser();
+
+    // Nothing set up anywhere — each figure should be a real zero rather than a
+    // missing prop the page would render as "undefined".
+    $this->get('/acme/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('snapshot.stock_value.amount', 0)
+            ->where('snapshot.stock_value.valued', 0)
+            ->where('snapshot.stock_value.unvalued', 0)
+            ->where('snapshot.incoming.count', 0)
+            ->where('snapshot.incoming.amount', 0)
+            ->where('snapshot.incoming.overdue', 0)
+            ->where('snapshot.production.active', 0)
+            ->where('snapshot.production.blocked', 0)
+            ->where('snapshot.low_stock', 0)
+            ->where('snapshot.out_of_stock', 0)
+            ->where('snapshot.ready_sales', 0)
+        );
+});
+
+it('wires each snapshot figure to the right number (R17)', function () {
+    $this->tenant->run(function () {
+        $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'ST-1', 'unit' => 'kg']);
+        $widget = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'pcs']);
+        $location = Location::create(['name' => 'KL HQ']);
+        $warehouse = Warehouse::create(['location_id' => $location->id, 'name' => 'Main']);
+
+        // 20 kg of steel bought at 4.00 and received → 80.00 of stock on hand.
+        $received = PurchaseOrder::create([
+            'status' => PurchaseOrderStatus::Received, 'currency' => 'MYR',
+            'exchange_rate' => 1, 'received_at' => now(),
+        ]);
+        $received->items()->create([
+            'raw_material_id' => $steel->id,
+            'raw_material_snapshot' => ['name' => 'Steel', 'sku' => 'ST-1', 'unit' => 'kg'],
+            'quantity' => 20, 'unit_cost' => 4,
+        ]);
+        app(StockService::class)->record(
+            $warehouse, $steel, 20, StockMovementReason::Adjustment,
+        );
+
+        // One more order still on its way, already a day late: 10 × 3.00 = 30.00.
+        $open = PurchaseOrder::create([
+            'status' => PurchaseOrderStatus::Pending, 'currency' => 'MYR',
+            'exchange_rate' => 1, 'expected_date' => now()->subDay()->startOfDay(),
+        ]);
+        $open->items()->create([
+            'raw_material_id' => $steel->id,
+            'raw_material_snapshot' => ['name' => 'Steel', 'sku' => 'ST-1', 'unit' => 'kg'],
+            'quantity' => 10, 'unit_cost' => 3,
+        ]);
+
+        // A sales order that one warehouse can cover.
+        app(StockService::class)->record(
+            $warehouse, $widget, 5, StockMovementReason::Adjustment,
+        );
+        $sale = SalesOrder::create([
+            'customer_id' => null, 'status' => SalesOrderStatus::Pending, 'currency' => 'MYR',
+        ]);
+        $sale->items()->create([
+            'product_id' => $widget->id,
+            'product_snapshot' => ['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'pcs'],
+            'quantity' => 2, 'unit_price' => 10,
+        ]);
+    });
+
+    loginAsAcmeUser();
+
+    // Distinct figures, so a transposed or wrong-service call can't still pass.
+    $this->get('/acme/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('snapshot.stock_value.amount', 80)
+            ->where('snapshot.stock_value.valued', 1)   // steel priced; the widget isn't
+            ->where('snapshot.stock_value.unvalued', 1)
+            ->where('snapshot.incoming.count', 1)
+            ->where('snapshot.incoming.amount', 30)
+            ->where('snapshot.incoming.overdue', 1)
+            ->where('snapshot.ready_sales', 1)
         );
 });
 

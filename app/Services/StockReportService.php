@@ -12,6 +12,8 @@ use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\WarehouseReorderLevel;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -147,10 +149,166 @@ class StockReportService
         return $series;
     }
 
-    /** Current count of items at or below their reorder level, across all warehouses. */
+    /**
+     * How many distinct items are at or below their reorder level somewhere. Counts
+     * *items*, not (warehouse, item) rows — one material low in three warehouses is
+     * one item to reorder, which is what the dashboard says out loud.
+     */
     public function lowStockCount(): int
     {
-        return WarehouseReorderLevel::query()->belowLevel()->count();
+        return $this->countDistinctItems(WarehouseReorderLevel::query()->belowLevel());
+    }
+
+    /**
+     * Of those, how many have actually run out — nothing left in any warehouse that
+     * tracks them. The sharp end of low stock.
+     */
+    public function outOfStockCount(): int
+    {
+        return $this->countDistinctItems(
+            WarehouseReorderLevel::query()
+                ->belowLevel()
+                ->whereRaw('COALESCE(ws.quantity, 0) <= 0'),
+        );
+    }
+
+    /**
+     * Count distinct (type, id) stockables in a reorder-level query. Concatenated
+     * rather than a multi-column COUNT(DISTINCT …) so it isn't MySQL-only.
+     *
+     * @param  Builder<WarehouseReorderLevel>  $query
+     */
+    private function countDistinctItems($query): int
+    {
+        return (int) $query
+            ->selectRaw("COUNT(DISTINCT CONCAT(warehouse_reorder_levels.stockable_type, '-', warehouse_reorder_levels.stockable_id)) as aggregate")
+            ->value('aggregate');
+    }
+
+    /**
+     * Purchase orders still waiting to arrive: how many, what they're worth in base
+     * currency, and how many are past the delivery date the buyer expected.
+     *
+     * @return object{count: int, amount: float, overdue: int}
+     */
+    public function openPurchaseTotals(): object
+    {
+        $orders = DB::table('purchase_orders')
+            ->where('status', PurchaseOrderStatus::Pending->value)
+            ->whereNull('deleted_at')
+            // Late means the delivery day has *passed* — an order due today isn't
+            // late yet, and expected_date is stored at midnight of the chosen day.
+            ->selectRaw('COUNT(*) as cnt, COALESCE(SUM(CASE WHEN expected_date IS NOT NULL AND expected_date < ? THEN 1 ELSE 0 END), 0) as overdue', [Date::now()->startOfDay()])
+            ->first();
+
+        $amount = DB::table('purchase_orders')
+            ->join('purchase_order_items', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
+            ->where('purchase_orders.status', PurchaseOrderStatus::Pending->value)
+            ->whereNull('purchase_orders.deleted_at')
+            ->sum(DB::raw('purchase_order_items.quantity * purchase_order_items.unit_cost * purchase_orders.exchange_rate'));
+
+        return (object) [
+            'count' => (int) ($orders->cnt ?? 0),
+            'amount' => (float) $amount,
+            'overdue' => (int) ($orders->overdue ?? 0),
+        ];
+    }
+
+    /**
+     * Builds waiting to be made, and how many of those can't start because no single
+     * warehouse holds every material they need — the shortage a manufacturer most
+     * needs to catch. Availability is judged per warehouse because completing a build
+     * draws all of its materials from one warehouse.
+     *
+     * @return object{active: int, blocked: int}
+     */
+    public function productionPipeline(): object
+    {
+        $active = DB::table('production_orders')
+            ->where('status', ProductionOrderStatus::Pending->value)
+            ->whereNull('deleted_at')
+            ->count();
+
+        $ready = DB::table('production_orders as po')
+            ->where('po.status', ProductionOrderStatus::Pending->value)
+            ->whereNull('po.deleted_at')
+            // A build whose finished product is gone can never be completed either.
+            ->whereRaw(<<<'SQL'
+                EXISTS (
+                    SELECT 1 FROM products fp
+                    WHERE fp.id = po.product_id AND fp.deleted_at IS NULL
+                )
+                SQL)
+            // No material line points at a material that no longer exists.
+            ->whereRaw(<<<'SQL'
+                NOT EXISTS (
+                    SELECT 1 FROM production_order_items oi
+                    LEFT JOIN raw_materials rm
+                        ON rm.id = oi.raw_material_id AND rm.deleted_at IS NULL
+                    WHERE oi.production_order_id = po.id AND rm.id IS NULL
+                )
+                SQL)
+            // And some live warehouse holds enough of every material, counting the
+            // *total* a material is needed for across all of the build's lines.
+            ->whereRaw(<<<'SQL'
+                EXISTS (
+                    SELECT 1 FROM warehouses w
+                    WHERE w.deleted_at IS NULL
+                    AND NOT EXISTS (
+                        SELECT 1 FROM production_order_items oi
+                        LEFT JOIN warehouse_stocks ws
+                            ON ws.warehouse_id = w.id
+                            AND ws.stockable_type = 'raw_material'
+                            AND ws.stockable_id = oi.raw_material_id
+                        WHERE oi.production_order_id = po.id
+                        GROUP BY oi.raw_material_id
+                        HAVING SUM(oi.quantity_required) > COALESCE(MAX(ws.quantity), 0)
+                    )
+                )
+                SQL)
+            ->count();
+
+        return (object) ['active' => $active, 'blocked' => max(0, $active - $ready)];
+    }
+
+    /**
+     * Sales orders that could be shipped right now — pending, and with a single
+     * warehouse holding enough of every product on them (the same all-or-nothing
+     * rule the Fulfil action applies).
+     */
+    public function salesOrdersReadyToShip(): int
+    {
+        return DB::table('sales_orders as so')
+            ->where('so.status', SalesOrderStatus::Pending->value)
+            ->whereNull('so.deleted_at')
+            // No line points at a product that no longer exists — Fulfil refuses those.
+            ->whereRaw(<<<'SQL'
+                NOT EXISTS (
+                    SELECT 1 FROM sales_order_items oi
+                    LEFT JOIN products p
+                        ON p.id = oi.product_id AND p.deleted_at IS NULL
+                    WHERE oi.sales_order_id = so.id AND p.id IS NULL
+                )
+                SQL)
+            // Some live warehouse holds enough of every product, counting the *total*
+            // ordered across all lines (the same product can appear more than once).
+            ->whereRaw(<<<'SQL'
+                EXISTS (
+                    SELECT 1 FROM warehouses w
+                    WHERE w.deleted_at IS NULL
+                    AND NOT EXISTS (
+                        SELECT 1 FROM sales_order_items oi
+                        LEFT JOIN warehouse_stocks ws
+                            ON ws.warehouse_id = w.id
+                            AND ws.stockable_type = 'product'
+                            AND ws.stockable_id = oi.product_id
+                        WHERE oi.sales_order_id = so.id
+                        GROUP BY oi.product_id
+                        HAVING SUM(oi.quantity) > COALESCE(MAX(ws.quantity), 0)
+                    )
+                )
+                SQL)
+            ->count();
     }
 
     /**

@@ -452,10 +452,21 @@ sequenceDiagram
 
 None of these write domain tables.
 
-- **Dashboard** (`GET dashboard` → `DashboardController`, page `tenant/dashboard`): date-range KPIs
-  (sales/purchases/production totals, low-stock count) via `StockReportService`, a daily
-  sales-vs-purchases series, net movements by reason, and onboarding EXISTS-probes. Heavy props are
-  closures (partial-reload friendly).
+- **Dashboard** (`GET dashboard` → `DashboardController`, page `tenant/dashboard`): four linked KPI
+  tiles (stock value · low/out-of-stock · incoming POs · production, each an `<a>` to its list), a
+  "needs your attention" list, a daily sales-vs-purchases series, net movements by reason (diverging
+  in/out bars), and onboarding EXISTS-probes. Heavy props are closures (partial-reload friendly);
+  every current-state number lives in the one `kpis` closure so each query runs once per request.
+  - **Stock value** comes from `InventoryValuationService`: there is no cost column on an item, so a
+    raw material is priced at the **weighted-average unit cost of received purchase order lines**
+    (× that order's `exchange_rate`, so it lands in base currency) and a product at its **BOM
+    roll-up**. A product is only priced when *every* BOM material has a cost — no partial roll-ups —
+    and anything unpriceable is excluded from the total and reported as `unvalued` for the UI to
+    disclose. This is deliberately *not* a costing engine (roadmap Phase B); it re-uses the same
+    receipts math a real AVCO engine would start from.
+  - **"Blocked" builds / "ready to ship" orders** are judged **per warehouse** (`EXISTS` a live
+    warehouse short on no line), matching the all-or-nothing Complete/Fulfil actions — stock split
+    across two warehouses does not count as covered.
 - **Activity log** (`GET activity` → `ActivityController`, page `tenant/activity`): paginated
   `activity_log` rows (Spatie `Activity`) with `causer` + `subject`, searchable by
   event/description/subject type/causer name. Written by the `RecordsActivity` infra (§6), not here.
