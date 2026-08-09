@@ -52,8 +52,11 @@ function props(overrides: Record<string, unknown> = {}) {
     };
 }
 
-it('puts the reorder level back and says so when saving it fails', () => {
-    renderPageWithForm(<WarehouseShow />, props(), { onSubmit: 'error' });
+it('puts the reorder level back and shows why, under the input', () => {
+    renderPageWithForm(<WarehouseShow />, props(), {
+        onSubmit: 'error',
+        errors: { min_stock: 'The reorder level must be at least 0.' },
+    });
 
     const input = screen.getByLabelText('Reorder level for Desk fan 12-inch');
     fireEvent.change(input, { target: { value: '99' } });
@@ -61,10 +64,13 @@ it('puts the reorder level back and says so when saving it fails', () => {
 
     // The typed value is rolled back rather than left looking saved…
     expect(input).toHaveValue(5);
-    // …and the failure is actually reported, not swallowed.
-    expect(toast.error).toHaveBeenCalledWith(
-        'Could not update the reorder level.',
-    );
+    // …and the reason sits under the field. A toast here would scroll away and
+    // leave the user staring at a cell that silently reverted.
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(
+        document.getElementById(input.getAttribute('aria-describedby') ?? ''),
+    ).toHaveTextContent('The reorder level must be at least 0.');
+    expect(toast.error).not.toHaveBeenCalled();
 });
 
 it('renders a warehouse with its stock summary and item rows', () => {

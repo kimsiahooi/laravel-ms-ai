@@ -16,6 +16,15 @@ const schema: SettingsFieldSchema[] = [
         options: [],
         placeholder: null,
         required: false,
+        constraints: {
+            required: false,
+            numeric: false,
+            email: false,
+            max: null,
+            min: null,
+            scale: null,
+            in: [],
+        },
     },
     {
         key: 'address',
@@ -26,6 +35,15 @@ const schema: SettingsFieldSchema[] = [
         options: [],
         placeholder: null,
         required: false,
+        constraints: {
+            required: false,
+            numeric: false,
+            email: false,
+            max: null,
+            min: null,
+            scale: null,
+            in: [],
+        },
     },
     {
         key: 'tax_type',
@@ -39,6 +57,15 @@ const schema: SettingsFieldSchema[] = [
         ],
         placeholder: null,
         required: false,
+        constraints: {
+            required: false,
+            numeric: false,
+            email: false,
+            max: null,
+            min: null,
+            scale: null,
+            in: [],
+        },
     },
 ];
 
@@ -52,6 +79,15 @@ const fileSchema: SettingsFieldSchema[] = [
         options: [],
         placeholder: null,
         required: false,
+        constraints: {
+            required: false,
+            numeric: false,
+            email: false,
+            max: null,
+            min: null,
+            scale: null,
+            in: [],
+        },
     },
 ];
 

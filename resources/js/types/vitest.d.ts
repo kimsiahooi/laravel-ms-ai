@@ -32,4 +32,16 @@ declare global {
         | InertiaFormOverride
         | ((key?: unknown) => InertiaFormOverride | undefined)
         | undefined;
+
+    /**
+     * Requests a real `<Form>` / `useForm` submit actually made, recorded by the
+     * router spy in vitest.setup.ts. Visits cancelled by a validation gate are not
+     * recorded, so `expect(submittedVisits()).not.toHaveBeenCalled()` means
+     * "the client refused to send it". Read it via `submittedVisits()`.
+     */
+    var __inertiaVisits:
+        | import('vitest').Mock<
+              (url: string, data: unknown, options: unknown) => void
+          >
+        | undefined;
 }

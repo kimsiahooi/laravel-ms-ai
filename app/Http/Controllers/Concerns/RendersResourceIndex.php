@@ -24,6 +24,10 @@ trait RendersResourceIndex
      * @param  callable(Model): mixed  $toData  maps each row to its Data object
      * @param  array<int, string>  $sortable  real columns the UI may sort by (default: created_at desc)
      * @param  array<int, string>  $with  relations to eager-load (e.g. ['creator'])
+     * @param  array<string, mixed>  $extraProps  extra page props. Values are eager, so
+     *                                            anything that costs a query belongs in a
+     *                                            closure — a search reload asks for the list
+     *                                            prop only, and would otherwise pay for these too.
      */
     protected function resourceIndex(
         Request $request,
@@ -35,6 +39,7 @@ trait RendersResourceIndex
         array $with = [],
         string $defaultSort = 'created_at',
         string $defaultDirection = 'desc',
+        array $extraProps = [],
     ): Response {
         $search = trim((string) $request->string('search'));
         $perPage = $this->perPage($request);
@@ -45,6 +50,7 @@ trait RendersResourceIndex
         $rows = $this->paginateList($query, $perPage)->through($toData);
 
         return Inertia::render($view, [
+            ...$extraProps,
             $key => $rows,
             'filters' => [
                 'search' => $search,

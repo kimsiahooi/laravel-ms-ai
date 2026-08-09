@@ -27,7 +27,7 @@ class WarehouseReorderLevelRequest extends TenantFormRequest
                 'required', 'integer',
                 ActiveExists::of($table),
             ],
-            'min_stock' => ['required', 'numeric', 'min:0', 'max:'.self::DECIMAL_MAX],
+            'min_stock' => ['required', ...$this->decimalRules('min:0')],
         ];
     }
 }

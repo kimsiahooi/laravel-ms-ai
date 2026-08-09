@@ -25,8 +25,17 @@ class StockMovementRequest extends TenantFormRequest
             // The merged item-picker value, e.g. "product:5" or "raw_material:3".
             'stockable' => ['required', 'string', 'regex:/^(product|raw_material):\d+$/'],
             'type' => ['required', Rule::in(['in', 'out', 'adjustment'])],
-            // Magnitude for in/out; the absolute target for adjustment.
-            'quantity' => ['required', 'numeric', 'min:0', 'max:'.self::DECIMAL_MAX],
+            // Magnitude for in/out; the absolute target for adjustment. Moving
+            // nothing in or out is refused — it would append a meaningless row to a
+            // ledger nothing deletes. Adjusting *to* zero is a real correction, so
+            // zero stays legal there. (An adjustment to the current level still
+            // writes a zero-quantity row; that is pre-existing stock behaviour.)
+            'quantity' => [
+                'required',
+                ...$this->decimalRules(
+                    $this->input('type') === 'adjustment' ? 'min:0' : 'gt:0',
+                ),
+            ],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

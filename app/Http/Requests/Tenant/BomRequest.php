@@ -15,13 +15,13 @@ class BomRequest extends TenantFormRequest
     {
         return [
             // A product may legitimately have an empty BOM, so `items` is present but can be [].
-            'items' => ['present', 'array'],
+            'items' => ['present', 'array', 'max:200'],
             'items.*.raw_material_id' => [
                 'required',
                 'distinct',
                 ActiveExists::of('raw_materials'),
             ],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
+            'items.*.quantity' => ['required', ...$this->decimalRules()],
         ];
     }
 }

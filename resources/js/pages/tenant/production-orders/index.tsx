@@ -44,6 +44,9 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { runGate } from '@/lib/validation/gate';
+import { productionOrderSchema } from '@/lib/validation/schemas/production-order';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import productionRoutes from '@/routes/tenant/production-orders';
 import type { TenantPageProps } from '@/types';
@@ -105,6 +108,9 @@ export default function ProductionOrdersIndex() {
                 productionOrder: completing.id,
             }),
             {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, completeForm.data, completeForm),
                 preserveScroll: true,
                 onSuccess: () => setCompleting(null),
             },
@@ -343,6 +349,7 @@ export default function ProductionOrdersIndex() {
                     create: "Pick a product and how many to build. The bill of materials is saved with the order, so changing it later won't affect this one.",
                     edit: 'Update this production order.',
                 }}
+                schema={productionOrderSchema}
             >
                 {({ errors }) => (
                     <>

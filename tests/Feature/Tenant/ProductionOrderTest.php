@@ -311,3 +311,19 @@ it('deletes a production order', function () {
 
     $this->tenant->run(fn () => expect(ProductionOrder::find($moId))->toBeNull());
 });
+
+it('refuses a build whose material requirement would not fit its column', function () {
+    ['widget' => $widget] = seedProductionFixture();
+    loginAsAcmeUser();
+
+    // The BOM needs 2 steel per unit. Both numbers are individually valid, but
+    // quantity_required is decimal(15,4) and the product overflows it.
+    $this->from('/acme/production-orders')
+        ->post('/acme/production-orders', [
+            'product_id' => $widget,
+            'quantity' => 90000000000,
+        ])
+        ->assertInvalid('quantity');
+
+    $this->tenant->run(fn () => expect(ProductionOrder::count())->toBe(0));
+});

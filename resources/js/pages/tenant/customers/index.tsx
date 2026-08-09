@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
@@ -11,6 +11,10 @@ import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { customerMeta } from '@/config/resources';
 import { useDelete } from '@/hooks/use-delete';
@@ -19,18 +23,28 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
+import { customerSchema } from '@/lib/validation/schemas/customer';
 import { dashboard } from '@/routes/tenant';
 import customersRoutes from '@/routes/tenant/customers';
 import type { TenantPageProps } from '@/types';
 
 type Customer = App.Data.CustomerData;
+/** A country the address may use, as App\Support\Countries lists them. */
+type CountryOption = { value: string; label: string };
 
 type PageProps = TenantPageProps & {
     customers: Paginator<Customer>;
+    /** The country codes a customer address may use (App\Support\Countries). */
+    countries: CountryOption[];
 };
 
 export default function CustomersIndex() {
-    const { customers, filters, tenant } = usePageProps<PageProps>();
+    const { customers, filters, tenant, countries } = usePageProps<PageProps>();
+    // Built from the server's own list, so the two can't drift apart.
+    const schema = useMemo(
+        () => customerSchema(countries.map((country) => country.value)),
+        [countries],
+    );
     const { can } = usePermissions();
     const base = customersRoutes.index.url({ tenant: tenant.slug });
 
@@ -225,6 +239,7 @@ export default function CustomersIndex() {
                     create: 'Add a business or person you sell to. They can be picked when you create a sales order.',
                     edit: "Update this customer's details.",
                 }}
+                schema={schema}
             >
                 {({ errors }) => (
                     <>
@@ -535,29 +550,39 @@ export default function CustomersIndex() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="country_code">
-                                    Country code{' '}
+                                    Country{' '}
                                     <span className="font-normal text-muted-foreground">
                                         (optional)
                                     </span>
                                 </Label>
-                                <Input
+                                {/* A picker, not free text: only these codes are
+                                    accepted, and an e-invoice is built from this. */}
+                                <NativeSelect
                                     id="country_code"
                                     name="country_code"
                                     value={countryCode}
                                     onChange={(event) =>
-                                        setCountryCode(
-                                            event.target.value.toUpperCase(),
-                                        )
+                                        setCountryCode(event.target.value)
                                     }
-                                    maxLength={2}
-                                    placeholder="MY / SG"
                                     aria-invalid={!!errors.country_code}
                                     aria-describedby={
                                         errors.country_code
                                             ? 'country_code-error'
                                             : undefined
                                     }
-                                />
+                                >
+                                    <NativeSelectOption value="">
+                                        Not set
+                                    </NativeSelectOption>
+                                    {countries.map((country) => (
+                                        <NativeSelectOption
+                                            key={country.value}
+                                            value={country.value}
+                                        >
+                                            {country.label}
+                                        </NativeSelectOption>
+                                    ))}
+                                </NativeSelect>
                                 <InputError
                                     id="country_code-error"
                                     role="alert"

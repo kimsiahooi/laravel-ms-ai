@@ -20,14 +20,14 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('sku')->unique();
-            $table->string('barcode')->nullable();
+            $table->string('sku', 100)->unique();
+            $table->string('barcode', 100)->nullable();
             $table->text('description')->nullable();
             $table->foreignIdFor(Category::class)->nullable()
                 ->constrained()->nullOnDelete();
             $table->foreignIdFor(Supplier::class)->nullable()
                 ->constrained()->nullOnDelete();
-            $table->string('unit');
+            $table->string('unit', 20);
             $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();

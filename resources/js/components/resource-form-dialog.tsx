@@ -1,6 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type ReactNode, useRef, useState } from 'react';
+import type { ZodType } from 'zod';
 import { ConfirmDiscardDialog } from '@/components/confirm-discard-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useZodGate } from '@/hooks/use-zod-gate';
 import { cn } from '@/lib/utils';
 
 type FormRender = {
@@ -34,6 +36,12 @@ type ResourceFormDialogProps<T extends { id: number }> = {
     description?: { create: ReactNode; edit: ReactNode };
     /** Extra classes for DialogContent (e.g. a tall scrolling form). */
     contentClassName?: string;
+    /**
+     * Checked before anything is sent. A failure stops the request and its messages
+     * appear under the fields exactly like the server's would, so the user finds out
+     * without a round trip. Omit it and the form submits unchecked, as before.
+     */
+    schema?: ZodType;
     /** The form fields, rendered inside the Inertia <Form> with its render props. */
     children: (form: FormRender) => ReactNode;
 };
@@ -57,9 +65,11 @@ export function ResourceFormDialog<T extends { id: number }>({
     onSuccess,
     description,
     contentClassName,
+    schema,
     children,
 }: ResourceFormDialogProps<T>) {
     const isEdit = editing !== null;
+    const gate = useZodGate(schema);
     // Latest form state, captured from the <Form> render bag so the Dialog's
     // close handler (outside the Form) can read it.
     const dirtyRef = useRef(false);
@@ -116,6 +126,11 @@ export function ResourceFormDialog<T extends { id: number }>({
                     </DialogHeader>
 
                     <Form
+                        {...gate}
+                        // Without this the browser's own bubble fires first and the
+                        // checks below never run; the inputs keep their required/min
+                        // attributes for semantics.
+                        noValidate
                         key={editing ? editing.id : 'new'}
                         action={editing ? `${baseUrl}/${editing.id}` : baseUrl}
                         method={isEdit ? 'put' : 'post'}

@@ -18,6 +18,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
+import { categorySchema } from '@/lib/validation/schemas/category';
 import { dashboard } from '@/routes/tenant';
 import categoriesRoutes from '@/routes/tenant/categories';
 import type { TenantPageProps } from '@/types';
@@ -182,6 +183,7 @@ export default function CategoriesIndex() {
                     create: 'Add a category to organize your products.',
                     edit: 'Update this category.',
                 }}
+                schema={categorySchema}
             >
                 {({ errors }) => (
                     <>

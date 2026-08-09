@@ -8,10 +8,10 @@ import {
     TriangleAlert,
 } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { InfoHint } from '@/components/info-hint';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,8 @@ import { usePermissions } from '@/hooks/use-permissions';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { runGate } from '@/lib/validation/gate';
+import { warehouseReorderLevelSchema } from '@/lib/validation/schemas/warehouse-reorder-level';
 import { dashboard } from '@/routes/tenant';
 import productsRoutes from '@/routes/tenant/products';
 import stockMovementsRoutes from '@/routes/tenant/stock-movements';
@@ -64,12 +66,18 @@ function MinStockCell({
         min_stock: row.min_stock,
     });
 
+    const errorId = `min-stock-error-${row.stockable_type}-${row.stockable_id}`;
+    const error = form.errors.min_stock;
+
     const commit = () => {
         if (value === String(row.min_stock)) return;
-        form.transform((data) => ({
-            ...data,
-            min_stock: value === '' ? 0 : Number(value),
-        }));
+
+        const payload = {
+            stockable_type: row.stockable_type,
+            stockable_id: row.stockable_id,
+            min_stock: value,
+        };
+        form.transform(() => payload);
         form.put(
             warehousesRoutes.reorderLevels.update.url({
                 tenant: tenantSlug,
@@ -80,32 +88,46 @@ function MinStockCell({
                 preserveScroll: true,
                 preserveState: true,
                 only: ['items', 'summary'],
-                onError: () => {
-                    setValue(String(row.min_stock));
-                    toast.error('Could not update the reorder level.');
-                },
+                // Check before sending, so a level the column would round is caught
+                // here rather than saved as a different number.
+                onBefore: () =>
+                    runGate(warehouseReorderLevelSchema, payload, form),
+                // Put the row back to what is actually saved, and say why under the
+                // input — the server's own message, not a generic toast.
+                onError: () => setValue(String(row.min_stock)),
             },
         );
     };
 
     return (
-        <div className="flex items-center justify-end gap-1.5">
-            {form.processing && (
-                <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
-            )}
-            <Input
-                type="number"
-                min={0}
-                inputMode="decimal"
-                value={value}
-                disabled={form.processing}
-                aria-label={`Reorder level for ${row.item}`}
-                onChange={(e) => setValue(e.target.value)}
-                onBlur={commit}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                }}
-                className="h-8 w-24 text-right tabular-nums"
+        <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center justify-end gap-1.5">
+                {form.processing && (
+                    <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
+                )}
+                <Input
+                    type="number"
+                    min={0}
+                    step="0.0001"
+                    inputMode="decimal"
+                    value={value}
+                    disabled={form.processing}
+                    aria-label={`Reorder level for ${row.item}`}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? errorId : undefined}
+                    onChange={(e) => setValue(e.target.value)}
+                    onBlur={commit}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
+                    className="h-8 w-24 text-right tabular-nums"
+                />
+            </div>
+            <InputError
+                id={errorId}
+                role="alert"
+                message={error}
+                className="text-right"
             />
         </div>
     );

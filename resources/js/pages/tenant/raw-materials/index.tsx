@@ -20,6 +20,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
+import { rawMaterialSchema } from '@/lib/validation/schemas/raw-material';
 import { dashboard } from '@/routes/tenant';
 import rawMaterialsRoutes from '@/routes/tenant/raw-materials';
 import type { TenantPageProps } from '@/types';
@@ -261,6 +262,7 @@ export default function RawMaterialsIndex() {
                 editing={dialog.editing}
                 entityLabel={rawMaterialMeta.singular}
                 baseUrl={base}
+                schema={rawMaterialSchema}
             >
                 {({ errors }) => (
                     <>

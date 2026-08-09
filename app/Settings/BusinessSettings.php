@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Settings;
 
 use App\Data\BusinessSettingsData;
+use App\Support\Countries;
 
 /**
  * The tenant's company profile — the first settings category. Fields are declared once
@@ -156,11 +157,8 @@ class BusinessSettings extends SettingsCategory
                 section: self::TAX,
                 default: 'MY',
                 description: 'Where your business is registered — sets the default tax treatment.',
-                options: [
-                    ['value' => 'MY', 'label' => 'Malaysia'],
-                    ['value' => 'SG', 'label' => 'Singapore'],
-                ],
-                rules: ['required', 'string', 'in:MY,SG'],
+                options: Countries::options(),
+                rules: ['required', 'string', 'in:'.implode(',', Countries::codes())],
             ),
             new Field(
                 key: 'tax_type',
@@ -184,7 +182,9 @@ class BusinessSettings extends SettingsCategory
                 default: '0',
                 description: 'The SST/GST rate applied to taxable invoice lines. Leave 0 if you don\'t charge tax.',
                 placeholder: 'e.g. 10',
-                rules: ['required', 'numeric', 'min:0', 'max:100'],
+                // Snapshotted onto sales_orders.tax_rate, a decimal(8,4) column —
+                // more places than that would be rounded away silently.
+                rules: ['required', 'numeric', 'decimal:0,4', 'min:0', 'max:100'],
             ),
             new Field(
                 key: 'tax_registration_no',

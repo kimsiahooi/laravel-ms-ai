@@ -32,6 +32,8 @@ function props(overrides: Record<string, unknown> = {}) {
         suppliers: [],
         rawMaterials: [],
         warehouses: [],
+        baseCurrency: 'MYR',
+        currencies: ['MYR', 'USD'],
         filters: filters(),
         ...overrides,
     };

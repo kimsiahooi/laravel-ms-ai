@@ -23,9 +23,9 @@ class SalesReturnRequest extends TenantFormRequest
             // has something to validate against.
             'customer_id' => ['required', ActiveExists::of('customers')],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'items' => ['required', 'array', 'min:1'],
+            'items' => ['required', 'array', 'min:1', 'max:200'],
             'items.*.product_id' => ['required', ActiveExists::of('products')],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
+            'items.*.quantity' => ['required', ...$this->decimalRules()],
         ];
     }
 

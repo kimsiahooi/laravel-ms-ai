@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use App\Models\Customer;
+use App\Support\Countries;
 use Illuminate\Validation\Rule;
 
 class CustomerRequest extends TenantFormRequest
@@ -34,7 +35,8 @@ class CustomerRequest extends TenantFormRequest
             'city' => ['nullable', 'string', 'max:100'],
             'postcode' => ['nullable', 'string', 'max:20'],
             'state_code' => ['nullable', 'string', 'max:10'],
-            'country_code' => ['nullable', 'string', 'size:2'],
+            // `size:2` would accept "1!" — a code that reaches the e-invoice payload.
+            'country_code' => ['nullable', 'string', Rule::in(Countries::codes())],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

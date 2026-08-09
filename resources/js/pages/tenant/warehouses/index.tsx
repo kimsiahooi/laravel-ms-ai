@@ -24,6 +24,7 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { warehouseSchema } from '@/lib/validation/schemas/warehouse';
 import { dashboard } from '@/routes/tenant';
 import locationsRoutes from '@/routes/tenant/locations';
 import warehousesRoutes from '@/routes/tenant/warehouses';
@@ -283,6 +284,7 @@ export default function WarehousesIndex() {
                 editing={dialog.editing}
                 entityLabel={warehouseMeta.singular}
                 baseUrl={base}
+                schema={warehouseSchema}
             >
                 {({ errors }) => (
                     <>

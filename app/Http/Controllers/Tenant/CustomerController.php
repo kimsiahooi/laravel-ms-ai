@@ -10,6 +10,7 @@ use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
+use App\Support\Countries;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Response;
@@ -30,6 +31,7 @@ class CustomerController
             fn (Customer $customer): CustomerData => CustomerData::from($customer),
             ['name', 'email', 'created_at'],
             ['creator'],
+            extraProps: ['countries' => Countries::options()],
         );
     }
 

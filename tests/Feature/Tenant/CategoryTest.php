@@ -114,3 +114,18 @@ it('searches categories by name or description', function () {
             ->where('categories.data.0.name', 'Fasteners')
         );
 });
+
+it('accepts a description as long as the form allows', function () {
+    loginAsAcmeUser();
+
+    // The column used to be varchar(255) while the rule allowed 1000, so anything
+    // past 255 was a database error rather than a validation message.
+    $this->post('/acme/categories', [
+        'name' => 'Fasteners',
+        'description' => str_repeat('a', 1000),
+    ])->assertSessionHasNoErrors();
+
+    $this->tenant->run(
+        fn () => expect(strlen((string) Category::first()->description))->toBe(1000),
+    );
+});

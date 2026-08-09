@@ -24,6 +24,8 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { statusVariant } from '@/lib/status';
+import { runGate } from '@/lib/validation/gate';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import poRoutes from '@/routes/tenant/purchase-orders';
 import type { TenantPageProps } from '@/types';
@@ -173,7 +175,13 @@ function PurchaseOrderDetail({
                 tenant: tenant.slug,
                 purchaseOrder: order.id,
             }),
-            { preserveScroll: true, onSuccess: () => setReceiveOpen(false) },
+            {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, receiveForm.data, receiveForm),
+                preserveScroll: true,
+                onSuccess: () => setReceiveOpen(false),
+            },
         );
     const submitCancel = () =>
         cancelForm.post(

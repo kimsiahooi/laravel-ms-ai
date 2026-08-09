@@ -10,6 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { runGate } from '@/lib/validation/gate';
+import {
+    type FieldConstraints,
+    settingsSchema,
+} from '@/lib/validation/schemas/settings';
 import settingsRoutes from '@/routes/tenant/settings';
 
 /** One field's code-defined metadata, mirrored from App\Settings\Field::toSchema(). */
@@ -30,6 +35,8 @@ export type SettingsFieldSchema = {
     options: { value: string; label: string }[];
     placeholder: string | null;
     required: boolean;
+    /** The field's Laravel rules, in a form the browser can check. */
+    constraints: FieldConstraints;
 };
 
 type SettingsFormProps = {
@@ -100,16 +107,19 @@ export function SettingsForm({
             (field) => field.type === 'file' && data[field.key] instanceof File,
         );
 
+        // Built from the very schema this form was generated from.
+        const gate = () => runGate(settingsSchema(schema), form.data, form);
+
         if (uploading) {
             // A File forces multipart, and Inertia never method-spoofs a put() with a
             // File — so send POST + _method:'put' + forceFormData.
             form.transform((current) => ({ ...current, _method: 'put' }));
-            form.post(url, { ...options, forceFormData: true });
+            form.post(url, { ...options, onBefore: gate, forceFormData: true });
         } else {
             // JSON PUT: preserves empty arrays (so a cleared multi-select is saved) and
             // booleans without the FormData quirks.
             form.transform((current) => current);
-            form.put(url, options);
+            form.put(url, { ...options, onBefore: gate });
         }
     };
 

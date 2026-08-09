@@ -25,6 +25,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePageProps } from '@/hooks/use-page-props';
+import { useZodGate } from '@/hooks/use-zod-gate';
+import { loginSchema } from '@/lib/validation/schemas/auth';
 import { store as loginStore } from '@/routes/tenant/login';
 import type { TenantBrand } from '@/types';
 
@@ -50,6 +52,7 @@ const HIGHLIGHTS = [
 export default function TenantLogin() {
     const { tenant } = usePageProps<{ tenant: TenantBrand }>();
     const [showPassword, setShowPassword] = useState(false);
+    const gate = useZodGate(loginSchema);
 
     return (
         <div className="grid min-h-dvh lg:grid-cols-2">
@@ -149,6 +152,8 @@ export default function TenantLogin() {
 
                         <CardContent>
                             <Form
+                                {...gate}
+                                noValidate
                                 action={loginStore.url({ tenant: tenant.slug })}
                                 method="post"
                                 resetOnSuccess={['password']}

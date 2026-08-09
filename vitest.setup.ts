@@ -12,6 +12,7 @@ afterEach(() => {
     cleanup();
     // Never let one test's injected form failure leak into the next.
     globalThis.__inertiaForm = undefined;
+    globalThis.__inertiaVisits?.mockClear();
 });
 
 // --- Form failure / loading injection -------------------------------------------
@@ -93,6 +94,29 @@ if (!window.matchMedia) {
 // real (useForm, etc.); only the browser-coupled bits are stubbed.
 vi.mock('@inertiajs/react', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@inertiajs/react')>();
+
+    // A real <Form> submit doesn't touch the stubbed `router` below — it reaches
+    // @inertiajs/core's singleton directly, which this package re-exports. Spy on
+    // that instance so a test can see the request a form actually made.
+    //
+    // The one router contract reproduced here is the one the zod gate depends on:
+    // `Router.visit` returns early when `onBefore` yields false. Only visits that
+    // survive the gate are recorded, so "zod blocked the request" is assertable.
+    const visits = vi.fn();
+    vi.spyOn(actual.router, 'visit').mockImplementation(
+        (href: unknown, options: Record<string, unknown> = {}) => {
+            const onBefore = options.onBefore as
+                | ((visit: unknown) => unknown)
+                | undefined;
+
+            if (onBefore?.({ url: href, ...options }) === false) {
+                return;
+            }
+
+            visits(String(href), options.data, options);
+        },
+    );
+    globalThis.__inertiaVisits = visits;
 
     return {
         ...actual,

@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -33,4 +33,41 @@ export function renderPageWithForm(
     globalThis.__inertiaForm = form;
 
     return renderPage(ui, props);
+}
+
+/**
+ * The requests a real form actually sent this test. A submit that client-side
+ * validation refused never reaches the router, so an empty mock is the assertion
+ * for "the browser didn't send it".
+ *
+ * Only meaningful with `renderPage` — `renderPageWithForm` swaps the real `<Form>`
+ * for a stub, so no gate runs and nothing is ever recorded.
+ */
+export function submittedVisits(): NonNullable<
+    typeof globalThis.__inertiaVisits
+> {
+    const visits = globalThis.__inertiaVisits;
+
+    if (!visits) {
+        throw new Error(
+            'The Inertia router spy is not installed — is vitest.setup.ts loaded?',
+        );
+    }
+
+    return visits;
+}
+
+/**
+ * Submit the form `element` sits in, the way its submit button would. Uses
+ * `fireEvent.submit` rather than `requestSubmit` so jsdom's native constraint
+ * validation can't short-circuit the submit before our own validation runs.
+ */
+export function submitForm(element: HTMLElement): void {
+    const form = element.closest('form');
+
+    if (!form) {
+        throw new Error('That element is not inside a <form>.');
+    }
+
+    fireEvent.submit(form);
 }

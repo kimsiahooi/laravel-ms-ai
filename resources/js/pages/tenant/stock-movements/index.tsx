@@ -32,6 +32,7 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { stockMovementSchema } from '@/lib/validation/schemas/stock-movement';
 import { dashboard } from '@/routes/tenant';
 import rawMaterialRoutes from '@/routes/tenant/raw-materials';
 import stockMovementsRoutes from '@/routes/tenant/stock-movements';
@@ -256,6 +257,7 @@ export default function StockMovementsIndex() {
                     create: 'Adjust the stock held at a warehouse.',
                     edit: '',
                 }}
+                schema={stockMovementSchema}
             >
                 {({ errors }) => (
                     <>

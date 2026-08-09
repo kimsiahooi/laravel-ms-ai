@@ -31,6 +31,7 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity, timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { stockTransferSchema } from '@/lib/validation/schemas/stock-transfer';
 import { dashboard } from '@/routes/tenant';
 import rawMaterialRoutes from '@/routes/tenant/raw-materials';
 import stockTransfersRoutes from '@/routes/tenant/stock-transfers';
@@ -237,6 +238,7 @@ export default function StockTransfersIndex() {
                     create: 'Move stock from a source to a destination warehouse.',
                     edit: '',
                 }}
+                schema={stockTransferSchema}
             >
                 {({ errors }) => (
                     <>

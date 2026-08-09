@@ -31,6 +31,7 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { timeAgo } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { stockTakeSchema } from '@/lib/validation/schemas/stock-take';
 import { dashboard } from '@/routes/tenant';
 import stockTakesRoutes from '@/routes/tenant/stock-takes';
 import type { TenantPageProps } from '@/types';
@@ -252,6 +253,7 @@ export default function StockTakesIndex() {
                     create: "Pick a warehouse. We'll list everything it currently holds for you to count.",
                     edit: '',
                 }}
+                schema={stockTakeSchema}
             >
                 {({ errors }) => (
                     <>

@@ -149,3 +149,16 @@ it('searches customers by their notes (R04)', function () {
             ->where('customers.data.0.name', 'Globex')
         );
 });
+
+it('refuses a country code that is not a country', function () {
+    loginAsAcmeUser();
+
+    // `size:2` accepted anything two characters long — including values that would
+    // travel straight into an e-invoice payload.
+    $this->from('/acme/customers')
+        ->post('/acme/customers', ['name' => 'Globex', 'country_code' => '1!'])
+        ->assertInvalid('country_code');
+
+    $this->post('/acme/customers', ['name' => 'Globex', 'country_code' => 'MY'])
+        ->assertSessionHasNoErrors();
+});

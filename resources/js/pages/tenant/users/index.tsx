@@ -9,7 +9,7 @@ import {
     RotateCcw,
     UserMinus,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
@@ -36,6 +36,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
+import { userSchema } from '@/lib/validation/schemas/user';
 import { dashboard } from '@/routes/tenant';
 import usersRoutes from '@/routes/tenant/users';
 import type { TenantPageProps } from '@/types';
@@ -147,6 +148,12 @@ export default function UsersIndex() {
             setShowPassword(false);
         },
     });
+
+    // Editing leaves the password blank to keep the current one.
+    const schema = useMemo(
+        () => userSchema(dialog.editing !== null),
+        [dialog.editing],
+    );
 
     // Deactivate reuses the shared delete flow (DELETE /users/{id} soft-deletes).
     const del = useDelete<User>({ baseUrl: base });
@@ -320,6 +327,7 @@ export default function UsersIndex() {
                     create: 'Create a sign-in for someone on your team and choose what they can do.',
                     edit: "Update this person's details or change their role.",
                 }}
+                schema={schema}
             >
                 {({ errors }) => (
                     <>

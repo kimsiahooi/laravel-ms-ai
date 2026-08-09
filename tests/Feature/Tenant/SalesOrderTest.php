@@ -437,3 +437,56 @@ it('defaults a line to taxable when the payload omits the flag (R15)', function 
 
     $this->tenant->run(fn () => expect(SalesOrder::with('items')->first()->items->first()->taxable)->toBeTrue());
 });
+
+it('refuses a price with more decimal places than the column keeps', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    loginAsAcmeUser();
+
+    // decimal(15,4) would store 1.1235 — a different price from the one entered,
+    // and MySQL rounds it without complaining.
+    $this->from('/acme/sales-orders')
+        ->post('/acme/sales-orders', [
+            'customer_id' => $customer,
+            'currency' => 'MYR',
+            'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 1.12345]],
+        ])
+        ->assertInvalid('items.0.unit_price');
+
+    $this->tenant->run(fn () => expect(SalesOrder::count())->toBe(0));
+});
+
+it('refuses a quantity that would round away to nothing', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    loginAsAcmeUser();
+
+    // Passes "greater than zero" but reaches decimal(15,4) as 0.0000.
+    $this->from('/acme/sales-orders')
+        ->post('/acme/sales-orders', [
+            'customer_id' => $customer,
+            'currency' => 'MYR',
+            'items' => [['product_id' => $widget, 'quantity' => 0.00004, 'unit_price' => 10]],
+        ])
+        ->assertInvalid('items.0.quantity');
+});
+
+it('refuses an exchange rate finer than its column', function () {
+    ['customer' => $customer, 'widget' => $widget] = seedSalesFixture();
+    loginAsAcmeUser();
+
+    // exchange_rate is decimal(15,6): six places are fine, seven are not.
+    $this->from('/acme/sales-orders')
+        ->post('/acme/sales-orders', [
+            'customer_id' => $customer,
+            'currency' => 'USD',
+            'exchange_rate' => 4.7123456,
+            'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 10]],
+        ])
+        ->assertInvalid('exchange_rate');
+
+    $this->post('/acme/sales-orders', [
+        'customer_id' => $customer,
+        'currency' => 'USD',
+        'exchange_rate' => 4.712345,
+        'items' => [['product_id' => $widget, 'quantity' => 1, 'unit_price' => 10]],
+    ])->assertSessionHasNoErrors();
+});

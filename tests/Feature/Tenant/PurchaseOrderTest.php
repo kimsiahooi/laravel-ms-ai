@@ -391,3 +391,18 @@ it('accepts a unique order number and rejects a duplicate (R08b)', function () {
 
     $this->tenant->run(fn () => expect(PurchaseOrder::count())->toBe(1));
 });
+
+it('refuses a unit cost with more decimal places than the column keeps', function () {
+    ['supplier' => $supplier, 'steel' => $steel] = seedPurchaseFixture();
+    loginAsAcmeUser();
+
+    $this->from('/acme/purchase-orders')
+        ->post('/acme/purchase-orders', [
+            'supplier_id' => $supplier,
+            'currency' => 'MYR',
+            'items' => [['raw_material_id' => $steel, 'quantity' => 1, 'unit_cost' => 2.00005]],
+        ])
+        ->assertInvalid('items.0.unit_cost');
+
+    $this->tenant->run(fn () => expect(PurchaseOrder::count())->toBe(0));
+});

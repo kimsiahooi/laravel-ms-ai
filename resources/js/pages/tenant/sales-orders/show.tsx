@@ -25,6 +25,8 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { statusVariant } from '@/lib/status';
+import { runGate } from '@/lib/validation/gate';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import soRoutes from '@/routes/tenant/sales-orders';
 import type { TenantPageProps } from '@/types';
@@ -246,7 +248,13 @@ function SalesOrderDetail({
                 tenant: tenant.slug,
                 salesOrder: order.id,
             }),
-            { preserveScroll: true, onSuccess: () => setFulfillOpen(false) },
+            {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, fulfillForm.data, fulfillForm),
+                preserveScroll: true,
+                onSuccess: () => setFulfillOpen(false),
+            },
         );
     const submitCancel = () =>
         cancelForm.post(

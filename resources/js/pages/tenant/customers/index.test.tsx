@@ -23,6 +23,10 @@ function props(overrides: Record<string, unknown> = {}) {
                 notes: null,
             },
         ]),
+        countries: [
+            { value: 'MY', label: 'Malaysia' },
+            { value: 'SG', label: 'Singapore' },
+        ],
         filters: filters(),
         ...overrides,
     };

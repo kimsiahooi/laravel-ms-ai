@@ -23,9 +23,9 @@ class PurchaseReturnRequest extends TenantFormRequest
             // something to validate against.
             'supplier_id' => ['required', ActiveExists::of('suppliers')],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'items' => ['required', 'array', 'min:1'],
+            'items' => ['required', 'array', 'min:1', 'max:200'],
             'items.*.raw_material_id' => ['required', ActiveExists::of('raw_materials')],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:'.self::DECIMAL_MAX],
+            'items.*.quantity' => ['required', ...$this->decimalRules()],
         ];
     }
 

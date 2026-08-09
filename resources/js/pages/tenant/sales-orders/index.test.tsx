@@ -2,7 +2,12 @@ import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
-import { renderPage, renderPageWithForm } from '@/test/render';
+import {
+    renderPage,
+    renderPageWithForm,
+    submitForm,
+    submittedVisits,
+} from '@/test/render';
 
 vi.mock('@/layouts/tenant-layout', () => ({
     default: ({ children }: { children: ReactNode }) => children,
@@ -149,5 +154,56 @@ describe('sales orders index', () => {
         // Line items still render, but no taxable column.
         expect(await screen.findByText('Line items')).toBeInTheDocument();
         expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    });
+
+    it('refuses a price finer than the column keeps, and says so on that line (zod)', async () => {
+        renderPage(
+            <SalesOrdersIndex />,
+            props({
+                customers: [{ id: 1, name: 'Globex Retail' }],
+                products: [{ id: 2, name: 'Widget' }],
+            }),
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /new sales order/i }),
+        );
+
+        const price = await screen.findByLabelText('Unit price');
+        // decimal(15,4) would keep 1.1235 — a different price from this one.
+        fireEvent.change(price, { target: { value: '1.12345' } });
+        submitForm(price);
+
+        // Nothing was sent…
+        expect(submittedVisits()).not.toHaveBeenCalled();
+        // …and the message is on the line it belongs to, not a toast.
+        expect(price).toHaveAttribute('aria-invalid', 'true');
+        expect(
+            document.getElementById(
+                price.getAttribute('aria-describedby') ?? '',
+            ),
+        ).toHaveTextContent('may not have more than 4 decimal places');
+    });
+
+    it('refuses a quantity that would round away to nothing (zod)', async () => {
+        renderPage(
+            <SalesOrdersIndex />,
+            props({
+                customers: [{ id: 1, name: 'Globex Retail' }],
+                products: [{ id: 2, name: 'Widget' }],
+            }),
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /new sales order/i }),
+        );
+
+        const qty = await screen.findByLabelText('Quantity');
+        // Passes "greater than zero" but reaches the column as 0.0000.
+        fireEvent.change(qty, { target: { value: '0.00004' } });
+        submitForm(qty);
+
+        expect(submittedVisits()).not.toHaveBeenCalled();
+        expect(qty).toHaveAttribute('aria-invalid', 'true');
     });
 });

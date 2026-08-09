@@ -23,6 +23,15 @@ const schema: SettingsFieldSchema[] = [
         options: [],
         placeholder: null,
         required: false,
+        constraints: {
+            required: false,
+            numeric: false,
+            email: false,
+            max: null,
+            min: null,
+            scale: null,
+            in: [],
+        },
     },
 ];
 

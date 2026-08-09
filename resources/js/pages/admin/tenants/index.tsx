@@ -49,9 +49,11 @@ import {
 import { useClipboard } from '@/hooks/use-clipboard';
 import { useInitials } from '@/hooks/use-initials';
 import { usePageProps } from '@/hooks/use-page-props';
+import { useZodGate } from '@/hooks/use-zod-gate';
 import CentralAdminLayout from '@/layouts/central-admin-layout';
 import { absoluteDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { createTenantSchema } from '@/lib/validation/schemas/tenant';
 import { dashboard } from '@/routes/admin';
 import { destroy, index, store, trashed } from '@/routes/admin/tenants';
 import { login as tenantLogin } from '@/routes/tenant';
@@ -86,6 +88,7 @@ export default function AdminTenantsIndex() {
 
     const [open, setOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const gate = useZodGate(createTenantSchema);
     const [name, setName] = useState('');
     const [slug, setSlug] = useState('');
     const [slugTouched, setSlugTouched] = useState(false);
@@ -443,6 +446,8 @@ export default function AdminTenantsIndex() {
                     </DialogHeader>
 
                     <Form
+                        {...gate}
+                        noValidate
                         action={store.url()}
                         method="post"
                         resetOnSuccess

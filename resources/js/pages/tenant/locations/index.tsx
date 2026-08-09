@@ -20,6 +20,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
+import { locationSchema } from '@/lib/validation/schemas/location';
 import { dashboard } from '@/routes/tenant';
 import locationsRoutes from '@/routes/tenant/locations';
 import type { TenantPageProps } from '@/types';
@@ -200,6 +201,7 @@ export default function LocationsIndex() {
                     create: 'Add a site or branch — like a factory or office. Warehouses live inside a location.',
                     edit: "Update this location's details.",
                 }}
+                schema={locationSchema}
             >
                 {({ errors }) => (
                     <>

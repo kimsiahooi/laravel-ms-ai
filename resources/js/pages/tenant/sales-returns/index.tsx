@@ -15,6 +15,7 @@ import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
+import InputError from '@/components/input-error';
 import { ResourceFormDialog } from '@/components/resource-form-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,9 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { runGate } from '@/lib/validation/gate';
+import { salesReturnSchema } from '@/lib/validation/schemas/sales-return';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import returnsRoutes from '@/routes/tenant/sales-returns';
 import type { TenantPageProps } from '@/types';
@@ -125,7 +129,13 @@ export default function SalesReturnsIndex() {
                 tenant: tenant.slug,
                 salesReturn: completing.id,
             }),
-            { preserveScroll: true, onSuccess: () => setCompleting(null) },
+            {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, completeForm.data, completeForm),
+                preserveScroll: true,
+                onSuccess: () => setCompleting(null),
+            },
         );
     };
 
@@ -349,6 +359,7 @@ export default function SalesReturnsIndex() {
                     create: 'Log products a customer returned.',
                     edit: 'Update this pending return.',
                 }}
+                schema={salesReturnSchema}
             >
                 {({ errors }) => (
                     <>
@@ -374,11 +385,11 @@ export default function SalesReturnsIndex() {
 
                         <div className="space-y-2">
                             <Label>Line items</Label>
-                            {errors.items ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.items}
-                                </p>
-                            ) : null}
+                            <InputError
+                                id="items-error"
+                                role="alert"
+                                message={errors.items}
+                            />
 
                             <div className="space-y-3">
                                 {lines.map((line, index) => (
@@ -422,7 +433,7 @@ export default function SalesReturnsIndex() {
                                                 name={`items[${index}][quantity]`}
                                                 type="number"
                                                 min={0}
-                                                step="any"
+                                                step="0.0001"
                                                 value={line.quantity}
                                                 onChange={(event) =>
                                                     updateLine(line.key, {
@@ -431,6 +442,27 @@ export default function SalesReturnsIndex() {
                                                     })
                                                 }
                                                 required
+                                                aria-invalid={
+                                                    !!errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                }
+                                                aria-describedby={
+                                                    errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                        ? `quantity-error-${line.key}`
+                                                        : undefined
+                                                }
+                                            />
+                                            <InputError
+                                                id={`quantity-error-${line.key}`}
+                                                role="alert"
+                                                message={
+                                                    errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                }
                                             />
                                         </div>
                                         <Button

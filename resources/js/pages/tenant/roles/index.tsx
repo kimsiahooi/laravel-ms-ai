@@ -30,7 +30,9 @@ import { useDelete } from '@/hooks/use-delete';
 import { usePageProps } from '@/hooks/use-page-props';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
+import { useZodGate } from '@/hooks/use-zod-gate';
 import TenantLayout from '@/layouts/tenant-layout';
+import { roleSchema } from '@/lib/validation/schemas/role';
 import { dashboard } from '@/routes/tenant';
 import rolesRoutes from '@/routes/tenant/roles';
 import type { TenantPageProps } from '@/types';
@@ -131,6 +133,7 @@ function RoleEditorSheet({
             ),
         );
     const clearAll = () => setSelected(new Set());
+    const gate = useZodGate(roleSchema);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -146,6 +149,8 @@ function RoleEditorSheet({
                 </SheetHeader>
 
                 <Form
+                    {...gate}
+                    noValidate
                     action={isEdit ? `${baseUrl}/${editing.id}` : baseUrl}
                     method={isEdit ? 'put' : 'post'}
                     disableWhileProcessing

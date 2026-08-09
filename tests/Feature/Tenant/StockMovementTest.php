@@ -305,3 +305,40 @@ it('filters the movement ledger by item name and by warehouse', function () {
     $this->get('/acme/stock-movements?search=Nope')
         ->assertInertia(fn (Assert $page) => $page->has('movements.data', 0));
 });
+
+it('refuses a quantity finer than the ledger column keeps', function () {
+    ['warehouse' => $warehouse, 'product' => $product] = seedStockFixture();
+    loginAsAcmeUser();
+
+    $this->from('/acme/stock-movements')
+        ->post('/acme/stock-movements', [
+            'warehouse_id' => $warehouse,
+            'stockable' => "product:{$product}",
+            'type' => 'in',
+            'quantity' => 5.00006,
+        ])
+        ->assertInvalid('quantity');
+});
+
+it('refuses moving nothing in, but allows adjusting a level to zero', function () {
+    ['warehouse' => $warehouse, 'product' => $product] = seedStockFixture();
+    loginAsAcmeUser();
+
+    // A zero-quantity row would sit in an append-only ledger forever.
+    $this->from('/acme/stock-movements')
+        ->post('/acme/stock-movements', [
+            'warehouse_id' => $warehouse,
+            'stockable' => "product:{$product}",
+            'type' => 'in',
+            'quantity' => 0,
+        ])
+        ->assertInvalid('quantity');
+
+    // Counting a shelf down to nothing is a real correction, though.
+    $this->post('/acme/stock-movements', [
+        'warehouse_id' => $warehouse,
+        'stockable' => "product:{$product}",
+        'type' => 'adjustment',
+        'quantity' => 0,
+    ])->assertSessionHasNoErrors();
+});

@@ -33,6 +33,8 @@ import { useResolveScan } from '@/hooks/use-resolve-scan';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { runGate } from '@/lib/validation/gate';
+import { stockTakePostSchema } from '@/lib/validation/schemas/stock-take-post';
 import { dashboard } from '@/routes/tenant';
 import stockTakesRoutes from '@/routes/tenant/stock-takes';
 import type { TenantPageProps } from '@/types';
@@ -108,18 +110,25 @@ export default function StockTakeShow() {
     );
 
     const post = () => {
-        postForm.transform(() => ({
+        const payload = {
             items: take.items.map((item) => ({
                 id: item.id,
                 counted_qty: counts[item.id] ?? String(item.counted_qty),
             })),
-        }));
+        };
+        postForm.transform(() => payload);
         postForm.post(
             stockTakesRoutes.post.url({
                 tenant: tenant.slug,
                 stockTake: take.id,
             }),
-            { preserveScroll: true, onSuccess: () => setConfirmApply(false) },
+            {
+                // A count the column would round is caught before it is applied to
+                // stock — posting a take writes movements that can't be undone.
+                onBefore: () => runGate(stockTakePostSchema, payload, postForm),
+                preserveScroll: true,
+                onSuccess: () => setConfirmApply(false),
+            },
         );
     };
 

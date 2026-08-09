@@ -11,6 +11,7 @@ use App\Http\Controllers\Concerns\BuildsStockPickers;
 use App\Http\Controllers\Concerns\ResolvesPerPage;
 use App\Http\Controllers\Concerns\RespondsWithToast;
 use App\Http\Controllers\Concerns\SortsResourceQuery;
+use App\Http\Requests\Tenant\StockTakePostRequest;
 use App\Http\Requests\Tenant\StockTakeRequest;
 use App\Models\StockTake;
 use App\Models\Warehouse;
@@ -111,15 +112,9 @@ class StockTakeController
         ]);
     }
 
-    public function post(Request $request, StockTake $stockTake, PostStockTake $action): RedirectResponse
+    public function post(StockTakePostRequest $request, StockTake $stockTake, PostStockTake $action): RedirectResponse
     {
-        $validated = $request->validate([
-            'items' => ['array'],
-            'items.*.id' => ['required', 'integer'],
-            'items.*.counted_qty' => ['required', 'numeric', 'min:0'],
-        ]);
-
-        $action->handle($stockTake, $validated['items'] ?? [], $request->user());
+        $action->handle($stockTake, $request->array('items'), $request->user());
 
         $this->toast('Stock count applied.');
 

@@ -19,6 +19,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate } from '@/lib/format';
+import { supplierSchema } from '@/lib/validation/schemas/supplier';
 import { dashboard } from '@/routes/tenant';
 import suppliersRoutes from '@/routes/tenant/suppliers';
 import type { TenantPageProps } from '@/types';
@@ -207,6 +208,7 @@ export default function SuppliersIndex() {
                     create: 'Add a business you buy raw materials from. They can be picked when you create a purchase order.',
                     edit: "Update this supplier's details.",
                 }}
+                schema={supplierSchema}
             >
                 {({ errors }) => (
                     <>

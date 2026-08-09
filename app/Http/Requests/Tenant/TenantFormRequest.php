@@ -20,8 +20,29 @@ abstract class TenantFormRequest extends FormRequest
      */
     protected const DECIMAL_MAX = 99999999999;
 
+    /** Decimal places a decimal(15,4) column stores. */
+    protected const DECIMAL_SCALE = 4;
+
     public function authorize(): bool
     {
         return $this->user() !== null;
+    }
+
+    /**
+     * The rules a decimal(15,4) money/quantity column needs.
+     *
+     * `numeric` alone is not enough. MySQL runs in strict mode, which errors on too
+     * many integer digits but **silently rounds** extra decimal places — so
+     * `1.12345` is accepted and stored as `1.1235`, and the saved record quietly
+     * disagrees with what was submitted. `decimal:0,4` is what refuses it.
+     *
+     * The same limits are enforced in the browser (resources/js/lib/validation),
+     * so a value refused here is refused there too.
+     *
+     * @return array<int, string>
+     */
+    protected function decimalRules(string $bound = 'gt:0'): array
+    {
+        return ['numeric', 'decimal:0,'.self::DECIMAL_SCALE, $bound, 'max:'.self::DECIMAL_MAX];
     }
 }

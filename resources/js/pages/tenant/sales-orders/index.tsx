@@ -9,12 +9,13 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import InputError from '@/components/input-error';
 import { NewResourceButton } from '@/components/new-resource-button';
 import {
     PrereqEmptyState,
@@ -56,6 +57,9 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { runGate } from '@/lib/validation/gate';
+import { salesOrderSchema } from '@/lib/validation/schemas/sales-order';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import customerRoutes from '@/routes/tenant/customers';
 import productRoutes from '@/routes/tenant/products';
@@ -185,6 +189,9 @@ export default function SalesOrdersIndex() {
         },
     });
 
+    // The same currency list the server validates against.
+    const schema = useMemo(() => salesOrderSchema(currencies), [currencies]);
+
     const lineAmount = (line: Line) =>
         (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
     const draftSubtotal = lines.reduce(
@@ -209,6 +216,9 @@ export default function SalesOrdersIndex() {
                 salesOrder: fulfilling.id,
             }),
             {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, fulfillForm.data, fulfillForm),
                 preserveScroll: true,
                 onSuccess: () => setFulfilling(null),
             },
@@ -466,6 +476,7 @@ export default function SalesOrdersIndex() {
                     create: 'Sell products to a customer.',
                     edit: 'Update this pending sales order.',
                 }}
+                schema={schema}
             >
                 {({ errors }) => (
                     <>
@@ -564,11 +575,11 @@ export default function SalesOrdersIndex() {
                                         {baseCurrency}
                                     </span>
                                 </div>
-                                {errors.exchange_rate ? (
-                                    <p className="text-destructive text-sm">
-                                        {errors.exchange_rate}
-                                    </p>
-                                ) : null}
+                                <InputError
+                                    id="exchange_rate-error"
+                                    role="alert"
+                                    message={errors.exchange_rate}
+                                />
                             </div>
                         )}
 
@@ -593,11 +604,11 @@ export default function SalesOrdersIndex() {
                                 placeholder="e.g. SO-2026-014"
                                 aria-invalid={!!errors.number}
                             />
-                            {errors.number ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.number}
-                                </p>
-                            ) : null}
+                            <InputError
+                                id="number-error"
+                                role="alert"
+                                message={errors.number}
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -669,11 +680,11 @@ export default function SalesOrdersIndex() {
                                 </div>
                             </div>
 
-                            {errors.items ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.items}
-                                </p>
-                            ) : null}
+                            <InputError
+                                id="items-error"
+                                role="alert"
+                                message={errors.items}
+                            />
 
                             <div className="space-y-3">
                                 {lines.map((line, index) => (
@@ -726,7 +737,7 @@ export default function SalesOrdersIndex() {
                                                 name={`items[${index}][quantity]`}
                                                 type="number"
                                                 min={0}
-                                                step="any"
+                                                step="0.0001"
                                                 value={line.quantity}
                                                 onChange={(event) =>
                                                     updateLine(line.key, {
@@ -735,6 +746,27 @@ export default function SalesOrdersIndex() {
                                                     })
                                                 }
                                                 required
+                                                aria-invalid={
+                                                    !!errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                }
+                                                aria-describedby={
+                                                    errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                        ? `quantity-error-${line.key}`
+                                                        : undefined
+                                                }
+                                            />
+                                            <InputError
+                                                id={`quantity-error-${line.key}`}
+                                                role="alert"
+                                                message={
+                                                    errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                }
                                             />
                                         </div>
                                         <div className="w-28 space-y-2">
@@ -749,7 +781,7 @@ export default function SalesOrdersIndex() {
                                                 name={`items[${index}][unit_price]`}
                                                 type="number"
                                                 min={0}
-                                                step="any"
+                                                step="0.0001"
                                                 value={line.unitPrice}
                                                 onChange={(event) =>
                                                     updateLine(line.key, {
@@ -758,6 +790,27 @@ export default function SalesOrdersIndex() {
                                                     })
                                                 }
                                                 required
+                                                aria-invalid={
+                                                    !!errors[
+                                                        `items.${index}.unit_price`
+                                                    ]
+                                                }
+                                                aria-describedby={
+                                                    errors[
+                                                        `items.${index}.unit_price`
+                                                    ]
+                                                        ? `unit-price-error-${line.key}`
+                                                        : undefined
+                                                }
+                                            />
+                                            <InputError
+                                                id={`unit-price-error-${line.key}`}
+                                                role="alert"
+                                                message={
+                                                    errors[
+                                                        `items.${index}.unit_price`
+                                                    ]
+                                                }
                                             />
                                         </div>
                                         {taxRate > 0 ? (

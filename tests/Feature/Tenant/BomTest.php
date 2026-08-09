@@ -163,3 +163,15 @@ it('includes each product BOM in the products index', function () {
             ->where('products.data.0.bom.0.name', 'Steel')
         );
 });
+
+it('refuses a per-unit quantity finer than the column keeps', function () {
+    ['product' => $product, 'steel' => $steel] = seedBomFixture();
+    loginAsAcmeUser();
+
+    // A BOM line rounded up here is multiplied by every future build.
+    $this->from('/acme/products')
+        ->put("/acme/products/{$product}/bom", [
+            'items' => [['raw_material_id' => $steel, 'quantity' => 0.00005]],
+        ])
+        ->assertInvalid('items.0.quantity');
+});

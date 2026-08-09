@@ -24,6 +24,8 @@ import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
 import { statusVariant } from '@/lib/status';
+import { runGate } from '@/lib/validation/gate';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import productionRoutes from '@/routes/tenant/production-orders';
 import type { TenantPageProps } from '@/types';
@@ -142,7 +144,13 @@ function ProductionOrderDetail({
                 tenant: tenant.slug,
                 productionOrder: order.id,
             }),
-            { preserveScroll: true, onSuccess: () => setCompleteOpen(false) },
+            {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, completeForm.data, completeForm),
+                preserveScroll: true,
+                onSuccess: () => setCompleteOpen(false),
+            },
         );
     const submitCancel = () =>
         cancelForm.post(

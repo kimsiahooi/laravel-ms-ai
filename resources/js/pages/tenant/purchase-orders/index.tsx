@@ -9,12 +9,13 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ComboboxField } from '@/components/combobox-field';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { DataTable, type Paginator } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { FieldLabel } from '@/components/field-label';
+import InputError from '@/components/input-error';
 import { NewResourceButton } from '@/components/new-resource-button';
 import {
     PrereqEmptyState,
@@ -55,6 +56,9 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatMoney } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { runGate } from '@/lib/validation/gate';
+import { purchaseOrderSchema } from '@/lib/validation/schemas/purchase-order';
+import { warehouseIdSchema } from '@/lib/validation/schemas/warehouse-id';
 import { dashboard } from '@/routes/tenant';
 import poRoutes from '@/routes/tenant/purchase-orders';
 import rawMaterialRoutes from '@/routes/tenant/raw-materials';
@@ -182,6 +186,9 @@ export default function PurchaseOrdersIndex() {
         },
     });
 
+    // The same currency list the server validates against.
+    const schema = useMemo(() => purchaseOrderSchema(currencies), [currencies]);
+
     const draftTotal = lines.reduce(
         (sum, line) =>
             sum + (Number(line.quantity) || 0) * (Number(line.unitCost) || 0),
@@ -196,6 +203,9 @@ export default function PurchaseOrdersIndex() {
                 purchaseOrder: receiving.id,
             }),
             {
+                // A warehouse has to be picked before stock can move.
+                onBefore: () =>
+                    runGate(warehouseIdSchema, receiveForm.data, receiveForm),
                 preserveScroll: true,
                 onSuccess: () => setReceiving(null),
             },
@@ -456,6 +466,7 @@ export default function PurchaseOrdersIndex() {
                     create: 'Order raw materials from a supplier.',
                     edit: 'Update this pending purchase order.',
                 }}
+                schema={schema}
             >
                 {({ errors }) => (
                     <>
@@ -554,11 +565,11 @@ export default function PurchaseOrdersIndex() {
                                         {baseCurrency}
                                     </span>
                                 </div>
-                                {errors.exchange_rate ? (
-                                    <p className="text-destructive text-sm">
-                                        {errors.exchange_rate}
-                                    </p>
-                                ) : null}
+                                <InputError
+                                    id="exchange_rate-error"
+                                    role="alert"
+                                    message={errors.exchange_rate}
+                                />
                             </div>
                         )}
 
@@ -583,11 +594,11 @@ export default function PurchaseOrdersIndex() {
                                 placeholder="e.g. PO-2026-014"
                                 aria-invalid={!!errors.number}
                             />
-                            {errors.number ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.number}
-                                </p>
-                            ) : null}
+                            <InputError
+                                id="number-error"
+                                role="alert"
+                                message={errors.number}
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -632,11 +643,11 @@ export default function PurchaseOrdersIndex() {
                                 </span>
                             </div>
 
-                            {errors.items ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.items}
-                                </p>
-                            ) : null}
+                            <InputError
+                                id="items-error"
+                                role="alert"
+                                message={errors.items}
+                            />
 
                             <div className="space-y-3">
                                 {lines.map((line, index) => (
@@ -680,7 +691,7 @@ export default function PurchaseOrdersIndex() {
                                                 name={`items[${index}][quantity]`}
                                                 type="number"
                                                 min={0}
-                                                step="any"
+                                                step="0.0001"
                                                 value={line.quantity}
                                                 onChange={(event) =>
                                                     updateLine(line.key, {
@@ -689,6 +700,27 @@ export default function PurchaseOrdersIndex() {
                                                     })
                                                 }
                                                 required
+                                                aria-invalid={
+                                                    !!errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                }
+                                                aria-describedby={
+                                                    errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                        ? `quantity-error-${line.key}`
+                                                        : undefined
+                                                }
+                                            />
+                                            <InputError
+                                                id={`quantity-error-${line.key}`}
+                                                role="alert"
+                                                message={
+                                                    errors[
+                                                        `items.${index}.quantity`
+                                                    ]
+                                                }
                                             />
                                         </div>
                                         <div className="w-28 space-y-2">
@@ -703,7 +735,7 @@ export default function PurchaseOrdersIndex() {
                                                 name={`items[${index}][unit_cost]`}
                                                 type="number"
                                                 min={0}
-                                                step="any"
+                                                step="0.0001"
                                                 value={line.unitCost}
                                                 onChange={(event) =>
                                                     updateLine(line.key, {
@@ -712,6 +744,27 @@ export default function PurchaseOrdersIndex() {
                                                     })
                                                 }
                                                 required
+                                                aria-invalid={
+                                                    !!errors[
+                                                        `items.${index}.unit_cost`
+                                                    ]
+                                                }
+                                                aria-describedby={
+                                                    errors[
+                                                        `items.${index}.unit_cost`
+                                                    ]
+                                                        ? `unit-cost-error-${line.key}`
+                                                        : undefined
+                                                }
+                                            />
+                                            <InputError
+                                                id={`unit-cost-error-${line.key}`}
+                                                role="alert"
+                                                message={
+                                                    errors[
+                                                        `items.${index}.unit_cost`
+                                                    ]
+                                                }
                                             />
                                         </div>
                                         <Button

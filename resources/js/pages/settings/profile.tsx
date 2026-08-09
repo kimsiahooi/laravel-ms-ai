@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useZodGate } from '@/hooks/use-zod-gate';
+import { profileSchema } from '@/lib/validation/schemas/auth';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
 
@@ -20,6 +22,7 @@ type PageProps = {
 };
 
 export default function Profile() {
+    const gate = useZodGate(profileSchema);
     const { auth } = usePage<PageProps>().props;
 
     return (
@@ -38,6 +41,8 @@ export default function Profile() {
                     </CardHeader>
                     <CardContent>
                         <Form
+                            {...gate}
+                            noValidate
                             {...ProfileController.update.form()}
                             options={{ preserveScroll: true }}
                             className="space-y-6"

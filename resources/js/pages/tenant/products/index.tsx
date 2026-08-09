@@ -46,6 +46,9 @@ import { useResourceDialog } from '@/hooks/use-resource-dialog';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDate, formatQuantity } from '@/lib/format';
 import { toOptions } from '@/lib/options';
+import { runGate } from '@/lib/validation/gate';
+import { bomSchema } from '@/lib/validation/schemas/bom';
+import { productSchema } from '@/lib/validation/schemas/product';
 import { dashboard } from '@/routes/tenant';
 import productsRoutes from '@/routes/tenant/products';
 import type { TenantPageProps } from '@/types';
@@ -239,14 +242,15 @@ export default function ProductsIndex() {
         }
         // Drop rows the user left without a raw material; the backend still
         // validates quantity + duplicates on what remains.
-        bomForm.transform(() => ({
+        const payload = {
             items: bomLines
                 .filter((line) => line.rawMaterialId !== '')
                 .map((line) => ({
-                    raw_material_id: Number(line.rawMaterialId),
+                    raw_material_id: String(line.rawMaterialId),
                     quantity: line.quantity,
                 })),
-        }));
+        };
+        bomForm.transform(() => payload);
 
         bomForm.put(
             productsRoutes.bom.url({
@@ -254,6 +258,9 @@ export default function ProductsIndex() {
                 product: bomProduct.id,
             }),
             {
+                // Checked against the payload after blank rows are dropped, so an
+                // error's index matches the row it belongs to.
+                onBefore: () => runGate(bomSchema, payload, bomForm),
                 preserveScroll: true,
                 onSuccess: closeBom,
             },
@@ -541,6 +548,7 @@ export default function ProductsIndex() {
                     create: 'Add a finished item you make or sell. You can set its bill of materials afterwards to build it from raw materials.',
                     edit: "Update this product's details.",
                 }}
+                schema={productSchema}
             >
                 {({ errors }) => (
                     <>
@@ -814,11 +822,11 @@ export default function ProductsIndex() {
                         className="-mr-2 space-y-4 overflow-y-auto pr-2"
                         style={{ maxHeight: 'min(60vh, calc(90vh - 13rem))' }}
                     >
-                        {bomErrors.items ? (
-                            <p className="text-destructive text-sm">
-                                {bomErrors.items}
-                            </p>
-                        ) : null}
+                        <InputError
+                            id="bom-items-error"
+                            role="alert"
+                            message={bomErrors.items}
+                        />
 
                         {rawMaterialOptions.length === 0 ? (
                             <p className="rounded-md border border-dashed p-4 text-center text-muted-foreground text-sm">
