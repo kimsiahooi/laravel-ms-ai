@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
-import { renderPage } from '@/test/render';
+import { renderPage, renderPageWithForm } from '@/test/render';
 
 vi.mock('@/layouts/tenant-layout', () => ({
     default: ({ children }: { children: ReactNode }) => children,
@@ -38,5 +38,22 @@ describe('categories index', () => {
         renderPage(<CategoriesIndex />, props({ categories: paginator([]) }));
 
         expect(screen.getByText(/no categories yet/i)).toBeInTheDocument();
+    });
+
+    it('shows a rejected field on the create form', async () => {
+        renderPageWithForm(<CategoriesIndex />, props({}), {
+            errors: { name: 'The name has already been taken.' },
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /^new /i }));
+
+        expect(
+            await screen.findByText('The name has already been taken.'),
+        ).toBeInTheDocument();
+        // Scoped to the rejected field: flagging the wrong input must not pass.
+        expect(document.querySelector('#name')).toHaveAttribute(
+            'aria-invalid',
+            'true',
+        );
     });
 });

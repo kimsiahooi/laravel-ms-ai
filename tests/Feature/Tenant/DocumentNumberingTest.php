@@ -70,3 +70,37 @@ it('keeps a manually entered sales-order number', function () {
 
     $this->tenant->run(fn () => expect(SalesOrder::firstOrFail()->number)->toBe('INV-CUSTOM-1'));
 });
+
+it('rejects a manual number longer than the document number allows', function () {
+    ['customer' => $customer, 'product' => $product] = seedSalesParties();
+    loginAsAcmeUser();
+
+    // The column holds 50 characters; 51 must be refused rather than truncated.
+    $this->from('/acme/sales-orders');
+    postSalesOrder($customer, $product, ['number' => str_repeat('X', 51)]);
+
+    $this->tenant->run(fn () => expect(SalesOrder::count())->toBe(0));
+});
+
+it('carries on numbering cleanly after an order was rejected', function () {
+    ['customer' => $customer, 'product' => $product] = seedSalesParties();
+    loginAsAcmeUser();
+
+    postSalesOrder($customer, $product);                       // SO-{year}-0001
+
+    // A rejected order must not consume a number or leave a gap the next one trips on.
+    $this->from('/acme/sales-orders')
+        ->post('/acme/sales-orders', [
+            'customer_id' => $customer,
+            'currency' => 'MYR',
+            'items' => [],                                     // invalid: no lines
+        ])
+        ->assertInvalid('items');
+
+    postSalesOrder($customer, $product);
+
+    $numbers = $this->tenant->run(fn () => SalesOrder::orderBy('id')->pluck('number')->all());
+    $period = (string) now()->year;
+
+    expect($numbers)->toBe(["SO-{$period}-0001", "SO-{$period}-0002"]);
+});

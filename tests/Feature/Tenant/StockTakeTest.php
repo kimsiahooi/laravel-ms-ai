@@ -93,6 +93,60 @@ it('posts variance adjustments and sets on-hand to the counted quantity', functi
     });
 });
 
+it('applies no line at all when one line of the count is invalid', function () {
+    ['warehouse' => $wh, 'product' => $p] = seedStockTakeFixture();
+    loginAsAcmeUser();
+
+    // A second item, so the batch has a good line to lose if it isn't atomic.
+    $second = $this->tenant->run(function () use ($wh) {
+        $gadget = Product::create(['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'pcs']);
+        app(StockService::class)->record(
+            Warehouse::find($wh), $gadget, 4, StockMovementReason::Adjustment,
+        );
+
+        return $gadget->id;
+    });
+
+    $this->post('/acme/stock-takes', ['warehouse_id' => $wh]);
+    [$takeId, $items] = $this->tenant->run(function () {
+        $take = StockTake::with('items')->first();
+
+        return [$take->id, $take->items->pluck('id', 'stockable_id')->all()];
+    });
+
+    // The first line is perfectly good; the second is negative and must take the
+    // whole submission down with it.
+    $this->from("/acme/stock-takes/{$takeId}")
+        ->post("/acme/stock-takes/{$takeId}/post", [
+            'items' => [
+                ['id' => $items[$p], 'counted_qty' => 7],
+                ['id' => $items[$second], 'counted_qty' => -1],
+            ],
+        ])
+        ->assertInvalid('items.1.counted_qty');
+
+    $this->tenant->run(function () use ($wh, $p, $second) {
+        $take = StockTake::with('items')->first();
+        expect($take->status->value)->toBe('draft')
+            ->and($take->counted_at)->toBeNull()
+            // Neither line was written — not even the valid one. A fresh line starts
+            // counted at the system quantity, so untouched means still equal to it.
+            ->and($take->items->every(
+                fn ($item): bool => (float) $item->counted_qty === (float) $item->system_qty
+                    && (float) $item->variance === 0.0,
+            ))->toBeTrue()
+            ->and(StockMovement::where('reason', 'stock_take')->count())->toBe(0);
+
+        foreach ([$p => 10.0, $second => 4.0] as $productId => $expected) {
+            $stock = WarehouseStock::where('warehouse_id', $wh)
+                ->where('stockable_type', 'product')
+                ->where('stockable_id', $productId)
+                ->first();
+            expect((float) $stock->quantity)->toBe($expected);
+        }
+    });
+});
+
 it('refuses to post a stock take twice', function () {
     ['warehouse' => $wh] = seedStockTakeFixture();
     loginAsAcmeUser();

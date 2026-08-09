@@ -141,6 +141,51 @@ it('receives a pending PO: posts purchase_receipt IN per line and marks it recei
     });
 });
 
+it('rolls the whole receipt back when a later line’s raw material is gone', function () {
+    ['supplier' => $supplier, 'steel' => $steel, 'bolt' => $bolt, 'warehouse' => $warehouse] = seedPurchaseFixture();
+
+    // Two lines, and the *second* material is gone — so the receipt aborts only
+    // after the first line has already been posted into stock.
+    $poId = $this->tenant->run(function () use ($supplier, $steel, $bolt) {
+        $order = PurchaseOrder::create([
+            'supplier_id' => $supplier, 'currency' => 'MYR', 'status' => 'pending',
+        ]);
+        $order->items()->create([
+            'raw_material_id' => $steel,
+            'raw_material_snapshot' => ['name' => 'Steel', 'sku' => 'S-1', 'unit' => 'kg'],
+            'quantity' => 10, 'unit_cost' => 2,
+        ]);
+        $order->items()->create([
+            'raw_material_id' => $bolt,
+            'raw_material_snapshot' => ['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea'],
+            'quantity' => 5, 'unit_cost' => 1,
+        ]);
+        RawMaterial::find($bolt)->delete();
+
+        return $order->id;
+    });
+
+    loginAsAcmeUser();
+
+    $this->post("/acme/purchase-orders/{$poId}/receive", ['warehouse_id' => $warehouse])
+        ->assertStatus(422);
+
+    // Nothing survives the abort: no half-received stock, no ledger row, and the
+    // order is still waiting to be received.
+    $this->tenant->run(function () use ($poId, $steel, $warehouse) {
+        $order = PurchaseOrder::find($poId);
+        expect($order->status->value)->toBe('pending')
+            ->and($order->received_at)->toBeNull()
+            ->and(StockMovement::where('reason', 'purchase_receipt')->count())->toBe(0);
+
+        $stock = WarehouseStock::where('warehouse_id', $warehouse)
+            ->where('stockable_type', 'raw_material')
+            ->where('stockable_id', $steel)
+            ->first();
+        expect($stock?->quantity ?? 0)->toEqual(0);
+    });
+});
+
 it('rejects receiving a PO that is not pending', function () {
     ['supplier' => $supplier, 'steel' => $steel, 'warehouse' => $warehouse] = seedPurchaseFixture();
     $poId = makePendingPo($supplier, $steel);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\ResolvesDateRange;
 use App\Services\StockReportService;
 use App\Settings\BusinessSettings;
 use Illuminate\Http\Request;
@@ -18,10 +19,13 @@ use Inertia\Response;
  */
 class ReportController
 {
+    use ResolvesDateRange;
+
     public function index(Request $request, StockReportService $reports): Response
     {
-        $from = $request->date('from') ?? Carbon::now()->startOfMonth();
-        $to = $request->date('to') ?? Carbon::now()->endOfDay();
+        [$from, $to] = $this->dateRange(
+            $request, Carbon::now()->startOfMonth(), Carbon::now()->endOfDay(),
+        );
         $range = [$from, $to];
 
         // Closures so an `only:` partial reload recomputes only the requested figures.

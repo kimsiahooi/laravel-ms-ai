@@ -154,6 +154,44 @@ it('wires each snapshot figure to the right number (R17)', function () {
         );
 });
 
+it('shrugs off a junk date range instead of erroring (R17)', function () {
+    loginAsAcmeUser();
+
+    // A hand-edited or stale URL must not take the page down: Request::date() parses
+    // with Carbon, which throws on anything it can't read.
+    $this->get('/acme/dashboard?from=banana&to=also-banana')->assertOk();
+    $this->get('/acme/reports?from=banana')->assertOk();
+    $this->get('/acme/export/products?format=csv&from=banana')->assertOk();
+});
+
+it('falls back to the default range when one end cannot be read', function () {
+    $this->tenant->run(function () {
+        $product = Product::create(['name' => 'Widget', 'sku' => 'W-1', 'unit' => 'pcs']);
+        makeDashboardSale($product->id, 2, 10, Carbon::now());
+    });
+
+    loginAsAcmeUser();
+
+    // A pasted link whose "+" was mangled to a space: rescuing only `from` would
+    // pair this month's default start with an old `to` and silently report zero.
+    $this->get('/acme/dashboard?from=2026-07-01T00:00:00 08:00&to=2026-07-31T23:59:59%2B08:00')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('kpis.sales.count', 1));
+});
+
+it('survives a range that ends before it starts (R17)', function () {
+    loginAsAcmeUser();
+
+    $this->get('/acme/dashboard?from=2026-08-01T00:00:00%2B08:00&to=2026-07-01T00:00:00%2B08:00')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('kpis.sales.count', 0)
+            ->where('kpis.sales.amount', 0)
+            // An inverted range yields no days rather than looping to the guard cap.
+            ->has('series', 0)
+        );
+});
+
 it('reports onboarding progress from real data', function () {
     loginAsAcmeUser();
 

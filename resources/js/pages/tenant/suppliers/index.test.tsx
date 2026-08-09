@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
-import { renderPage } from '@/test/render';
+import { renderPage, renderPageWithForm } from '@/test/render';
 
 vi.mock('@/layouts/tenant-layout', () => ({
     default: ({ children }: { children: ReactNode }) => children,
@@ -65,5 +65,18 @@ describe('suppliers index', () => {
         expect(
             screen.queryByRole('button', { name: /actions for/i }),
         ).not.toBeInTheDocument();
+    });
+
+    it('shows a rejected field on the create form', async () => {
+        renderPageWithForm(<SuppliersIndex />, props({}), {
+            errors: { email: 'The email has already been taken.' },
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /^new /i }));
+
+        expect(
+            await screen.findByText('The email has already been taken.'),
+        ).toBeInTheDocument();
+        expect(document.querySelector('[aria-invalid="true"]')).not.toBeNull();
     });
 });

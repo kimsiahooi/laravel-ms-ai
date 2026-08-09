@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\ResolvesDateRange;
 use App\Services\StockReportService;
 use App\Settings\BusinessSettings;
 use App\Support\ExportRegistry;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ExportController
 {
+    use ResolvesDateRange;
+
     public function download(Request $request, string $resource): BinaryFileResponse
     {
         $format = $request->string('format')->toString() === 'xlsx' ? 'xlsx' : 'csv';
@@ -56,8 +59,9 @@ class ExportController
      */
     private function downloadReports(Request $request, StockReportService $reports, string $format): BinaryFileResponse
     {
-        $from = $request->date('from') ?? Carbon::now()->startOfMonth();
-        $to = $request->date('to') ?? Carbon::now()->endOfDay();
+        [$from, $to] = $this->dateRange(
+            $request, Carbon::now()->startOfMonth(), Carbon::now()->endOfDay(),
+        );
         $range = [$from, $to];
 
         $sales = $reports->salesTotals($range);

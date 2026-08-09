@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\ResolvesDateRange;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -31,6 +32,8 @@ use Inertia\Response;
  */
 class DashboardController
 {
+    use ResolvesDateRange;
+
     public function __invoke(
         Request $request,
         StockReportService $reports,
@@ -38,8 +41,9 @@ class DashboardController
     ): Response {
         $tenant = tenant();
 
-        $from = $request->date('from') ?? Carbon::now()->startOfWeek();
-        $to = $request->date('to') ?? Carbon::now()->endOfDay();
+        [$from, $to] = $this->dateRange(
+            $request, Carbon::now()->startOfWeek(), Carbon::now()->endOfDay(),
+        );
         $range = [$from, $to];
 
         // Every heavy prop is a closure, so an `only:` partial reload (the date-range

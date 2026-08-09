@@ -231,6 +231,58 @@ it('creates a sales return and completes it, posting stock IN', function () {
     });
 });
 
+it('puts no stock back at all when a later line’s product is gone', function () {
+    ['warehouse' => $wh, 'product' => $p, 'customer' => $c] = seedSalesReturnFixture();
+    sellToCustomer($c, $p);
+    loginAsAcmeUser();
+
+    // A second sold product, deleted after the return is raised — so completing it
+    // aborts only after the first line has already been put back into stock.
+    $gone = $this->tenant->run(function () use ($c) {
+        $gadget = Product::create(['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'pcs']);
+        $order = SalesOrder::create([
+            'customer_id' => $c, 'status' => 'fulfilled', 'currency' => 'MYR',
+            'fulfilled_at' => now(),
+        ]);
+        $order->items()->create([
+            'product_id' => $gadget->id,
+            'product_snapshot' => ['name' => 'Gadget', 'sku' => 'G-1', 'unit' => 'pcs'],
+            'quantity' => 10, 'unit_price' => 5,
+        ]);
+
+        return $gadget->id;
+    });
+
+    $this->post('/acme/sales-returns', [
+        'customer_id' => $c,
+        'items' => [
+            ['product_id' => $p, 'quantity' => 4],
+            ['product_id' => $gone, 'quantity' => 2],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    $returnId = $this->tenant->run(function () use ($gone) {
+        Product::find($gone)->delete();
+
+        return SalesReturn::first()->id;
+    });
+
+    $this->post("/acme/sales-returns/{$returnId}/complete", ['warehouse_id' => $wh])
+        ->assertStatus(422);
+
+    $this->tenant->run(function () use ($returnId, $wh, $p) {
+        expect(SalesReturn::find($returnId)->status->value)->toBe('pending')
+            ->and(StockMovement::where('reason', 'sales_return')->count())->toBe(0);
+
+        // The first line's 4 never made it back in.
+        $stock = WarehouseStock::where('warehouse_id', $wh)
+            ->where('stockable_type', 'product')
+            ->where('stockable_id', $p)
+            ->first();
+        expect($stock?->quantity ?? 0)->toEqual(0);
+    });
+});
+
 it('rejects returning a product that was never sold to the customer (R12)', function () {
     ['product' => $p, 'customer' => $c] = seedSalesReturnFixture();
     // No fulfilled sale to this customer — the return must be rejected.

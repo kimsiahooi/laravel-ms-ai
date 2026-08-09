@@ -251,7 +251,15 @@ export default function AdminLogin() {
                                             disabled={processing}
                                         >
                                             {processing ? (
-                                                <LoaderCircle className="size-4 animate-spin" />
+                                                <>
+                                                    <LoaderCircle className="size-4 animate-spin" />
+                                                    {/* Keeps the button named while
+                                                        it spins — a spinner alone is
+                                                        silent to a screen reader. */}
+                                                    <span className="sr-only">
+                                                        Signing in…
+                                                    </span>
+                                                </>
                                             ) : (
                                                 <>
                                                     Sign in

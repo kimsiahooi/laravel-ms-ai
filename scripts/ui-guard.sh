@@ -31,7 +31,9 @@ fi
 # 3) SSR determinism: no Date.now()/Math.random() in render output (a React #418
 #    hydration mismatch). Compute in useEffect or pin it (see NUMBER_LOCALE in
 #    resources/js/lib/format.ts). Same `ui-allow` escape for the rare legit case.
-color_re='#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\('
+# The `(^|[^&])` guard keeps HTML numeric entities out of it: `&#8209;` (a
+# non-breaking hyphen) is not a hex colour, and neither is any other `&#nnnn;`.
+color_re='(^|[^&])#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\('
 ssr_re='Date\.now\(|Math\.random\('
 touched_ui=0
 for f in $(printf '%s\n' "$staged" | grep -E '\.tsx$' | grep -v '\.test\.tsx$' || true); do

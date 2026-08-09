@@ -2,7 +2,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
-import { renderPage } from '@/test/render';
+import { renderPage, renderPageWithForm } from '@/test/render';
 
 vi.mock('@/layouts/tenant-layout', () => ({
     default: ({ children }: { children: ReactNode }) => children,
@@ -97,6 +97,39 @@ describe('sales orders index', () => {
         const taxable = await screen.findByRole('checkbox');
         expect(taxable).toHaveAttribute('aria-checked', 'true');
         expect(screen.getByText('Taxable')).toBeInTheDocument();
+    });
+
+    it('surfaces a rejected order number on the create form', async () => {
+        renderPageWithForm(
+            <SalesOrdersIndex />,
+            props({
+                customers: [{ id: 1, name: 'Globex Retail' }],
+                products: [{ id: 2, name: 'Widget' }],
+            }),
+            // Target the dialog's own form by its action, so the page's separate
+            // fulfil/cancel forms are left alone.
+            (action) =>
+                action === '/acme/sales-orders'
+                    ? {
+                          errors: {
+                              number: 'The number has already been taken.',
+                          },
+                      }
+                    : undefined,
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /new sales order/i }),
+        );
+
+        expect(
+            await screen.findByText('The number has already been taken.'),
+        ).toBeInTheDocument();
+        // By id — "order number" also matches the list's Order # column header.
+        expect(document.querySelector('#number')).toHaveAttribute(
+            'aria-invalid',
+            'true',
+        );
     });
 
     it('hides the taxable toggle when the tenant charges no tax (R15)', async () => {

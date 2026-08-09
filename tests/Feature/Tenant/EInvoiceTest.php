@@ -295,6 +295,47 @@ it('forbids the e-invoice download without the sales-orders view permission (R15
     $this->get("/acme/sales-orders/{$soId}/e-invoice")->assertForbidden();
 });
 
+it('redirects a guest from the e-invoice download to the tenant login (R15)', function () {
+    $soId = seedEInvoiceOrder();
+
+    $this->get("/acme/sales-orders/{$soId}/e-invoice")
+        ->assertRedirect(route('tenant.login', ['tenant' => 'acme']));
+});
+
+it('404s the e-invoice download for an order that does not exist (R15)', function () {
+    seedEInvoiceOrder();
+    loginAsAcmeUser();
+
+    $this->get('/acme/sales-orders/999999/e-invoice')->assertNotFound();
+});
+
+it('404s the e-invoice download for a deleted order (R15)', function () {
+    $soId = seedEInvoiceOrder();
+    $this->tenant->run(fn () => SalesOrder::find($soId)->delete());
+
+    loginAsAcmeUser();
+
+    $this->get("/acme/sales-orders/{$soId}/e-invoice")->assertNotFound();
+});
+
+it('builds a zero-total payload for an order with no lines, without dividing by zero (R15)', function () {
+    $soId = seedEInvoiceOrder();
+    $this->tenant->run(fn () => SalesOrder::find($soId)->items()->delete());
+
+    loginAsAcmeUser();
+
+    $response = $this->get("/acme/sales-orders/{$soId}/e-invoice")->assertOk();
+
+    // Real zeros, not NaN/null — an empty invoice is still a valid document.
+    expect($response->json('line_extension_amount'))->toBe(0.0)
+        ->and($response->json('tax_exclusive_amount'))->toBe(0.0)
+        ->and($response->json('tax_amount'))->toBe(0.0)
+        ->and($response->json('tax_inclusive_amount'))->toBe(0.0)
+        ->and($response->json('payable_amount'))->toBe(0.0)
+        ->and($response->json('invoice_lines'))->toBe([])
+        ->and($response->json('tax_subtotals'))->toBe([]);
+});
+
 it('allows the e-invoice download with the sales-orders view permission (R15)', function () {
     $soId = seedEInvoiceOrder();
 

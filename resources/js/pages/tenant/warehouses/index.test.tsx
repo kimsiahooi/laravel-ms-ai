@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
-import { renderPage } from '@/test/render';
+import { renderPage, renderPageWithForm } from '@/test/render';
 
 vi.mock('@/layouts/tenant-layout', () => ({
     default: ({ children }: { children: ReactNode }) => children,
@@ -50,5 +50,22 @@ describe('warehouses index', () => {
         renderPage(<WarehousesIndex />, props({ warehouses: paginator([]) }));
 
         expect(screen.getByText(/no warehouses yet/i)).toBeInTheDocument();
+    });
+
+    it('shows a rejected field on the create form', async () => {
+        // A warehouse lives under a location: with none, the page shows the
+        // prerequisite prompt and no New button at all.
+        renderPageWithForm(
+            <WarehousesIndex />,
+            props({ locations: [{ id: 1, name: 'KL HQ' }] }),
+            { errors: { code: 'The code has already been taken.' } },
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /^new /i }));
+
+        expect(
+            await screen.findByText('The code has already been taken.'),
+        ).toBeInTheDocument();
+        expect(document.querySelector('[aria-invalid="true"]')).not.toBeNull();
     });
 });

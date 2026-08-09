@@ -17,6 +17,7 @@ use App\Services\InventoryValuationService;
 use App\Services\StockReportService;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->tenant = app(ProvisionTenant::class)->handle(
@@ -233,6 +234,50 @@ it('separates items that have run out from those merely low', function () {
         expect($reports->lowStockCount())->toBe(2)
             ->and($reports->outOfStockCount())->toBe(1);
     });
+});
+
+it('does not blow up on a purchase line with no quantity', function () {
+    $this->tenant->run(function () {
+        $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'ST-1', 'unit' => 'kg']);
+        $warehouse = valuationWarehouse();
+
+        // A zero-quantity received line: the weighted average divides by the summed
+        // quantity, so this must not become a division by zero or an infinite cost.
+        valuationPurchase($steel, 0, 5.0);
+        valuationStock($warehouse, $steel, 10);
+
+        $value = app(InventoryValuationService::class)->onHand();
+
+        expect(is_finite($value->value))->toBeTrue()
+            ->and($value->value)->toBe(0.0)
+            // Nothing was really paid, so the steel is honestly "not priced yet".
+            ->and($value->valued)->toBe(0)
+            ->and($value->unvalued)->toBe(1);
+    });
+});
+
+it('tells the dashboard how much stock it could not price', function () {
+    $this->tenant->run(function () {
+        $steel = RawMaterial::create(['name' => 'Steel', 'sku' => 'ST-1', 'unit' => 'kg']);
+        $mystery = RawMaterial::create(['name' => 'Mystery', 'sku' => 'MY-1', 'unit' => 'kg']);
+        $warehouse = valuationWarehouse();
+
+        valuationPurchase($steel, 10, 4.0);
+        valuationStock($warehouse, $steel, 10);
+        valuationStock($warehouse, $mystery, 5);
+    });
+
+    loginAsAcmeUser();
+
+    // The service's own tests never make a request, so this is what proves the
+    // figure actually reaches the screen it was written for.
+    $this->get('/acme/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('snapshot.stock_value.amount', 40)
+            ->where('snapshot.stock_value.valued', 1)
+            ->where('snapshot.stock_value.unvalued', 1)
+        );
 });
 
 it('counts one item low in several warehouses as one item to reorder', function () {

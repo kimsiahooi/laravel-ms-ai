@@ -235,6 +235,57 @@ it('creates a purchase return and completes it, posting stock OUT', function () 
     });
 });
 
+it('takes no stock out at all when a later line is short', function () {
+    ['warehouse' => $wh, 'raw_material' => $rm, 'supplier' => $sup] = seedPurchaseReturnFixture();
+    loginAsAcmeUser();
+    receivePurchaseFrom($sup, $rm);
+
+    // A second material with only 1 in stock, so the *second* line fails after the
+    // first has already been taken out.
+    $scarce = $this->tenant->run(function () use ($wh, $sup) {
+        $bolt = RawMaterial::create(['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea']);
+        app(StockService::class)->record(
+            Warehouse::find($wh), $bolt, 1, StockMovementReason::Adjustment,
+        );
+
+        $po = PurchaseOrder::create(['supplier_id' => $sup, 'status' => 'received']);
+        $po->items()->create([
+            'raw_material_id' => $bolt->id,
+            'raw_material_snapshot' => ['name' => 'Bolt', 'sku' => 'B-1', 'unit' => 'ea'],
+            'quantity' => 100, 'unit_cost' => 1,
+        ]);
+
+        return $bolt->id;
+    });
+
+    $this->post('/acme/purchase-returns', [
+        'supplier_id' => $sup,
+        'items' => [
+            ['raw_material_id' => $rm, 'quantity' => 5],
+            ['raw_material_id' => $scarce, 'quantity' => 50],
+        ],
+    ]);
+    $returnId = $this->tenant->run(fn () => PurchaseReturn::first()->id);
+
+    $this->from('/acme/purchase-returns')
+        ->post("/acme/purchase-returns/{$returnId}/complete", ['warehouse_id' => $wh])
+        ->assertSessionHasErrors('warehouse_id');
+
+    $this->tenant->run(function () use ($returnId, $wh, $rm, $scarce) {
+        expect(PurchaseReturn::find($returnId)->status->value)->toBe('pending')
+            ->and(StockMovement::where('reason', 'purchase_return')->count())->toBe(0);
+
+        // The first line's 5 were never taken out.
+        foreach ([$rm => 20.0, $scarce => 1.0] as $materialId => $expected) {
+            $stock = WarehouseStock::where('warehouse_id', $wh)
+                ->where('stockable_type', 'raw_material')
+                ->where('stockable_id', $materialId)
+                ->first();
+            expect((float) $stock->quantity)->toBe($expected);
+        }
+    });
+});
+
 it('cannot return more raw material than is on hand', function () {
     ['warehouse' => $wh, 'raw_material' => $rm, 'supplier' => $sup] = seedPurchaseReturnFixture();
     loginAsAcmeUser();

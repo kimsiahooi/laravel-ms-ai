@@ -81,6 +81,42 @@ it('replaces the BOM on re-save and clears it with an empty array', function () 
     $this->tenant->run(fn () => expect(Product::find($product)->bomItems)->toHaveCount(0));
 });
 
+it('leaves the saved BOM intact when a re-save is rejected', function () {
+    ['product' => $product, 'steel' => $steel, 'bolt' => $bolt] = seedBomFixture();
+
+    loginAsAcmeUser();
+
+    // A good two-line BOM to protect.
+    $this->put("/acme/products/{$product}/bom", [
+        'items' => [
+            ['raw_material_id' => $steel, 'quantity' => 2],
+            ['raw_material_id' => $bolt, 'quantity' => 4],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    // Saving deletes every line before re-creating them, so a rejected re-save must
+    // not be allowed to leave the product with no bill of materials at all.
+    $this->tenant->run(fn () => RawMaterial::find($bolt)->delete());
+
+    $this->from('/acme/products')
+        ->put("/acme/products/{$product}/bom", [
+            'items' => [
+                ['raw_material_id' => $steel, 'quantity' => 9],
+                ['raw_material_id' => $bolt, 'quantity' => 9],
+            ],
+        ])
+        ->assertInvalid('items.1.raw_material_id');
+
+    $this->tenant->run(function () use ($product, $steel, $bolt) {
+        $bom = Product::find($product)->bomItems()->orderBy('raw_material_id')->get();
+
+        // Both original lines survive, at their original quantities.
+        expect($bom)->toHaveCount(2)
+            ->and($bom->firstWhere('raw_material_id', $steel)->quantity)->toEqual(2)
+            ->and($bom->firstWhere('raw_material_id', $bolt)->quantity)->toEqual(4);
+    });
+});
+
 it('rejects duplicate raw materials in a BOM', function () {
     ['product' => $product, 'steel' => $steel] = seedBomFixture();
 

@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { filters, paginator, tenantProps } from '@/test/fixtures';
-import { renderPage } from '@/test/render';
+import { renderPage, renderPageWithForm } from '@/test/render';
 
 vi.mock('@/layouts/tenant-layout', () => ({
     default: ({ children }: { children: ReactNode }) => children,
@@ -44,5 +44,18 @@ describe('locations index', () => {
         renderPage(<LocationsIndex />, props({ locations: paginator([]) }));
 
         expect(screen.getByText(/no locations yet/i)).toBeInTheDocument();
+    });
+
+    it('shows a rejected field on the create form', async () => {
+        renderPageWithForm(<LocationsIndex />, props({}), {
+            errors: { name: 'The name field is required.' },
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /^new /i }));
+
+        expect(
+            await screen.findByText('The name field is required.'),
+        ).toBeInTheDocument();
+        expect(document.querySelector('[aria-invalid="true"]')).not.toBeNull();
     });
 });

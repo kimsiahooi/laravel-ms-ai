@@ -8,7 +8,52 @@ import { afterEach, vi } from 'vitest';
 // `globals: false` in vitest.config, so Testing Library's auto-cleanup never
 // registers — unmount + reset the DOM after each test ourselves, otherwise a file
 // with two render tests leaks the first render into the second.
-afterEach(() => cleanup());
+afterEach(() => {
+    cleanup();
+    // Never let one test's injected form failure leak into the next.
+    globalThis.__inertiaForm = undefined;
+});
+
+// --- Form failure / loading injection -------------------------------------------
+// Validation errors and `processing` live in Inertia-internal form state that only a
+// real submit mutates, and no component reads them off page props — so a test can
+// only reach them here, at the mock boundary. Both hooks below consult an OPT-IN
+// override (globalThis.__inertiaForm, set by test/render.tsx): unset means the real
+// behaviour, so tests that don't ask for a failure are completely unaffected.
+type FormOverride = {
+    errors?: Record<string, string>;
+    processing?: boolean;
+    onSubmit?: 'error' | 'success';
+    isDirty?: boolean;
+};
+
+/** Resolve the override for one form, identified by its data key or action URL. */
+function formOverride(key?: unknown): FormOverride | undefined {
+    const override = globalThis.__inertiaForm;
+
+    return typeof override === 'function' ? override(key) : override;
+}
+
+/** The render bag an Inertia <Form> hands its children. */
+function formBag(override: FormOverride) {
+    const errors = override.errors ?? {};
+
+    return {
+        errors,
+        hasErrors: Object.keys(errors).length > 0,
+        processing: override.processing ?? false,
+        isDirty: override.isDirty ?? false,
+        progress: null,
+        wasSuccessful: false,
+        recentlySuccessful: false,
+        clearErrors: () => {},
+        resetAndClearErrors: () => {},
+        setError: () => {},
+        reset: () => {},
+        defaults: () => {},
+        submit: () => {},
+    };
+}
 
 // --- jsdom polyfills the app's UI relies on -------------------------------------
 // recharts' ResponsiveContainer observes size; DateRangePicker reads matchMedia.
@@ -64,6 +109,80 @@ vi.mock('@inertiajs/react', async (importOriginal) => {
                 { href: typeof href === 'string' ? href : '#', ...rest },
                 children as never,
             ),
+        // Wrapped, never replaced: data/setData/transform keep working, and only the
+        // injected error bag + processing flag are layered on. `onSubmit` swaps the
+        // submit methods for ones that call the caller's own onError/onSuccess
+        // synchronously, which is how the toast.error paths get exercised.
+        useForm: (...args: unknown[]) => {
+            const form = (
+                actual.useForm as unknown as (
+                    ...a: unknown[]
+                ) => Record<string, unknown>
+            )(...args);
+            const override = formOverride(args[0]);
+
+            if (!override) {
+                return form;
+            }
+
+            const errors = {
+                ...(form.errors as Record<string, string>),
+                ...(override.errors ?? {}),
+            };
+            const submit = (...call: unknown[]) => {
+                const options = (call.at(-1) ?? {}) as Record<
+                    string,
+                    ((payload: unknown) => void) | undefined
+                >;
+                if (override.onSubmit === 'success') {
+                    options.onSuccess?.({ props: {} });
+                } else {
+                    options.onError?.(override.errors ?? {});
+                }
+                options.onFinish?.({});
+            };
+
+            return {
+                ...form,
+                errors,
+                hasErrors: Object.keys(errors).length > 0,
+                processing: override.processing ?? form.processing,
+                ...(override.onSubmit
+                    ? {
+                          post: submit,
+                          put: submit,
+                          patch: submit,
+                          delete: submit,
+                          submit,
+                      }
+                    : {}),
+            };
+        },
+        // <Form> builds its bag from an internal useForm imported straight from
+        // @inertiajs/core — an externalized dependency this mock cannot reach — so
+        // when an override is set we stand in a plain <form> yielding the injected
+        // bag. With no override it falls through to the real component untouched.
+        Form: (props: Record<string, unknown>) => {
+            const override = formOverride(props.action);
+
+            if (!override) {
+                return createElement(actual.Form as never, props as never);
+            }
+
+            const bag = formBag(override);
+
+            return createElement(
+                'form',
+                {
+                    className: props.className,
+                    onSubmit: (event: { preventDefault: () => void }) =>
+                        event.preventDefault(),
+                },
+                typeof props.children === 'function'
+                    ? (props.children as (bag: unknown) => unknown)(bag)
+                    : (props.children as never),
+            );
+        },
         router: {
             get: vi.fn(),
             post: vi.fn(),
